@@ -1,0 +1,503 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Metadatos técnicos de la aplicación. Sin entidades de negocio en la etapa 1.
+model ApplicationMetadata {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("application_metadata")
+}
+
+enum AdminRole {
+  OWNER
+  ADMIN
+}
+
+enum AccessTokenPurpose {
+  PASSWORD_RESET
+}
+
+model Administrator {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         AdminRole     @default(ADMIN)
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  sessions     AdminSession[]
+  accessTokens AccessToken[]
+}
+
+model AdminSession {
+  id              String        @id @default(cuid())
+  administratorId String
+  administrator   Administrator @relation(fields: [administratorId], references: [id], onDelete: Cascade)
+  tokenHash       String        @unique
+  createdAt       DateTime      @default(now())
+  expiresAt       DateTime
+  revokedAt       DateTime?
+
+  @@index([administratorId, revokedAt])
+  @@index([expiresAt])
+}
+
+model AccessToken {
+  id              String             @id @default(cuid())
+  administratorId String
+  administrator   Administrator      @relation(fields: [administratorId], references: [id], onDelete: Cascade)
+  purpose         AccessTokenPurpose @default(PASSWORD_RESET)
+  tokenHash       String             @unique
+  createdAt       DateTime           @default(now())
+  expiresAt       DateTime
+  usedAt          DateTime?
+
+  @@index([administratorId, usedAt])
+  @@index([expiresAt])
+}
+
+// Contadores persistentes, compartidos por las réplicas de la API.
+model AuthRateLimit {
+  key       String   @id
+  attempts  Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+enum ProductType {
+  GENERIC
+  PREDEFINED
+  CUSTOM
+  COMBO
+}
+
+enum ProductStatus {
+  HIDDEN
+  PUBLISHED
+  UNAVAILABLE
+}
+
+enum PricingMode {
+  FIXED
+  QUOTE
+}
+
+enum PersonalizationType {
+  SHORT_TEXT
+  LONG_TEXT
+  SELECT
+  NUMBER
+}
+
+enum OrderStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  IN_PRODUCTION
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum PaymentMovementType {
+  CHARGE
+  REFUND
+}
+
+model Category {
+  id       String            @id @default(cuid())
+  name     String            @unique
+  slug     String            @unique
+  products ProductCategory[]
+}
+
+model Career {
+  id       String          @id @default(cuid())
+  name     String          @unique
+  slug     String          @unique
+  products ProductCareer[]
+}
+
+model Product {
+  id           String                 @id @default(cuid())
+  name         String
+  slug         String                 @unique
+  description  String
+  type         ProductType
+  status       ProductStatus          @default(HIDDEN)
+  measurements String                 @default("")
+  materials    String                 @default("")
+  includes     String                 @default("")
+  leadTime     String                 @default("")
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  categories   ProductCategory[]
+  careers      ProductCareer[]
+  variants     ProductVariant[]
+  fields       PersonalizationField[]
+  components   ComboComponent[]       @relation("ComboOwner")
+  usedInCombos ComboComponent[]       @relation("ComponentReference")
+  images       ProductImage[]
+  mediaUploads MediaUpload[]
+  featured     FeaturedProduct?
+
+  @@index([status, type])
+}
+
+// Autorización y registro duradero para limpiar cargas abandonadas o eliminadas.
+// El administrador se conserva como identificador de auditoría, sin cascada.
+model MediaUpload {
+  id              String        @id @default(uuid())
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  administratorId String
+  cloudName       String
+  publicId        String        @unique
+  createdAt       DateTime      @default(now())
+  expiresAt       DateTime
+  cleanupAfter    DateTime
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  cleanedAt       DateTime?
+  leaseUntil      DateTime?
+  cleanupAttempts Int           @default(0)
+  image           ProductImage?
+
+  @@index([administratorId, createdAt])
+  @@index([productId, expiresAt])
+  @@index([cloudName, cleanedAt, cleanupAfter])
+}
+
+model ProductImage {
+  id         String      @id @default(cuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  uploadId   String      @unique
+  upload     MediaUpload @relation(fields: [uploadId], references: [id], onDelete: Restrict)
+  assetId    String      @unique
+  publicId   String      @unique
+  url        String
+  format     String
+  bytes      Int
+  width      Int
+  height     Int
+  altText    String      @default("")
+  position   Int
+  cover      Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+
+  @@index([productId, position])
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([productId, categoryId])
+  @@index([categoryId])
+}
+
+model ProductCareer {
+  productId String
+  careerId  String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  career    Career  @relation(fields: [careerId], references: [id], onDelete: Restrict)
+
+  @@id([productId, careerId])
+  @@index([careerId])
+}
+
+model ProductVariant {
+  id           String      @id @default(cuid())
+  productId    String
+  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key          String
+  name         String
+  pricingMode  PricingMode
+  priceCents   Int?
+  attributes   Json
+  photoCount   Int         @default(0)
+  active       Boolean     @default(true)
+  position     Int
+
+  @@unique([productId, key])
+}
+
+model PersonalizationField {
+  id           String                @id @default(cuid())
+  productId    String
+  product      Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  key          String
+  label        String
+  type         PersonalizationType
+  required     Boolean               @default(false)
+  position     Int
+  componentKey String?
+  minLength    Int?
+  maxLength    Int?
+  minValue     Float?
+  maxValue     Float?
+  options      PersonalizationOption[]
+
+  @@unique([productId, key])
+}
+
+model PersonalizationOption {
+  id              String               @id @default(cuid())
+  fieldId         String
+  field           PersonalizationField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  key             String
+  label           String
+  additionalCents Int                  @default(0)
+  position        Int
+
+  @@unique([fieldId, key])
+}
+
+model ComboComponent {
+  id                 String   @id @default(cuid())
+  comboId            String
+  combo              Product  @relation("ComboOwner", fields: [comboId], references: [id], onDelete: Cascade)
+  key                String
+  name               String
+  quantity           Int
+  position           Int
+  referenceProductId String?
+  referenceProduct   Product? @relation("ComponentReference", fields: [referenceProductId], references: [id], onDelete: Restrict)
+
+  @@unique([comboId, key])
+  @@index([referenceProductId])
+}
+
+
+model GuestSession {
+  id             String              @id @default(cuid())
+  tokenHash      String              @unique
+  createdAt      DateTime            @default(now())
+  lastSeenAt     DateTime            @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  previews       OrderPreview[]
+  requests       IdempotentRequest[]
+  orders         Order[]
+  orderRequests  OrderRequest[]
+
+  @@index([expiresAt])
+}
+
+model Order {
+  id                 String            @id @default(cuid())
+  guestSessionId     String?
+  guestSession       GuestSession?     @relation(fields: [guestSessionId], references: [id], onDelete: SetNull)
+  reference          String            @unique
+  customerName       String
+  customerPhone      String
+  requestedDate      DateTime          @db.Date
+  deliveryMethod     String
+  deliveryAddress    String?
+  notes              String?
+  knownSubtotalCents Decimal @db.Decimal(16, 0)
+  pendingQuoteCount  Int               @default(0)
+  shippingCents      Decimal? @db.Decimal(16, 0)
+  status             OrderStatus       @default(PENDING_CONFIRMATION)
+  whatsappUrl        String?
+  whatsappMessage    String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  items              OrderItem[]
+  events             OrderEvent[]
+  orderRequests      OrderRequest[]
+  quotes             OrderQuote[]
+  payments           PaymentMovement[]
+
+  @@index([guestSessionId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderQuote {
+  id             String           @id @default(cuid())
+  orderId        String
+  order          Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  version        Int
+  status         QuoteStatus      @default(DRAFT)
+  totalCents     Decimal @db.Decimal(16, 0)
+  notes          String?
+  administratorId String
+  items          OrderQuoteItem[]
+  payments       PaymentMovement[]
+  createdAt      DateTime         @default(now())
+
+  @@unique([orderId, version])
+  @@index([orderId, createdAt])
+}
+
+model OrderQuoteItem {
+  id             String     @id @default(cuid())
+  quoteId        String
+  quote          OrderQuote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  productName    String
+  description    String?
+  quantity       Int
+  unitPriceCents Decimal @db.Decimal(16, 0)
+  subtotalCents  Decimal @db.Decimal(16, 0)
+
+  @@index([quoteId])
+}
+
+model PaymentMovement {
+  idempotencyKey String @unique @db.Uuid
+  requestHash String
+  id              String              @id @default(cuid())
+  orderId         String
+  order           Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quoteId         String?
+  quote           OrderQuote?         @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  type            PaymentMovementType
+  amountCents     Int
+  method          String
+  reference       String?
+  occurredAt      DateTime            @default(now())
+  administratorId String
+  createdAt       DateTime            @default(now())
+
+  @@index([orderId, occurredAt])
+  @@index([quoteId])
+}
+
+model OrderItem {
+  id                    String   @id @default(cuid())
+  orderId               String
+  order                 Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId             String?
+  productName           String
+  variantSnapshot       Json?
+  customizationSnapshot Json
+  componentsSnapshot    Json?
+  pricingMode           PricingMode
+  unitPriceCents        Decimal? @db.Decimal(16, 0)
+  quantity              Int
+  subtotalCents         Decimal? @db.Decimal(16, 0)
+  createdAt             DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model OrderRequest {
+  guestSessionId String
+  guestSession   GuestSession @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  scope          String
+  key            String
+  requestHash    String
+  orderId        String       @unique
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@id([guestSessionId, scope, key])
+}
+
+model OrderPreview {
+  id             String              @id @default(uuid())
+  guestSessionId String
+  guestSession   GuestSession        @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  input          Json
+  result         Json
+  createdAt      DateTime            @default(now())
+  expiresAt      DateTime
+  request        IdempotentRequest?
+
+  @@index([guestSessionId, expiresAt])
+  @@index([expiresAt])
+}
+
+model IdempotentRequest {
+  guestSessionId String
+  guestSession   GuestSession @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  scope          String
+  key            String
+  requestHash    String
+  previewId      String       @unique
+  preview        OrderPreview @relation(fields: [previewId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@id([guestSessionId, scope, key])
+}
+
+model GuestRateLimit {
+  key       String   @id
+  attempts  Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+
+enum ContentPageKey {
+  home
+  about
+  contact
+  faq
+}
+
+model ContentPage {
+  page       ContentPageKey @id
+  title      String         @default("")
+  subtitle   String         @default("")
+  body       String         @default("")
+  sections   Json           @default("[]")
+  faqItems   Json           @default("[]")
+  published  Boolean        @default(false)
+  updatedAt  DateTime       @updatedAt
+}
+
+model FeaturedProduct {
+  productId String  @id
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int     @unique
+}
+
+model StoreSettings {
+  id              Int      @id @default(1)
+  storeName       String   @default("Por fin!")
+  description     String   @default("")
+  whatsappNumber  String?
+  contactEmail    String?
+  instagramUrl    String?
+  facebookUrl     String?
+  tiktokUrl       String?
+  pickupAddress   String   @default("")
+  deliveryMethods String[] @default([])
+  deliveryNotes   String   @default("")
+  leadTimeText    String   @default("")
+  businessHours   String   @default("")
+  updatedAt       DateTime @updatedAt
+}

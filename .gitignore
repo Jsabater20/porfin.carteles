@@ -1,0 +1,16 @@
+backend/data/
+.local/
+.env
+node_modules/
+dist/
+coverage/
+.npm-cache/
+*.tsbuildinfo
+.env.*
+!.env.example
+
+dist-tools/
+.next/
+out/
+.test-build/
+.neon

@@ -1,0 +1,10 @@
+.auth-fields { border: 0; padding: 0; min-width: 0; }
+.auth-fields:disabled { opacity: .7; }
+.auth-submit { width: 100%; margin-block: 1rem; }
+.auth-alternative { display: block; text-align: center; margin-top: .8rem; }
+.auth-card { overflow-wrap: anywhere; }
+.auth-card .custom-field input { min-width: 0; }
+.admin-topbar { align-items: center; }
+.admin-topbar strong { overflow-wrap: anywhere; }
+.admin-main .panel-card { overflow-wrap: anywhere; }
+.admin-logout { padding-block: .2rem; }

@@ -1,0 +1,63 @@
+name: Frontend checks
+on:
+  push:
+    paths: ['Frontend/**', 'backend/**', '.github/workflows/frontend.yml']
+  pull_request:
+    paths: ['Frontend/**', 'backend/**', '.github/workflows/frontend.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: porfin_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: Frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      SITE_INDEXABLE: 'false'
+      DATABASE_URL: postgresql://postgres:test-only@localhost:5432/porfin_test?schema=public
+      DIRECT_URL: postgresql://postgres:test-only@localhost:5432/porfin_test?schema=public
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            Frontend/package-lock.json
+            backend/package-lock.json
+      - run: npm ci --include=dev --no-audit --no-fund
+      - run: npm ci --include=dev --no-audit --no-fund
+        working-directory: backend
+      - run: test -x "$CHROME_PATH"
+      - run: npm run check
+      - run: npm run build
+      - run: npm run test:release -- --built
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-quality
+          path: |
+            Frontend/.test-build/*.png
+            Frontend/.test-build/*.json
+            Frontend/.test-build/*.jsonl
+          if-no-files-found: ignore

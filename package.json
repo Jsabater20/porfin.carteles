@@ -1,0 +1,25 @@
+{
+  "name": "porfin-carteles",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix backend run start",
+    "build": "npm --prefix backend run build",
+    "test": "npm --prefix backend test",
+    "dev:web": "npm --prefix Frontend run dev",
+    "build:web": "npm --prefix Frontend run build",
+    "check:web": "npm --prefix Frontend run check",
+    "dev:frontend": "npm --prefix Frontend run dev",
+    "build:frontend": "npm --prefix Frontend run build",
+    "check:frontend": "npm --prefix Frontend run check",
+    "start:frontend": "npm --prefix Frontend run start",
+    "start:backend": "npm --prefix backend run start"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "dependencies": {
+    "@neon/config": "^1.8.3",
+    "@neon/env": "^1.4.8"
+  }
+}

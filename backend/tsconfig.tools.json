@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist-tools",
+    "rootDir": ".",
+    "sourceMap": false
+  },
+  "include": [
+    "scripts/create-owner.ts",
+    "prisma/seed.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-tools",
+    "test",
+    "legacy"
+  ]
+}

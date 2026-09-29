@@ -1,0 +1,18 @@
+.order-page { padding-block: 2rem 4rem; }
+.order-fields { padding: 0; border: 0; min-width: 0; }
+.order-fields legend { font-size: 1.5rem; font-weight: 600; }
+.order-fields:disabled { opacity: .7; }
+.order-form { min-width: 0; }
+.order-consent { display: flex; align-items: start; gap: .7rem; margin-block: 1.5rem; font-size: .9rem; }
+.order-consent input { flex: 0 0 auto; width: 1.2rem; height: 1.2rem; margin-top: .2rem; accent-color: var(--accent); }
+.order-submit { margin-bottom: 1rem; }
+.order-review-item { padding-block: .7rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.order-review-item h3 { font-size: 1rem; }
+.order-review-item .cart-answers > div { display: block; border: 0; padding: 0; }
+.order-review-item .cart-answers dd { text-align: left; font-weight: 400; }
+.order-reference { overflow-wrap: anywhere; font-weight: 600; }
+.order-actions { margin-top: 1.5rem; }
+.order-actions h2 { font-size: 1.35rem; }
+.order-actions .button, .checkout-link { width: 100%; margin-top: 1rem; text-align: center; }
+.order-page > .text-link { display: inline-block; margin: 1rem; }
+.order-receipt .cart-summary { position: static; }

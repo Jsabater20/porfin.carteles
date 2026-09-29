@@ -1,0 +1,64 @@
+{
+  "name": "porfin-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API de Por fin! con NestJS, Prisma y PostgreSQL",
+  "scripts": {
+    "start": "nest start --watch",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
+    "build": "prisma generate && nest build && tsc -p tsconfig.tools.json",
+    "typecheck": "tsc --noEmit",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
+    "admin:bootstrap": "ts-node scripts/create-owner.ts",
+    "test:auth": "node --test -r ts-node/register test/auth.integration.ts",
+    "test:catalog": "node --test -r ts-node/register test/catalog.integration.ts",
+    "test:preview": "node --test -r ts-node/register test/preview.integration.ts",
+    "test:public": "node --test -r ts-node/register test/public-catalog.integration.ts",
+    "test:media": "node --test -r ts-node/register test/media.integration.ts",
+    "test": "node --test -r ts-node/register test/*.test.ts",
+    "test:database": "node --test -r ts-node/register test/database.integration.ts",
+    "test:orders": "node --test -r ts-node/register test/orders.integration.ts",
+    "test:content": "node --test -r ts-node/register test/content.integration.ts",
+    "admin:bootstrap:prod": "node dist-tools/scripts/create-owner.js",
+    "seed:prod": "node dist-tools/prisma/seed.js",
+    "check:production": "node scripts/check-production.cjs",
+    "predeploy": "npm run check:production && prisma migrate deploy",
+    "test:all": "node scripts/run-tests.cjs",
+    "test:security": "node --test -r ts-node/register test/security.integration.ts",
+    "check": "npm run prisma:validate && npm run build && npm run test:all"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.0.0",
+    "@prisma/client": "5.22.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "cloudinary": "^2.11.0",
+    "nodemailer": "^10.0.10",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "prisma": "5.22.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/nodemailer": "^8.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.7.3"
+  }
+}

@@ -1,0 +1,16 @@
+:root {
+  --canvas: #faf8f3;
+  --surface: #f2efe7;
+  --paper: #fffdf6;
+  --ink: #292820;
+  --muted: #646258;
+  --accent: #873e36;
+  --accent-dark: #6b2d28;
+  --accent-soft: #ead9cb;
+  --notice-bg: #eee5d8;
+  --line: #dedbd2;
+  --radius: 12px;
+  --radius-small: 6px;
+  --font-body: Arial, Helvetica, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
+}

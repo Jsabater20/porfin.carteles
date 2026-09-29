@@ -1,0 +1,127 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { integrationApp } from './support/integration';
+import { hashPassword, tokenHash } from '../src/common/utils/credentials';
+import { OrderService } from '../src/modules/orders/order.service';
+import { PaymentsService } from '../src/modules/payments/payments.service';
+
+test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 180000 }, async t => {
+  const ctx = await integrationApp(); t.after(ctx.cleanup);
+  type Identity = { cookie: string; csrf: string };
+  const req = async (route: string, method = 'GET', body?: unknown, identity?: Identity, key?: string) => {
+    const response = await fetch(ctx.url + '/api/v1' + route, { method, headers: { 'Content-Type': 'application/json', 'X-Requested-With': route.startsWith('/admin') || route.startsWith('/auth') ? 'porfin-admin' : 'porfin-storefront', ...(identity ? { Cookie: identity.cookie, 'X-CSRF-Token': identity.csrf } : {}), ...(key ? { 'Idempotency-Key': key } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    return { status: response.status, body: response.status === 204 ? null : await response.json() as any, response };
+  };
+  const identity = (r: Awaited<ReturnType<typeof req>>): Identity => ({ cookie: r.response.headers.get('set-cookie')!.split(';')[0], csrf: r.body.csrfToken });
+  const guest = identity(await req('/guest-session', 'POST', {})), other = identity(await req('/guest-session', 'POST', {}));
+  const administrator = await ctx.prisma.administrator.create({ data: { name: 'Owner', email: 'audit@example.com', passwordHash: await hashPassword('Clave-pruebas-123!'), role: 'OWNER' } });
+  const admin = identity(await req('/auth/login', 'POST', { email: administrator.email, password: 'Clave-pruebas-123!' }));
+  await ctx.prisma.storeSettings.create({ data: { id: 1, whatsappNumber: '5491199999999', deliveryMethods: ['PICKUP', 'SHIPPING'] } });
+  const product = await ctx.prisma.product.create({ data: { name: 'Cartel', slug: 'cartel-pedido', description: 'Prueba', type: 'PREDEFINED', status: 'PUBLISHED', variants: { create: { key: 'base', name: 'Tres fotos', pricingMode: 'FIXED', priceCents: 10000, photoCount: 3, attributes: { size: 'A3' }, position: 0 } }, fields: { create: { key: 'nombre', label: 'Nombre', type: 'SHORT_TEXT', required: true, position: 0 } } }, include: { variants: true } });
+  const variant = product.variants[0];
+  const line = { lineId: 'cartel', productId: product.id, variantId: variant.id, quantity: 2, answers: [{ fieldKey: 'nombre', value: 'Ana' }] };
+  const preview = async (items = [line]) => {
+    const result = await req('/orders/preview', 'POST', { items, deliveryMethod: 'SHIPPING' }, guest, randomUUID()); assert.equal(result.status, 200, JSON.stringify(result.body)); return result.body;
+  };
+  const saved = await preview();
+  const payload = { previewId: saved.id, customerName: 'Ana Pérez', customerPhone: '+5491123456789', requestedDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), deliveryMethod: 'SHIPPING', deliveryAddress: 'Calle 123' };
+  const create = (body: unknown = payload, key = randomUUID(), owner = guest) => req('/orders', 'POST', body, owner, key);
+  let order: any, quote: any;
+  const adminReq = (route: string, method = 'GET', body?: unknown, key?: string) => req(route, method, body, admin, key);
+  const transition = (status: string, reason?: string) => adminReq(`/admin/orders/${order.id}/status`, 'PATCH', { status, ...(reason ? { reason } : {}) });
+  const quoteStatus = (id: string, status: string) => adminReq(`/admin/orders/${order.id}/quotes/${id}/status`, 'PATCH', { status });
+  const createQuote = (unitPriceCents: number, quantity = 2) => adminReq(`/admin/orders/${order.id}/quotes`, 'POST', { items: [{ productName: 'Cartel', quantity, unitPriceCents }] });
+  const pay = (type: string, amountCents: number, key = randomUUID(), quoteId = quote.id) => adminReq('/admin/payments', 'POST', { orderId: order.id, quoteId, type, amountCents, method: 'TRANSFER' }, key);
+
+  await t.test('Valida datos, entrega, permisos y pertenencia antes de crear', async () => {
+    assert.equal((await create(payload, randomUUID(), other)).status, 404);
+    for (const patch of [{ customerName: '   ' }, { customerPhone: '------' }, { notes: '\u0000' }, { requestedDate: '2026-02-30' }, { requestedDate: '2000-01-01' }, { requestedDate: '2099-01-01T10:00:00Z' }, { deliveryMethod: 'PICKUP' }, { deliveryAddress: '' }, { unitPriceCents: 1 }]) assert.equal((await create({ ...payload, ...patch })).status, 400, JSON.stringify(patch));
+    assert.equal((await create(payload, randomUUID(), { ...guest, csrf: '' })).status, 403);
+    assert.equal((await req('/orders', 'POST', payload, undefined, randomUUID())).status, 401);
+    assert.equal(await ctx.prisma.order.count(), 0);
+  });
+  await t.test('Revalida precio, disponibilidad y atributos; la idempotencia resiste solicitudes simultáneas', async () => {
+    await ctx.prisma.productVariant.update({ where: { id: variant.id }, data: { priceCents: 11000 } });
+    assert.equal((await create()).status, 409);
+    await ctx.prisma.productVariant.update({ where: { id: variant.id }, data: { priceCents: 10000, attributes: { size: 'A4' } } });
+    assert.equal((await create()).status, 409);
+    await ctx.prisma.productVariant.update({ where: { id: variant.id }, data: { attributes: { size: 'A3' } } });
+    await ctx.prisma.product.update({ where: { id: product.id }, data: { status: 'HIDDEN' } });
+    assert.equal((await create()).status, 409);
+    await ctx.prisma.product.update({ where: { id: product.id }, data: { status: 'PUBLISHED' } });
+    const key = randomUUID(); const results = await Promise.all([create(payload, key), create(payload, key), create(payload, key)]);
+    for (const result of results) assert.equal(result.status, 200, JSON.stringify(result.body));
+    assert.equal(new Set(results.map(r => r.body.id)).size, 1); assert.equal(await ctx.prisma.order.count(), 1);
+    order = results[0].body;
+    assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
+    assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
+    assert.equal((await create({ ...payload, customerName: 'Otro' }, key)).status, 409);
+    await ctx.prisma.product.update({ where: { id: product.id }, data: { name: 'Nombre nuevo' } });
+    assert.equal((await create(payload, key)).body.items[0].productName, 'Cartel');
+    assert.equal((await req('/orders/' + order.id, 'GET', undefined, other)).status, 404);
+    assert.equal((await req('/orders/' + order.id, 'GET', undefined, guest)).body.items[0].productName, 'Cartel');
+    assert.equal((await req('/admin/orders/' + order.id, 'GET', undefined, guest)).status, 401);
+  });
+  await t.test('Estados controlados y auditoría con ID del administrador', async () => {
+    assert.equal((await transition('READY')).status, 409);
+    const results = await Promise.all([transition('CONFIRMED', 'Validado'), transition('CONFIRMED', 'Validado')]);
+    assert.deepEqual(results.map(r => r.status).sort(), [200, 409]);
+    const event = results.find(r => r.status === 200)!.body.events.at(-1);
+    assert.equal(event.details.administratorId, administrator.id); assert.equal(event.details.from, 'PENDING_CONFIRMATION');
+    assert.equal((await adminReq('/admin/orders?page=0')).status, 400);
+    assert.equal((await adminReq('/admin/orders')).body.total, 1);
+  });
+  await t.test('Presupuestos inmutables, versiones concurrentes y aceptación de la última revisión', async () => {
+    const results = await Promise.all([createQuote(32500), createQuote(35000)]);
+    for (const result of results) assert.equal(result.status, 201, JSON.stringify(result.body));
+    const sorted = results.map(r => r.body).sort((a, b) => a.version - b.version); assert.deepEqual(sorted.map(q => q.version), [1, 2]);
+    quote = sorted[1]; assert.equal(quote.administratorId, administrator.id);
+    assert.equal((await pay('CHARGE', 100)).status, 409);
+    assert.equal((await quoteStatus(quote.id, 'ACCEPTED')).status, 409);
+    assert.equal((await quoteStatus(sorted[0].id, 'SENT')).status, 200);
+    assert.equal((await quoteStatus(sorted[0].id, 'ACCEPTED')).status, 409);
+    assert.equal((await quoteStatus(quote.id, 'SENT')).status, 200); assert.equal((await quoteStatus(quote.id, 'ACCEPTED')).status, 200);
+    const stored = await ctx.prisma.orderQuote.findMany({ where: { orderId: order.id }, orderBy: { version: 'asc' }, include: { items: true } });
+    assert.equal(Number(stored[0].totalCents), sorted[0].totalCents); assert.equal(Number(stored[0].items[0].unitPriceCents), sorted[0].items[0].unitPriceCents);
+    assert.equal((await quoteStatus(quote.id, 'DRAFT')).status, 409);
+  });
+  await t.test('Cobros idempotentes, saldo concurrente, devoluciones y cancelación', async () => {
+    assert.equal((await adminReq('/admin/payments', 'POST', { orderId: order.id, type: 'CHARGE', amountCents: 1, method: 'TRANSFER' })).status, 400);
+    const key = randomUUID(); const same = await Promise.all([pay('CHARGE', 30000, key), pay('CHARGE', 30000, key)]);
+    for (const result of same) assert.equal(result.status, 201, JSON.stringify(result.body));
+    assert.equal(same[0].body.movement.id, same[1].body.movement.id); assert.equal(same[0].body.movement.administratorId, administrator.id);
+    assert.equal((await pay('CHARGE', 30001, key)).status, 409);
+    const remainder = quote.totalCents - 30000; const final = await Promise.all([pay('CHARGE', remainder), pay('CHARGE', remainder)]);
+    assert.deepEqual(final.map(r => r.status).sort(), [201, 400]); assert.equal(final.find(r => r.status === 201)!.body.paymentStatus, 'PAID');
+    assert.equal((await pay('REFUND', quote.totalCents + 1)).status, 400);
+    const lower = await createQuote(1); assert.equal(lower.status, 201);
+    await quoteStatus(lower.body.id, 'SENT'); assert.equal((await quoteStatus(lower.body.id, 'ACCEPTED')).status, 409);
+    assert.equal((await transition('CANCELLED')).status, 400);
+    assert.equal((await transition('CANCELLED', 'Solicitado por cliente')).status, 200);
+    assert.equal((await pay('CHARGE', 1)).status, 409);
+    const refunded = await pay('REFUND', 10000); assert.equal(refunded.status, 201, JSON.stringify(refunded.body)); assert.equal(refunded.body.balanceCents, quote.totalCents - 10000);
+    const totals = await adminReq('/admin/payments/orders/' + order.id); assert.equal(totals.body.outstandingCents, 10000); assert.equal(totals.body.movements.length, 3);
+    const details = await adminReq('/admin/orders/' + order.id); assert.equal(details.body.quotes.length, 3); assert.equal('guestSessionId' in details.body, false); assert.equal('requestHash' in details.body.payments[0], false);
+    assert.equal((await transition('CONFIRMED')).status, 409);
+  });
+  await t.test('Importes grandes exactos, pedido entregado terminal y WhatsApp sin configurar', async () => {
+    await ctx.prisma.storeSettings.update({ where: { id: 1 }, data: { whatsappNumber: null } });
+    await ctx.prisma.productVariant.update({ where: { id: variant.id }, data: { priceCents: 1000000000 } });
+    const big = await preview([{ ...line, quantity: 100 }]);
+    const created = await create({ ...payload, previewId: big.id }); assert.equal(created.status, 200, JSON.stringify(created.body));
+    assert.equal(created.body.knownSubtotalCents, 100000000000); assert.equal(created.body.items[0].subtotalCents, 100000000000); assert.equal(created.body.whatsapp.url, null);
+    order = created.body;
+    const bigQuote = await createQuote(1000000000, 10000); assert.equal(bigQuote.status, 201); assert.equal(bigQuote.body.totalCents, 10000000000000);
+    for (const status of ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED']) assert.equal((await transition(status)).status, 200);
+    assert.equal((await transition('CANCELLED', 'No permitido')).status, 409);
+    assert.equal((await createQuote(1)).status, 409);
+  });
+  await t.test('Una sesión revocada no puede escribir aunque haya pasado previamente el guard', async () => {
+    const session = await ctx.prisma.adminSession.findUniqueOrThrow({ where: { tokenHash: tokenHash(admin.cookie.split('=')[1]) } });
+    await ctx.prisma.adminSession.update({ where: { id: session.id }, data: { revokedAt: new Date() } });
+    await assert.rejects(ctx.app.get(OrderService).createQuote(order.id, { items: [{ productName: 'Prueba', quantity: 1, unitPriceCents: 1 }] }, session.id), (error: any) => error.getStatus() === 403);
+    await assert.rejects(ctx.app.get(PaymentsService).create({ orderId: order.id, type: 'CHARGE', amountCents: 1, method: 'TRANSFER' }, session.id, randomUUID()), (error: any) => error.getStatus() === 403);
+    assert.equal((await adminReq('/admin/orders')).status, 401);
+  });
+});

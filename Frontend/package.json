@@ -1,0 +1,45 @@
+{
+  "name": "porfin-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3000",
+    "build": "next build",
+    "start": "next dev --hostname 127.0.0.1 --port 3000",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test .test-build/test/*.test.js test/*.test.mjs",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "test:smoke": "node scripts/smoke.mjs",
+    "test:storefront": "node scripts/storefront-smoke.mjs",
+    "test:cart-browser": "node scripts/cart-browser-smoke.mjs",
+    "test:orders-browser": "node scripts/orders-browser-smoke.mjs",
+    "test:orders-real": "node scripts/orders-real-smoke.mjs",
+    "test:auth-browser": "node scripts/auth-browser-smoke.mjs",
+    "test:catalog-browser": "node scripts/catalog-browser-smoke.mjs",
+    "test:operations-browser": "node scripts/operations-browser-smoke.mjs",
+    "start:production": "node scripts/start-production.mjs",
+    "check:production": "node scripts/check-production.mjs",
+    "test:quality-browser": "node scripts/quality-browser-smoke.mjs",
+    "test:release": "node scripts/release-check.mjs",
+    "start:preview": "next start --hostname 127.0.0.1 --port 3000"
+  },
+  "dependencies": {
+    "next": "16.3.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.3.6",
+    "typescript": "~5.9.3",
+    "axe-core": "4.13.0"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  }
+}
