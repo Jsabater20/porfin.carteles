@@ -16,13 +16,15 @@
     "test:orders-browser": "node scripts/orders-browser-smoke.mjs",
     "test:orders-real": "node scripts/orders-real-smoke.mjs",
     "test:auth-browser": "node scripts/auth-browser-smoke.mjs",
+    "test:catalog-filters-browser": "node scripts/catalog-filters-browser-smoke.mjs",
     "test:catalog-browser": "node scripts/catalog-browser-smoke.mjs",
     "test:operations-browser": "node scripts/operations-browser-smoke.mjs",
     "start:production": "node scripts/start-production.mjs",
     "check:production": "node scripts/check-production.mjs",
     "test:quality-browser": "node scripts/quality-browser-smoke.mjs",
     "test:release": "node scripts/release-check.mjs",
-    "start:preview": "next start --hostname 127.0.0.1 --port 3000"
+    "start:preview": "next start --hostname 127.0.0.1 --port 3000",
+    "test:consolidation-browser": "node scripts/consolidation-browser-smoke.mjs"
   },
   "dependencies": {
     "next": "16.3.6",

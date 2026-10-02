@@ -7,7 +7,7 @@ try {
   if (process.env.NODE_ENV !== 'production') throw new Error('check:production requiere NODE_ENV=production.');
   const env = validateEnvironment(process.env);
   if (env.SWAGGER_ENABLED) throw new Error('Deshabilitá SWAGGER_ENABLED antes de publicar.');
-  if (env.MAIL_MODE !== 'smtp') throw new Error('Configurá MAIL_MODE=smtp antes de publicar.');
+  if (!['resend', 'smtp'].includes(env.MAIL_MODE)) throw new Error('Configurá MAIL_MODE=resend o smtp antes de publicar.');
   if (!env.CLOUDINARY_CLOUD_NAME) throw new Error('Configurá Cloudinary antes de publicar.');
   console.log('Configuración de producción válida. No se verificaron credenciales remotas ni conectividad.');
 } catch (error) {

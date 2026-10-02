@@ -1,10 +1,14 @@
 # Prueba local con PostgreSQL
 
-La base `porfin_pruebas` está en PostgreSQL 16, en `127.0.0.1:15432`. Tiene las migraciones del backend y metadata inicial. Es independiente de `porfin_stage1`; sus datos no fueron borrados. La conexión está en `backend/.env`, fuera de Git.
+El backend usa actualmente Neon, configurado en `backend/.env`, fuera de Git. Se inicia con `npm run start` sin PostgreSQL local y requiere conexión a Internet. Ver [configuración externa](external-services-setup.md).
+
+La base alternativa `porfin_pruebas` se conserva en PostgreSQL 16, en `127.0.0.1:15432`, con sus migraciones y metadata. Es independiente de `porfin_stage1`; sus datos no fueron borrados. La conexión local anterior quedó respaldada en `.local/backend-before-neon.env`. Para volver a ella, recuperar solamente DATABASE_URL y DIRECT_URL de ese archivo, conservando el resto de la configuración actual.
 
 ## Arrancar
 
-PostgreSQL debe estar encendido. En este equipo, desde la raíz, si está detenido:
+En este equipo Windows, `npm run start` dentro de backend comprueba PostgreSQL y enciende automáticamente la instancia existente de `.local/postgres-stage1/data` si la conexión apunta a localhost:15432. No crea ni borra bases, no cambia migraciones y no actúa sobre Neon ni producción. PostgreSQL queda encendido al cerrar la API para poder volver a iniciarla.
+
+Para iniciar la instancia manualmente, desde la raíz, si está detenida:
 
 ```powershell
 & 'C:\Program Files\PostgreSQL\16\bin\pg_ctl.exe' -D '.local\postgres-stage1\data' -l '.local\postgres-stage1\server.log' -o '-h 127.0.0.1 -p 15432' -w start
@@ -42,9 +46,9 @@ Ambos servidores observan cambios en desarrollo. Detenerlos con Ctrl+C. Desde la
 
 ## Datos y proveedores
 
-La base comienza sin productos, pedidos ni administradores. Para gestionar datos, crear el primer OWNER con `npm run admin:bootstrap` desde backend, configurando BOOTSTRAP_OWNER_NAME, BOOTSTRAP_OWNER_EMAIL y BOOTSTRAP_OWNER_PASSWORD como explica [autenticación](backend-auth.md). Luego cargar el catálogo desde el panel.
+La base Neon comienza sin productos, pedidos ni administradores. Para gestionar datos, crear el primer OWNER con `npm run admin:bootstrap` desde backend, configurando BOOTSTRAP_OWNER_NAME, BOOTSTRAP_OWNER_EMAIL y BOOTSTRAP_OWNER_PASSWORD como explica [autenticación](backend-auth.md). Luego cargar el catálogo desde el panel.
 
-La recuperación de contraseña usa el buzón local de desarrollo. Las imágenes requieren Cloudinary para cargas reales. Esta configuración no publica servicios ni conecta Neon o SMTP.
+La recuperación de contraseña sigue usando el buzón local de desarrollo hasta configurar Resend. Cloudinary ya está configurado para cargas reales. La API se ejecuta localmente y consulta Neon; todavía no se publicó en Railway.
 
 ## Producción y pruebas
 

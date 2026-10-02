@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { whatsappLink } from './validation';
 import { useCart } from '@/features/cart/provider';
 
@@ -9,6 +9,13 @@ export function OrderActions({ whatsapp }: { whatsapp: { url: string | null; mes
   const [notice, setNotice] = useState('');
   const text = useRef<HTMLTextAreaElement>(null);
   const link = whatsappLink(whatsapp.url);
+  useEffect(() => {
+    const current = new URL(window.location.href);
+    if (current.searchParams.get('whatsapp') !== '1') return;
+    current.searchParams.delete('whatsapp');
+    window.history.replaceState(window.history.state, '', current.pathname + current.search + current.hash);
+    if (link) window.location.assign(link);
+  }, [link]);
   async function copy() {
     try { await navigator.clipboard.writeText(whatsapp.message); setNotice('Mensaje copiado. Pegalo en el chat de la tienda.'); }
     catch { text.current?.focus(); text.current?.select(); setNotice('Seleccionamos el texto. Copialo desde el menú de tu navegador.'); }

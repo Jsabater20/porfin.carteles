@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
-import { MEDIA_FORMATS, MEDIA_MAX_BYTES } from './media.constants';
+import { MEDIA_FORMATS } from './media.constants';
 
 export interface CloudinaryAsset {
   asset_id: string;
@@ -36,11 +36,14 @@ export class CloudinaryService {
       const preset = await cloudinary.api.upload_preset(this.config.getOrThrow<string>('CLOUDINARY_UPLOAD_PRESET'), options);
       const settings = preset.settings ?? {};
       const formats: string[] = Array.isArray(settings.allowed_formats) ? settings.allowed_formats : String(settings.allowed_formats ?? '').split(',');
-      if (preset.unsigned !== false || !Number.isInteger(settings.max_file_size) || settings.max_file_size < 1 || settings.max_file_size > MEDIA_MAX_BYTES || !formats.length || formats.some(format => !MEDIA_FORMATS.includes(format)) || settings.folder || settings.public_id_prefix || settings.use_asset_folder_as_public_id_prefix || settings.transformation) {
+      // Cloudinary does not support per-preset file size limits. MediaService
+      // checks the provider's actual bytes before accepting an image.
+      const usesFolderPrefix = ![undefined, null, false, 0, '0', 'false'].includes(settings.use_asset_folder_as_public_id_prefix);
+      if (preset.unsigned !== false || !formats.length || formats.some(format => !MEDIA_FORMATS.includes(format)) || settings.folder || settings.public_id_prefix || usesFolderPrefix || settings.transformation || (settings.type && settings.type !== 'upload')) {
         throw new Error('Preset incompatible');
       }
     } catch {
-      throw new ServiceUnavailableException('El preset de Cloudinary debe ser firmado, limitar el peso a 5 MiB y permitir solo JPG, PNG o WebP, sin prefijos ni transformaciones de entrada.');
+      throw new ServiceUnavailableException('El preset de Cloudinary debe ser firmado y permitir solo JPG, PNG o WebP, con entrega pública y sin prefijos ni transformaciones de entrada.');
     }
   }
 

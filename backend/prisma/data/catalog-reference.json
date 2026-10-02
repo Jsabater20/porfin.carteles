@@ -1,0 +1,838 @@
+{
+  "source": "https://drive.google.com/file/d/1HJoegONC-lh2nrX06f-kG4ZL1gs4bwhF/view",
+  "importedAt": "2026-09-30",
+  "categories": [
+    {
+      "slug": "carteles",
+      "name": "Carteles"
+    },
+    {
+      "slug": "props",
+      "name": "Props · carteles chicos"
+    },
+    {
+      "slug": "combos",
+      "name": "Combos"
+    },
+    {
+      "slug": "recibidas",
+      "name": "Recibidas"
+    },
+    {
+      "slug": "baby-shower",
+      "name": "Baby shower"
+    }
+  ],
+  "products": [
+    {
+      "slug": "cartel-generico",
+      "name": "Cartel genérico",
+      "type": "GENERIC",
+      "categories": [
+        "carteles",
+        "recibidas"
+      ],
+      "sourcePage": 2,
+      "description": "Elegí un diseño genérico y personalizá el texto, el color de fondo y el color de la tipografía.",
+      "measurements": "Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro.",
+      "variants": [
+        {
+          "key": "rectangular",
+          "name": "Rectangular · 60 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "rectangular",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "circular",
+          "name": "Circular · 70 cm de diámetro",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "circular",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "generico-rectangular",
+          "name": "Genérico · Rectangular · 60 × 100 cm · con 3 imágenes",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "base": "generico",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 3,
+          "active": true
+        },
+        {
+          "key": "generico-circular",
+          "name": "Genérico · Circular · 70 cm de diámetro · con 3 imágenes",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "base": "generico",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 3,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "carrera",
+          "label": "Temática (opcional)",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "imagenes",
+          "label": "Indicaciones para las imágenes (opción con 3 imágenes)",
+          "type": "LONG_TEXT",
+          "required": false,
+          "maxLength": 2000,
+          "options": []
+        }
+      ],
+      "includes": "Un cartel con texto y colores a elección.",
+      "components": [],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "cartel-predeterminado",
+      "name": "Cartel predeterminado por carrera",
+      "type": "PREDEFINED",
+      "categories": [
+        "carteles",
+        "recibidas"
+      ],
+      "sourcePage": 3,
+      "description": "Diseños predeterminados según tu carrera. Podés personalizar el texto, el color de fondo y el color de la tipografía.",
+      "measurements": "Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro.",
+      "variants": [
+        {
+          "key": "rectangular",
+          "name": "Rectangular · 60 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "rectangular",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "circular",
+          "name": "Circular · 70 cm de diámetro",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "circular",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "predeterminado-rectangular",
+          "name": "Por carrera · Rectangular · 60 × 100 cm · con 3 imágenes",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "base": "predeterminado",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 3,
+          "active": true
+        },
+        {
+          "key": "predeterminado-circular",
+          "name": "Por carrera · Circular · 70 cm de diámetro · con 3 imágenes",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "base": "predeterminado",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 3,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "carrera",
+          "label": "Carrera",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "imagenes",
+          "label": "Indicaciones para las imágenes (opción con 3 imágenes)",
+          "type": "LONG_TEXT",
+          "required": false,
+          "maxLength": 2000,
+          "options": []
+        }
+      ],
+      "includes": "Un cartel con diseño predeterminado según carrera.",
+      "components": [],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "cartel-baby-shower",
+      "name": "Cartel para baby shower",
+      "type": "GENERIC",
+      "categories": [
+        "carteles",
+        "baby-shower"
+      ],
+      "sourcePage": 5,
+      "description": "Un cartel circular para dar la bienvenida. Personalizá el texto, el color de fondo y el color de la tipografía.",
+      "measurements": "Circular: 50 cm de diámetro.",
+      "variants": [
+        {
+          "key": "circular-50",
+          "name": "Circular · 50 cm de diámetro",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "medidas": "50 cm de diámetro"
+          },
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "nombre",
+          "label": "Nombre para el cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "bienvenida",
+          "label": "Texto de bienvenida",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        }
+      ],
+      "includes": "Un cartel circular personalizado para baby shower.",
+      "components": [],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "cartel-personalizado",
+      "name": "Cartel con diseño personalizado",
+      "type": "CUSTOM",
+      "categories": [
+        "carteles",
+        "recibidas"
+      ],
+      "sourcePage": 6,
+      "description": "Un diseño personalizado a partir de tu idea. Incluye visualización previa a la impresión.",
+      "measurements": "Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro. XXL alargado: 50 × 100 cm.",
+      "variants": [
+        {
+          "key": "rectangular",
+          "name": "Rectangular · 60 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "rectangular",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "circular",
+          "name": "Circular · 70 cm de diámetro",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "circular",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "xxl",
+          "name": "XXL alargado · 50 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "xxl",
+            "medidas": "50 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "carrera",
+          "label": "Carrera o motivo de la celebración",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": []
+        },
+        {
+          "key": "diseno",
+          "label": "Contanos cómo te gustaría el diseño",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": []
+        }
+      ],
+      "includes": "Un cartel con diseño personalizado y visualización previa a impresión.",
+      "components": [],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "props-personalizados",
+      "name": "Props personalizados",
+      "type": "CUSTOM",
+      "categories": [
+        "props"
+      ],
+      "sourcePage": 7,
+      "description": "Carteles chicos con diseño personalizado: elegí tus frases e ideas para acompañar las fotos de la celebración.",
+      "measurements": "12 × 17 cm.",
+      "variants": [
+        {
+          "key": "individual",
+          "name": "Prop individual · 12 × 17 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "medidas": "12 × 17 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "diseno",
+          "label": "Frase o idea para el prop",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": []
+        }
+      ],
+      "includes": "Un prop personalizado por unidad. Elegí la cantidad que necesitás.",
+      "components": [],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "combo-1",
+      "name": "Combo 1 · Cartel + 6 props",
+      "type": "COMBO",
+      "categories": [
+        "combos"
+      ],
+      "sourcePage": 9,
+      "description": "Un cartel con diseño personalizado acompañado por 6 props personalizados de 12 × 17 cm.",
+      "measurements": "Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro. XXL alargado: 50 × 100 cm. Props: 12 × 17 cm.",
+      "variants": [
+        {
+          "key": "rectangular",
+          "name": "Rectangular · 60 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "rectangular",
+            "medidas": "60 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "circular",
+          "name": "Circular · 70 cm de diámetro",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "circular",
+            "medidas": "70 cm de diámetro"
+          },
+          "photoCount": 0,
+          "active": true
+        },
+        {
+          "key": "xxl",
+          "name": "XXL alargado · 50 × 100 cm",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {
+            "formato": "xxl",
+            "medidas": "50 × 100 cm"
+          },
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "carrera",
+          "label": "Carrera o motivo de la celebración",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "diseno",
+          "label": "Contanos cómo te gustaría el diseño",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "frases-props",
+          "label": "Frases o ideas para los carteles chicos",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "props"
+        }
+      ],
+      "includes": "1 cartel personalizado + 6 props personalizados.",
+      "components": [
+        {
+          "key": "cartel",
+          "name": "Cartel con diseño personalizado",
+          "quantity": 1,
+          "referenceSlug": "cartel-personalizado"
+        },
+        {
+          "key": "props",
+          "name": "Props personalizados · 12 × 17 cm",
+          "quantity": 6,
+          "referenceSlug": "props-personalizados"
+        }
+      ],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "combo-2",
+      "name": "Combo 2 · Cartel + remera",
+      "type": "COMBO",
+      "categories": [
+        "combos"
+      ],
+      "sourcePage": 10,
+      "description": "Un cartel con diseño personalizado, una remera personalizada de Alta Remera y 2 cartelitos de regalo.",
+      "measurements": "Cartelitos: 12 × 17 cm. Formato del cartel y talle de la remera a confirmar.",
+      "variants": [
+        {
+          "key": "a-coordinar",
+          "name": "Combo con formato a coordinar",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {},
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "carrera",
+          "label": "Carrera o motivo de la celebración",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "diseno",
+          "label": "Contanos cómo te gustaría el diseño",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "frases-props",
+          "label": "Frases o ideas para los carteles chicos",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "props"
+        },
+        {
+          "key": "talle",
+          "label": "Talle de la remera",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "remera"
+        },
+        {
+          "key": "diseno-remera",
+          "label": "Idea para la remera",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "remera"
+        },
+        {
+          "key": "formato",
+          "label": "Formato deseado del cartel",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        }
+      ],
+      "includes": "1 cartel personalizado + 1 remera personalizada de Alta Remera + 2 cartelitos de regalo.",
+      "components": [
+        {
+          "key": "cartel",
+          "name": "Cartel con diseño personalizado",
+          "quantity": 1,
+          "referenceSlug": "cartel-personalizado"
+        },
+        {
+          "key": "remera",
+          "name": "Remera personalizada · Alta Remera",
+          "quantity": 1
+        },
+        {
+          "key": "props",
+          "name": "Cartelitos de regalo · 12 × 17 cm",
+          "quantity": 2,
+          "referenceSlug": "props-personalizados"
+        }
+      ],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    },
+    {
+      "slug": "combo-3",
+      "name": "Combo 3 · La celebración completa",
+      "type": "COMBO",
+      "categories": [
+        "combos"
+      ],
+      "sourcePage": 11,
+      "description": "Un cartel con diseño personalizado, una remera personalizada de Alta Remera, 6 props personalizados y una bengala de humo de regalo.",
+      "measurements": "Props: 12 × 17 cm. Formato del cartel y talle de la remera a confirmar.",
+      "variants": [
+        {
+          "key": "a-coordinar",
+          "name": "Combo con formato a coordinar",
+          "pricingMode": "QUOTE",
+          "priceCents": null,
+          "attributes": {},
+          "photoCount": 0,
+          "active": true
+        }
+      ],
+      "fields": [
+        {
+          "key": "texto",
+          "label": "Texto principal del cartel",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-fondo",
+          "label": "Color de fondo",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "color-texto",
+          "label": "Color del texto",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "carrera",
+          "label": "Carrera o motivo de la celebración",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "diseno",
+          "label": "Contanos cómo te gustaría el diseño",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "cartel"
+        },
+        {
+          "key": "frases-props",
+          "label": "Frases o ideas para los carteles chicos",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "props"
+        },
+        {
+          "key": "talle",
+          "label": "Talle de la remera",
+          "type": "SHORT_TEXT",
+          "required": true,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "remera"
+        },
+        {
+          "key": "diseno-remera",
+          "label": "Idea para la remera",
+          "type": "LONG_TEXT",
+          "required": true,
+          "maxLength": 2000,
+          "options": [],
+          "componentKey": "remera"
+        },
+        {
+          "key": "formato",
+          "label": "Formato deseado del cartel",
+          "type": "SHORT_TEXT",
+          "required": false,
+          "maxLength": 200,
+          "options": [],
+          "componentKey": "cartel"
+        }
+      ],
+      "includes": "1 cartel personalizado + 1 remera personalizada de Alta Remera + 6 props personalizados + 1 bengala de humo de regalo.",
+      "components": [
+        {
+          "key": "cartel",
+          "name": "Cartel con diseño personalizado",
+          "quantity": 1,
+          "referenceSlug": "cartel-personalizado"
+        },
+        {
+          "key": "remera",
+          "name": "Remera personalizada · Alta Remera",
+          "quantity": 1
+        },
+        {
+          "key": "props",
+          "name": "Props personalizados · 12 × 17 cm",
+          "quantity": 6,
+          "referenceSlug": "props-personalizados"
+        },
+        {
+          "key": "bengala",
+          "name": "Bengala de humo de regalo",
+          "quantity": 1
+        }
+      ],
+      "status": "PUBLISHED",
+      "materials": "",
+      "leadTime": "Consultar disponibilidad y plazo de entrega.",
+      "careerIds": []
+    }
+  ]
+}

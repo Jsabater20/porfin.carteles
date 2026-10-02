@@ -27,6 +27,15 @@ const production = {
   ...base, NODE_ENV: 'production', API_ORIGIN: 'https://api.example.com', ALLOWED_ORIGINS: 'https://tienda.example.com',
   DATABASE_URL: base.DATABASE_URL + '?sslmode=require&sslaccept=strict', DIRECT_URL: base.DIRECT_URL + '?sslmode=require&sslaccept=strict',
 };
+
+test('Resend exige clave y remitente válido sin exigir credenciales SMTP', () => {
+  const resend = { ...production, MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_sentinel', EMAIL_FROM: 'Porfin Carteles <no-reply@example.com>' };
+  assert.equal(validateEnvironment(resend).MAIL_MODE, 'resend');
+  assert.equal(validateEnvironment({ ...resend, EMAIL_FROM: 'no-reply@example.com' }).EMAIL_FROM, 'no-reply@example.com');
+  for (const patch of [{ RESEND_API_KEY: '' }, { RESEND_API_KEY: 'sentinel-secret' }, { EMAIL_FROM: '' }, { EMAIL_FROM: 'not-email' }, { EMAIL_FROM: 'Sender <a@example.com>\r\nBcc: b@example.com' }]) {
+    assert.throws(() => validateEnvironment({ ...resend, ...patch }), (error: any) => !error.message.includes('sentinel-secret'));
+  }
+});
 test('Producción exige TLS verificado y rechaza configuraciones ambiguas sin revelar secretos', () => {
   for (const key of ['DATABASE_URL', 'DIRECT_URL']) for (const query of ['', '?sslmode=disable', '?sslmode=require&sslaccept=accept_invalid_certs', '?sslmode=require&sslmode=disable&sslaccept=strict']) {
     assert.throws(() => validateEnvironment({ ...production, [key]: 'postgresql://user:secret-sentinel@db.example.com/store' + query }), (error: any) => !error.message.includes('secret-sentinel'));

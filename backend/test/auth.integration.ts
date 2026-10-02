@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
+import { ConfigService } from '@nestjs/config';
 import { integrationApp } from './support/integration';
 import { tokenHash } from '../src/common/utils/credentials';
 
@@ -116,6 +117,43 @@ test('Etapa 2: autenticación y administradores con PostgreSQL real', { timeout:
   await t.test('Límite de intentos persistente', async () => {
     for (let i = 0; i < 10; i++) assert.equal((await call('/auth/login', 'POST', { email: 'rate@example.com', password })).response.status, 401);
     assert.equal((await call('/auth/login', 'POST', { email: 'rate@example.com', password })).response.status, 429);
+  });
+
+  await t.test('Resend entrega recuperación y un fallo del proveedor invalida el token sin revelar la cuenta', async t => {
+    const config = ctx.app.get(ConfigService);
+    const previous = Object.fromEntries(['MAIL_MODE', 'RESEND_API_KEY', 'EMAIL_FROM'].map(key => [key, config.get(key)]));
+    config.set('MAIL_MODE', 'resend');
+    config.set('RESEND_API_KEY', 're_test_only');
+    config.set('EMAIL_FROM', 'Porfin Carteles <no-reply@example.com>');
+    const account = await ctx.prisma.administrator.create({ data: { name: 'Prueba Resend', email: 'resend@example.com', passwordHash: owner.passwordHash } });
+    const realFetch = globalThis.fetch;
+    let fail = false;
+    const messages: any[] = [];
+    t.mock.method(globalThis, 'fetch', async (url: Parameters<typeof fetch>[0], options?: RequestInit) => {
+      if (String(url) !== 'https://api.resend.com/emails') return realFetch(url, options);
+      assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer re_test_only');
+      messages.push(JSON.parse(String(options?.body)));
+      return new Response(JSON.stringify(fail ? { message: 'private-provider-error' } : { id: 'email-test' }), { status: fail ? 500 : 200 });
+    });
+    try {
+      const success = await call('/auth/recovery', 'POST', { email: account.email });
+      const absent = await call('/auth/recovery', 'POST', { email: 'absent-resend@example.com' });
+      assert.equal(success.response.status, 202);
+      assert.deepEqual(success.body, absent.body);
+      assert.equal(messages.length, 1);
+      assert.equal(messages[0].from, 'Porfin Carteles <no-reply@example.com>');
+      const rawToken = /#token=([a-f0-9]{64})/.exec(messages[0].text)![1];
+      assert.equal((await ctx.prisma.accessToken.findUniqueOrThrow({ where: { tokenHash: tokenHash(rawToken) } })).usedAt, null);
+      fail = true;
+      const failure = await call('/auth/recovery', 'POST', { email: account.email });
+      assert.equal(failure.response.status, 202);
+      assert.deepEqual(failure.body, absent.body);
+      assert.equal(messages.length, 2);
+      assert.equal(await ctx.prisma.accessToken.count({ where: { administratorId: account.id, usedAt: null } }), 0);
+      assert.doesNotMatch(JSON.stringify(failure.body), /private-provider-error|resend@example.com/);
+    } finally {
+      for (const [key, value] of Object.entries(previous)) config.set(key, value);
+    }
   });
 
   await t.test('Dos OWNER no pueden eliminarse concurrentemente', async () => {

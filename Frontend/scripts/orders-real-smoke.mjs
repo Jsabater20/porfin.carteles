@@ -51,7 +51,7 @@ const { integrationApp } = loadBackend(path.join(backendRoot, 'test/support/inte
     const previewInput = { deliveryMethod: 'SHIPPING', items: [{ lineId: 'f4', productId: product.id, variantId: product.variants[0].id, quantity: 2, answers: [{ fieldKey: 'nombre', value: 'Prueba aislada' }] }] };
     const preview = await req('orders/preview', 'POST', previewInput, randomUUID());
     assert.equal(preview.response.status, 200);
-    const input = { previewId: preview.body.id, customerName: 'Cliente único F4', customerPhone: '5491123456789',
+    const input = { previewId: preview.body.id, customerFirstName: 'Cliente único', customerLastName: 'F4', customerEmail: 'cliente@example.com', customerPhone: '5491123456789',
       requestedDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), deliveryMethod: 'SHIPPING', deliveryAddress: 'Dirección única F4' };
     const key = randomUUID();
     const created = await req('orders', 'POST', input, key);
@@ -62,7 +62,7 @@ const { integrationApp } = loadBackend(path.join(backendRoot, 'test/support/inte
     const retry = await req('orders', 'POST', input, key);
     assert.equal(retry.response.status, 200); assert.equal(retry.body.id, created.body.id);
     assert.equal(await ctx.prisma.order.count(), 1);
-    assert.equal((await req('orders', 'POST', { ...input, customerName: 'Distinto' }, key)).response.status, 409);
+    assert.equal((await req('orders', 'POST', { ...input, customerFirstName: 'Distinto' }, key)).response.status, 409);
     const own = await req('orders/' + created.body.id);
     assert.equal(own.response.status, 200);
     assert.equal(own.response.headers.get('cache-control'), 'no-store');

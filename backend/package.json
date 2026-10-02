@@ -4,7 +4,9 @@
   "private": true,
   "description": "API de Por fin! con NestJS, Prisma y PostgreSQL",
   "scripts": {
+    "prestart": "node scripts/ensure-local-postgres.cjs",
     "start": "nest start --watch",
+    "prestart:dev": "node scripts/ensure-local-postgres.cjs",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "build": "prisma generate && nest build && tsc -p tsconfig.tools.json",
@@ -16,6 +18,7 @@
     "prisma:seed": "prisma db seed",
     "admin:bootstrap": "ts-node scripts/create-owner.ts",
     "test:auth": "node --test -r ts-node/register test/auth.integration.ts",
+    "test:catalog-classification": "node --test -r ts-node/register test/catalog-classification.integration.ts",
     "test:catalog": "node --test -r ts-node/register test/catalog.integration.ts",
     "test:preview": "node --test -r ts-node/register test/preview.integration.ts",
     "test:public": "node --test -r ts-node/register test/public-catalog.integration.ts",
@@ -30,7 +33,9 @@
     "predeploy": "npm run check:production && prisma migrate deploy",
     "test:all": "node scripts/run-tests.cjs",
     "test:security": "node --test -r ts-node/register test/security.integration.ts",
-    "check": "npm run prisma:validate && npm run build && npm run test:all"
+    "check": "npm run prisma:validate && npm run build && npm run test:all",
+    "catalog:reference": "node --env-file=.env -r ts-node/register scripts/import-reference-catalog.ts",
+    "test:catalog-regression": "node --test --test-concurrency=1 -r ts-node/register test/catalog-classification.integration.ts test/catalog.integration.ts test/public-catalog.integration.ts test/preview.integration.ts test/orders.integration.ts test/content.integration.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -49,9 +54,9 @@
     "class-validator": "^0.14.2",
     "cloudinary": "^2.11.0",
     "nodemailer": "^10.0.10",
+    "prisma": "5.22.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "prisma": "5.22.0"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",

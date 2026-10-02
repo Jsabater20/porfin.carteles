@@ -30,7 +30,7 @@ export function authMessage(mode: AuthMode, error: unknown) {
 export const adminNavigation = (role: 'ADMIN' | 'OWNER') => [
   { label: 'Inicio', href: '/admin', enabled: true },
   { label: 'Productos', href: '/admin/productos', enabled: true },
-  { label: 'Categorías', href: '/admin/categorias', enabled: true },
+  { label: 'Ocasiones', href: '/admin/categorias', enabled: true },
   { label: 'Carreras', href: '/admin/carreras', enabled: true },
   { label: 'Pedidos', href: '/admin/pedidos', enabled: true },
   { label: 'Contenido', href: '/admin/contenido', enabled: true },

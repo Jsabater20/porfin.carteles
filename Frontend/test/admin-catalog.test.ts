@@ -14,7 +14,7 @@ test('precios ARS exactos y cotizaciones sin precio inventado',()=>{
  d.variants[0].pricingMode='FIXED';assert.ok(buildProduct(d).errors['variants.0.price']);
 });
 test('combos y campos conservan claves y validan referencias al quitar componentes',()=>{
- const d=valid();d.type='COMBO';d.components=[{key:'cartel',name:'Cartel',quantity:'2',referenceProductId:id}];
+ const d=valid();d.category='COMBO';d.type='COMBO';d.components=[{key:'cartel',name:'Cartel',quantity:'2',referenceProductId:id}];
  const f=blankField();f.key='nombre';f.label='Tu nombre';f.componentKey='cartel';f.required=true;d.fields=[f];
  assert.deepEqual(buildProduct(d).errors,{});assert.equal(buildProduct(d).input.components[0].quantity,2);
  assert.ok(buildProduct(d,id).errors['components.0']);d.components=[];assert.ok(buildProduct(d).errors['components']);assert.ok(buildProduct(d).errors['fields.0.componentKey']);
@@ -35,7 +35,7 @@ test('serialización limpia, IDs estables y PATCH solo con propiedades modificad
 });
 test('publicación, cantidades y límites se validan antes de enviar',()=>{
  const d=valid();d.status='PUBLISHED';d.variants[0].active=false;d.variants[0].photos='11';d.categoryIds=[];
- const errors=buildProduct(d).errors;assert.ok(errors.variants);assert.ok(errors.categoryIds);assert.ok(errors['variants.0.photos']);
+ const errors=buildProduct(d).errors;assert.ok(errors.variants);assert.equal(errors.categoryIds,undefined);assert.ok(errors['variants.0.photos']);
  assert.equal(slugify(' ¡Recibida: Medicina! '),'recibida-medicina');
 });
 test('pasarela de catálogo exige métodos y rutas exactos, cookies administrativas aisladas',()=>{

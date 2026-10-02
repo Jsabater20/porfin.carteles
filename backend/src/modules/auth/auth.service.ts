@@ -57,7 +57,7 @@ export class AuthService {
       try { await this.mailer.send(result.email, token); }
       catch {
         await this.prisma.accessToken.updateMany({ where: { id: result.recordId, usedAt: null }, data: { usedAt: new Date() } });
-        this.logger.error('No se pudo entregar un correo de recuperación. Revisar el proveedor SMTP.');
+        this.logger.error('No se pudo entregar un correo de recuperación. Revisar el proveedor de correo configurado.');
       }
     }
     // Misma respuesta para cuentas activas, inactivas e inexistentes.

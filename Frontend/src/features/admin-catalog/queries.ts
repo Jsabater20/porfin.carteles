@@ -1,7 +1,7 @@
 import 'server-only';
 import { serverApi } from '@/lib/api/server';
 import type { PublicPage, Taxonomy } from '@/lib/contracts/catalog';
-import { TYPES, STATUSES } from './model';
+import { TYPES, KINDS, STATUSES } from './model';
 export async function allTaxonomy(kind: 'categories' | 'careers') {
   const items: Taxonomy[] = [];
   for (let page = 1; ; page++) {
@@ -20,5 +20,15 @@ export function catalogQuery(params: Record<string, string | string[] | undefine
   if (Object.hasOwn(TYPES, value('type'))) result.set('type', value('type'));
   if (Object.hasOwn(STATUSES, value('status'))) result.set('status', value('status'));
   for (const key of ['categoryId', 'careerId']) if (/^c[a-z0-9]{24}$/.test(value(key))) result.set(key, value(key));
+  const category = value('category');
+  if (Object.hasOwn(KINDS, category)) result.set('category', category);
+  if (params.category !== undefined) {
+    if (category !== 'CARTEL') { result.delete('type'); result.delete('categoryId'); result.delete('careerId'); }
+    else {
+      if (result.get('type') === 'COMBO') result.delete('type');
+      if (!['GENERIC','PREDEFINED'].includes(result.get('type') ?? '')) result.delete('categoryId');
+      if (result.get('type') !== 'PREDEFINED') result.delete('careerId');
+    }
+  }
   return result;
 }

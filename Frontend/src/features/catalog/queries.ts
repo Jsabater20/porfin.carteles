@@ -19,3 +19,21 @@ export const getTaxonomy = cache(async (kind: 'categories' | 'careers'): Promise
     if (!result.items.length || page * result.limit >= result.total) return items;
   }
 });
+
+export async function getCatalogProducts(filters: import('./store-filters').StoreFilters) {
+  const { storeParams } = await import('./store-filters');
+  const query = storeParams(filters);
+  query.set('limit', '12');
+  return serverApi<PublicPage<ProductCard>>('products', query);
+}
+export async function getCatalogTaxonomy(kind: 'occasions' | 'careers', filters: import('./store-filters').StoreFilters): Promise<Taxonomy[]> {
+  const params = new URLSearchParams({ category: 'CARTEL', type: filters.type, limit: '50' });
+  if (kind === 'careers' && filters.occasion) params.set('occasion', filters.occasion);
+  const items: Taxonomy[] = [];
+  for (let page = 1; ; page++) {
+    params.set('page', String(page));
+    const result = await serverApi<PublicPage<Taxonomy>>(kind, params);
+    items.push(...result.items);
+    if (!result.items.length || page * result.limit >= result.total) return items;
+  }
+}

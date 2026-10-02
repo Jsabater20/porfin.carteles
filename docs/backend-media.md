@@ -19,11 +19,11 @@ Crear en Cloudinary un **upload preset firmado** para este catálogo, con:
 
 - Signing mode: **Signed**, nunca Unsigned.
 - Allowed formats: `jpg,png,webp`.
-- Maximum file size / `max_file_size`: **5242880 bytes (5 MiB)**.
+- El límite de la aplicación es **5242880 bytes (5 MiB)**. Cloudinary no admite `max_file_size` como límite por preset; no configurar ese parámetro.
 - Sin folder, public ID prefix, uso de asset folder como prefijo ni transformaciones de entrada. El backend genera el identificador completo.
 - Mantener los archivos públicos, con delivery type `upload`.
 
-El backend consulta el preset antes de autorizar una carga y rechaza configuraciones sin límite de peso o inseguras. Cloudinary aplica las restricciones del preset; el backend vuelve a validar los metadatos reales al confirmar. No se creó ni modificó una cuenta externa. Para usar una cuenta con dominio de entrega personalizado habría que adaptar la comprobación de URL, que actualmente admite `res.cloudinary.com`.
+El backend consulta el preset antes de autorizar una carga y rechaza configuraciones incompatibles. El frontend limita el peso antes de enviar y el backend comprueba los bytes reales consultados a Cloudinary antes de incorporar la imagen. Un cliente que omita la validación del navegador puede subir temporalmente un archivo mayor al proveedor: la API rechaza su confirmación y programa su limpieza. El límite de 5 MiB no es una cuota de almacenamiento impuesta por el preset. Para usar una cuenta con dominio de entrega personalizado habría que adaptar la comprobación de URL, que actualmente admite `res.cloudinary.com`.
 
 ## Flujo para el futuro panel
 

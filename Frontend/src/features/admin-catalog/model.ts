@@ -1,6 +1,23 @@
-import type { AdminProduct, ProductInput, FieldInput, VariantInput, ComponentInput } from '../../lib/contracts/admin-catalog';
+import type { AdminProduct, ProductInput, FieldInput, VariantInput, ComponentInput, ProductKind } from '../../lib/contracts/admin-catalog';
 export const CUID = /^c[a-z0-9]{24}$/;
-export const TYPES = { GENERIC: 'Genérico', PREDEFINED: 'Predefinido', CUSTOM: 'Personalizado', COMBO: 'Combo' };
+export const TYPES = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', CUSTOM: 'Personalizado', COMBO: 'Combo' };
+export const KINDS = { CARTEL: 'Cartel', PROP: 'Prop', COMBO: 'Combo' };
+export const SIGN_TYPES = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', CUSTOM: 'Personalizado' };
+export const isOccasion = (item: { slug: string; isOccasion?: boolean }) => item.isOccasion ?? !['carteles', 'props', 'combos'].includes(item.slug);
+export const productKind = (product: Pick<AdminProduct, 'category' | 'type' | 'categories'>): ProductKind => product.category ?? (product.type === 'COMBO' ? 'COMBO' : product.categories.some(item => item.category.slug === 'props') ? 'PROP' : 'CARTEL');
+export const supportsOccasions = (draft: ProductDraft) => draft.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(draft.type);
+export const supportsCareers = (draft: ProductDraft) => draft.category === 'CARTEL' && draft.type === 'PREDEFINED';
+export function changeClassification(draft: ProductDraft, category: ProductKind, type = draft.type): ProductDraft {
+  const technicalType = category === 'COMBO' ? 'COMBO' : category === 'PROP' ? 'CUSTOM' : type === 'COMBO' ? 'PREDEFINED' : type;
+  const next: ProductDraft = { ...draft, category, type: technicalType };
+  if (!supportsOccasions(next)) next.occasionIds = [];
+  if (!supportsCareers(next)) next.careerIds = [];
+  if (category !== 'COMBO' && draft.components.length) {
+    next.components = [];
+    next.fields = draft.fields.map(field => ({ ...field, componentKey: '' }));
+  }
+  return next;
+}
 export const STATUSES = { HIDDEN: 'Oculto', PUBLISHED: 'Publicado', UNAVAILABLE: 'No disponible' };
 export const FIELD_TYPES = { SHORT_TEXT: 'Texto corto', LONG_TEXT: 'Texto largo', NUMBER: 'Número', SELECT: 'Selección' };
 export const slugify = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -19,6 +36,7 @@ export const blankVariant = (): VariantDraft => ({ key: newKey(), name: '', pric
 export const blankField = (): FieldDraft => ({ key: newKey(), label: '', type: 'SHORT_TEXT', required: false, componentKey: '', minimum: '', maximum: '', options: [] });
 export function productInput(product: AdminProduct): ProductInput {
   return {
+    category: productKind(product), occasionIds: product.categories.filter(item => isOccasion(item.category)).map(item => item.categoryId),
     name: product.name, slug: product.slug, description: product.description, type: product.type, status: product.status, measurements: product.measurements, materials: product.materials, includes: product.includes, leadTime: product.leadTime,
     categoryIds: product.categories.map((item) => item.categoryId), careerIds: product.careers.map((item) => item.careerId),
     variants: product.variants.map(({ key, name, pricingMode, priceCents, attributes, photoCount, active }) => ({ key, name, pricingMode, priceCents, attributes, photoCount, active })),
@@ -29,7 +47,7 @@ export function productInput(product: AdminProduct): ProductInput {
   };
 }
 export function draftProduct(product?: AdminProduct): ProductDraft {
-  if (!product) return { name: '', slug: '', description: '', type: 'PREDEFINED', status: 'HIDDEN', measurements: '', materials: '', includes: '', leadTime: '', categoryIds: [], careerIds: [], variants: [{ key: 'base', name: 'Base', pricingMode: 'FIXED', price: '', photos: '0', active: true, attributes: [] }], fields: [], components: [] };
+  if (!product) return { category: 'CARTEL', occasionIds: [], name: '', slug: '', description: '', type: 'PREDEFINED', status: 'HIDDEN', measurements: '', materials: '', includes: '', leadTime: '', categoryIds: [], careerIds: [], variants: [{ key: 'base', name: 'Base', pricingMode: 'FIXED', price: '', photos: '0', active: true, attributes: [] }], fields: [], components: [] };
   const input = productInput(product);
   return { ...input, variants: input.variants.map(({ priceCents, photoCount, attributes, ...rest }) => ({ ...rest, price: moneyText(priceCents), photos: String(photoCount), attributes: Object.entries(attributes).map(([key, value]) => ({ key, value })) })),
     fields: input.fields.map(({ minLength, maxLength, minValue, maxValue, options, ...rest }) => ({ ...rest, minimum: String(minLength ?? minValue ?? ''), maximum: String(maxLength ?? maxValue ?? ''), options: options.map(({ additionalCents, ...option }) => ({ ...option, additional: moneyText(additionalCents) })) })),
@@ -42,13 +60,16 @@ export function buildProduct(draft: ProductDraft, id?: string) {
   const number = (key: string, value: string, min: number, max: number, integer = true) => { const n = Number(value.replace(',', '.')); if (!value.trim() || !/^-?\d+(?:[.,]\d+)?$/.test(value) || !Number.isFinite(n) || (integer && !Number.isInteger(n)) || n < min || n > max) error(key, 'Ingresá un número válido entre ' + min + ' y ' + max + '.'); return n; };
   const unique = (items: { key: string }[], path: string) => { if (new Set(items.map((x) => x.key)).size !== items.length || items.some((x) => !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(x.key) || x.key.length > 80)) error(path, 'Hay identificadores repetidos o inválidos. Recargá el producto.'); };
   const input: ProductInput = {
+    category: draft.category, occasionIds: [...(draft.occasionIds ?? [])],
     name: text('name', draft.name, 120, true), slug: draft.slug.trim(), description: text('description', draft.description, 5000, true), type: draft.type, status: draft.status,
     measurements: text('measurements', draft.measurements, 500), materials: text('materials', draft.materials, 500), includes: text('includes', draft.includes, 2000), leadTime: text('leadTime', draft.leadTime, 500),
     categoryIds: [...draft.categoryIds], careerIds: [...draft.careerIds], variants: [], fields: [], components: [],
   };
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(input.slug) || input.slug.length > 150) error('slug', 'Usá letras minúsculas sin acentos, números y guiones (hasta 150).');
   if (!Object.hasOwn(TYPES, draft.type) || !Object.hasOwn(STATUSES, draft.status)) error('type', 'Elegí un tipo y estado válidos.');
-  if (!input.categoryIds.length || input.categoryIds.length > 20 || new Set(input.categoryIds).size !== input.categoryIds.length) error('categoryIds', 'Elegí entre 1 y 20 categorías sin repetir.');
+  if (input.categoryIds.length > 20 || new Set(input.categoryIds).size !== input.categoryIds.length) error('categoryIds', 'Hasta 20 relaciones anteriores sin repetir.');
+  if (draft.category && (!Object.hasOwn(KINDS, draft.category) || (draft.category === 'COMBO') !== (draft.type === 'COMBO') || (draft.category === 'PROP' && draft.type !== 'CUSTOM'))) error('category', 'Revisá la categoría y el tipo de cartel.');
+  if ((input.occasionIds?.length ?? 0) > 20 || new Set(input.occasionIds).size !== input.occasionIds?.length) error('occasionIds', 'Elegí hasta 20 ocasiones sin repetir.');
   if (input.careerIds.length > 30 || new Set(input.careerIds).size !== input.careerIds.length) error('careerIds', 'Elegí hasta 30 carreras sin repetir.');
   if (!draft.variants.length || draft.variants.length > 30) error('variants', 'Necesitás entre 1 y 30 variantes.');
   unique(draft.variants, 'variants'); unique(draft.fields, 'fields'); unique(draft.components, 'components');

@@ -15,6 +15,10 @@ test('Artefactos compilados y validación previa al despliegue sin acceso remoto
   for (const file of ['dist/main.js', 'dist-tools/scripts/create-owner.js', 'dist-tools/prisma/seed.js']) assert.ok(existsSync(file), 'Ejecutá npm run build: falta ' + file);
   const check = (patch: NodeJS.ProcessEnv) => spawnSync(process.execPath, ['scripts/check-production.cjs'], { env: { ...configured, ...patch }, encoding: 'utf8', timeout: 10000 });
   const valid = check({}); assert.equal(valid.status, 0, valid.stdout + valid.stderr); assert.match(valid.stdout, /No se verificaron credenciales remotas/);
+  const resend = { MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_sentinel', EMAIL_FROM: 'Porfin Carteles <no-reply@example.com>', SMTP_HOST: '', SMTP_USER: '', SMTP_PASSWORD: '' };
+  const resendValid = check(resend); assert.equal(resendValid.status, 0, resendValid.stdout + resendValid.stderr);
+  assert.equal(check({ ...resend, RESEND_API_KEY: '' }).status, 1);
+  assert.equal(check({ ...resend, EMAIL_FROM: '' }).status, 1);
   for (const patch of [{ NODE_ENV: 'development' }, { MAIL_MODE: 'disabled' }, { SWAGGER_ENABLED: 'true' }, { DATABASE_URL: 'sentinel-secret' }, { CLOUDINARY_CLOUD_NAME: '' }]) {
     const result = check(patch); assert.equal(result.status, 1); assert.doesNotMatch(result.stdout + result.stderr, /sentinel-secret/);
   }

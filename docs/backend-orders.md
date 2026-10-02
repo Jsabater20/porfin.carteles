@@ -10,7 +10,10 @@ Se usa la numeración de los títulos del documento original. Todos los endpoint
 ```json
 {
   "previewId": "UUID devuelto por el preview",
-  "customerName": "Ana Pérez",
+  "customerFirstName": "Ana",
+  "customerLastName": "Pérez",
+  "customerEmail": "ana@example.com",
+  "customerBirthDate": "1995-02-28",
   "customerPhone": "+5491123456789",
   "requestedDate": "2026-12-01",
   "deliveryMethod": "SHIPPING",
@@ -19,7 +22,9 @@ Se usa la numeración de los títulos del documento original. Todos los endpoint
 }
 ```
 
-La fecha debe existir, usar YYYY-MM-DD y no estar en el pasado en Argentina. PICKUP o SHIPPING debe coincidir con el preview; SHIPPING requiere dirección. Si se configuraron modalidades en la tienda, la elegida debe seguir habilitada.
+Nombre y apellido (hasta 60 caracteres cada uno), mail válido (hasta 254) y fecha solicitada son obligatorios. Nacimiento, teléfono y observaciones son opcionales; omitir las propiedades opcionales vacías. La fecha de nacimiento debe ser real y no futura. Los pedidos anteriores conservan `customerName`; los campos nuevos quedan en null en sus registros.
+
+La fecha solicitada debe existir, usar YYYY-MM-DD y no estar en el pasado en Argentina. PICKUP o SHIPPING debe coincidir con el preview; SHIPPING requiere dirección. Si se configuraron modalidades en la tienda, la elegida debe seguir habilitada.
 
 La creación revalida productos, variantes, atributos, personalizaciones, adicionales y precios en una transacción. Un cambio invalida el resumen con 409; se debe generar un nuevo preview y confirmar nuevamente. Un preview vencido devuelve 410 y uno ajeno 404. El frontend nunca envía importes.
 
@@ -27,7 +32,7 @@ La misma clave y los mismos datos devuelven el mismo pedido, incluso en solicitu
 
 `GET /orders/:id` exige la sesión invitada propietaria. Al vencer o revocarse, se pierde este acceso; el historial administrativo se conserva. Los datos del producto, variante, atributos, fotos, respuestas, opciones, componentes e importes quedan copiados en el pedido.
 
-`whatsapp.url` apunta al número de la tienda configurado en la etapa 11. Sin número devuelve null y conserva `whatsapp.message`; no inventa un destinatario. El mensaje resume productos, subtotal conocido, pendientes, entrega y fecha. Abrir el enlace no registra un envío: el cliente debe tocar Enviar en WhatsApp. No existe integración de envío automático.
+`whatsapp.url` apunta al número de la tienda configurado en la etapa 11. Sin número devuelve null y conserva `whatsapp.message`; no inventa un destinatario. El mensaje saluda a Porfin Carteles y contiene productos, variantes, componentes, respuestas de personalización, fotos necesarias, subtotal conocido, pendientes, contacto, entrega y fecha. El destinatario configurado es 5493425686990. Abrir el enlace no registra un envío: el cliente debe tocar Enviar en WhatsApp. No existe integración de envío automático. Después de guardar el formulario, el frontend abre WhatsApp una vez desde el recibo; revisitarlo no repite la redirección. El recibo conserva el enlace manual y la copia del mensaje si el navegador no abre WhatsApp. El pedido se crea como PENDING_CONFIRMATION: la emprendedora confirma disponibilidad, fecha y presupuesto por ese chat.
 
 ## Administración y estados
 

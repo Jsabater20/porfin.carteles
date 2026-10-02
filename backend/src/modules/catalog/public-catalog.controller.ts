@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiGoneResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/auth.decorators';
 import { PublicCatalogService } from './public-catalog.service';
-import { PublicCatalogQuery, PublicPageQuery, PublicProductDetailDto, PublicProductPageDto, PublicProductParams, PublicTaxonomyPageDto } from './dto/public-catalog.dto';
+import { PublicCatalogQuery, PublicPageQuery, PublicTaxonomyQuery, PublicProductDetailDto, PublicProductPageDto, PublicProductParams, PublicTaxonomyPageDto } from './dto/public-catalog.dto';
 
 @Public()
 @ApiTags('Catálogo público')
@@ -19,6 +19,7 @@ export class PublicCatalogController {
   @ApiOperation({ summary: 'Ficha pública con variantes activas, galería y personalizaciones' })
   @ApiOkResponse({ type: PublicProductDetailDto })
   @ApiNotFoundResponse({ description: 'Producto inexistente, oculto o no disponible.' })
+  @ApiGoneResponse({ description: 'Producto consolidado: el enlace web anterior permite elegir el producto de destino.' })
   get(@Param() params: PublicProductParams) { return this.catalog.get(params.slug); }
 
   @Get('categories')
@@ -26,8 +27,13 @@ export class PublicCatalogController {
   @ApiOkResponse({ type: PublicTaxonomyPageDto })
   categories(@Query() query: PublicPageQuery) { return this.catalog.taxonomy('category', query); }
 
+  @Get('occasions')
+  @ApiOperation({ summary: 'Ocasiones de carteles genéricos o predeterminados visibles' })
+  @ApiOkResponse({ type: PublicTaxonomyPageDto })
+  occasions(@Query() query: PublicTaxonomyQuery) { return this.catalog.taxonomy('occasion', query); }
+
   @Get('careers')
   @ApiOperation({ summary: 'Carreras con productos visibles' })
   @ApiOkResponse({ type: PublicTaxonomyPageDto })
-  careers(@Query() query: PublicPageQuery) { return this.catalog.taxonomy('career', query); }
+  careers(@Query() query: PublicTaxonomyQuery) { return this.catalog.taxonomy('career', query); }
 }

@@ -17,6 +17,7 @@ const routes: Record<string, Partial<Record<ApiMethod, ApiScope>>> = {
   'admin/media/complete': { POST: 'admin' },
   products: { GET: 'public' },
   categories: { GET: 'public' },
+  occasions: { GET: 'public' },
   careers: { GET: 'public' },
   health: { GET: 'public' },
   'health/ready': { GET: 'public' },

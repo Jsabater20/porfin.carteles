@@ -24,9 +24,9 @@ NestJS + TypeScript + Prisma + PostgreSQL, siguiendo la organización de AgroMan
 
 [Revisión de las etapas 6 a 11](docs/backend-review-6-11.md).
 
-**Configuración externa diferida:** Railway, Neon, Cloudinary y SMTP se configurarán al terminar las etapas. Mientras tanto trabajamos y probamos localmente.
+**Servicios externos:** Neon vinculado y Cloudinary configurado/verificado. La API ya usa Neon con las 10 migraciones aplicadas; Railway y Resend quedan pendientes. [Registro de cambios y verificación](docs/external-services-setup.md).
 
-Cloudinary requiere configurar las credenciales y un preset firmado para probar cargas reales. Las pruebas simulan el proveedor.
+Cloudinary tiene credenciales privadas y preset firmado verificados con una carga temporal real. Las suites automáticas siguen simulando el proveedor.
 
 El envío SMTP real requiere configurar el proveedor y sus credenciales. Las pruebas usan un buzón de desarrollo y no envían correos. No se creó una cuenta administrativa de producción ni se publicó ningún servicio externo.
 

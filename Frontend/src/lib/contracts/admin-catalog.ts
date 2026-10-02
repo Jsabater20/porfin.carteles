@@ -3,12 +3,15 @@ export type ProductStatus = 'HIDDEN' | 'PUBLISHED' | 'UNAVAILABLE';
 export interface VariantInput { key: string; name: string; pricingMode: 'FIXED' | 'QUOTE'; priceCents: number | null; attributes: Record<string, string>; photoCount: number; active: boolean }
 export interface FieldInput { key: string; label: string; type: PersonalizationField['type']; required: boolean; componentKey?: string; minLength?: number; maxLength?: number; minValue?: number; maxValue?: number; options: { key: string; label: string; additionalCents: number }[] }
 export interface ComponentInput { key: string; name: string; quantity: number; referenceProductId?: string }
+export type ProductKind = 'CARTEL' | 'PROP' | 'COMBO';
 export interface ProductInput {
+  category?: ProductKind; occasionIds?: string[];
   name: string; slug: string; description: string; type: ProductType; status: ProductStatus;
   measurements: string; materials: string; includes: string; leadTime: string;
   categoryIds: string[]; careerIds: string[]; variants: VariantInput[]; fields: FieldInput[]; components: ComponentInput[];
 }
 export interface AdminProduct extends Omit<ProductInput, 'categoryIds' | 'careerIds' | 'variants' | 'fields' | 'components'> {
+  consolidatedInto?: { id: string; slug: string; name: string }[];
   id: string; updatedAt: string; createdAt: string;
   categories: { categoryId: string; category: Taxonomy }[]; careers: { careerId: string; career: Taxonomy }[];
   variants: (VariantInput & { id: string; position: number })[];

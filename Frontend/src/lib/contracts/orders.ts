@@ -1,12 +1,13 @@
 import type { PreviewLine } from './preview';
 
 export interface CreateOrderInput {
-  previewId: string; customerName: string; customerPhone: string; requestedDate: string;
+  previewId: string; customerFirstName: string; customerLastName: string; customerEmail: string; customerBirthDate?: string; customerPhone?: string; requestedDate: string;
   deliveryMethod: 'PICKUP' | 'SHIPPING'; deliveryAddress?: string; notes?: string;
 }
 export interface GuestOrder {
   id: string; reference: string;
   status: 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'IN_PRODUCTION' | 'READY' | 'DELIVERED' | 'CANCELLED';
+  customerFirstName: string | null; customerLastName: string | null; customerEmail: string | null; customerBirthDate: string | null;
   customerName: string; customerPhone: string; requestedDate: string; deliveryMethod: 'PICKUP' | 'SHIPPING';
   deliveryAddress: string | null; notes: string | null; createdAt: string; idempotencyKey?: string;
   knownSubtotalCents: number; pendingQuoteCount: number; shippingCents: number | null;

@@ -17,6 +17,8 @@ export async function integrationApp(environment: Record<string, string> = {}, b
   const schema = `test_auth_${randomBytes(8).toString('hex')}`;
   const connection = new URL(originalUrl);
   connection.searchParams.set('schema', schema);
+  // Prisma qualifies ORM queries, but raw SQL also needs an explicit search_path.
+  connection.searchParams.set('options', [connection.searchParams.get('options'), '-csearch_path=' + schema].filter(Boolean).join(' '));
   const root = new PrismaClient({ datasources: { db: { url: originalUrl } } });
   await root.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
   const local = path.resolve('.local');
@@ -34,10 +36,12 @@ export async function integrationApp(environment: Record<string, string> = {}, b
     await rm(outbox, { recursive: true, force: true });
   };
   try {
-    const migration = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env: process.env, encoding: 'utf8', timeout: 30000 });
-    if (migration.status !== 0) throw new Error('No se pudieron aplicar las migraciones al esquema aislado.');
+    const migration = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env: process.env, encoding: 'utf8', timeout: 60000 });
+    if (migration.status !== 0) throw new Error('Test schema migration failed: ' + ((migration.error as NodeJS.ErrnoException | undefined)?.code ?? migration.stderr?.match(/P[0-9]{4}/)?.[0] ?? 'exit ' + migration.status));
     const { AppModule } = await import('../../src/app.module');
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false, bodyParser: false, abortOnError: false });
+    const [scope] = await app.get(PrismaService).$queryRaw<{ schema: string }[]>`SELECT current_schema() AS schema`;
+    if (scope.schema !== schema) throw new Error('Raw SQL is not isolated in the test schema.');
     beforeConfigure?.(app);
     configureApp(app);
     await app.listen(0, '127.0.0.1');

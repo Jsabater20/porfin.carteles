@@ -32,8 +32,10 @@ try {
   });
   await run('catálogo, filtros completos y paginación', async () => {
     const page = await html('/catalogo');
-    assert.match(page, /Carteles y combos/);
-    assert.match(page, /Ocasión 51/);
+    assert.match(page, /Carteles, props y combos/);
+    assert.doesNotMatch(page, /id="catalog-sort"/);
+    assert.doesNotMatch(page, /id="catalog-type"/);
+    assert.match(await html('/catalogo?category=CARTEL&type=PREDEFINED'), /Ocasión 51/);
     assert.match(page, /Desde/);
     assert.match(page, /123,45/);
     assert.match(page, /A cotizar/);
@@ -45,7 +47,7 @@ try {
   });
   await run('búsqueda vacía, parámetros inválidos y página fuera de rango', async () => {
     assert.match(await html('/catalogo?q=sin-resultados'), /No encontramos productos/);
-    assert.match(await html('/catalogo?page=-5&type=INVALID&sort=INVALID'), /Carteles y combos/);
+    assert.match(await html('/catalogo?page=-5&type=INVALID&sort=INVALID'), /Carteles, props y combos/);
     const response = await get('/catalogo?page=999', { redirect: 'manual' });
     if (response.status === 307) assert.match(response.headers.get('location'), /page=3/);
     else assert.match(await response.text(), /NEXT_REDIRECT/);
@@ -77,7 +79,7 @@ try {
     assert.match(await html('/catalogo'), /No pudimos cargar el catálogo/);
     assert.match(await html('/'), /No pudimos cargar toda la información/);
     api.state.unavailable = false;
-    assert.match(await html('/catalogo'), /Carteles y combos/);
+    assert.match(await html('/catalogo'), /Carteles, props y combos/);
   });
   assert.ok(api.state.requests.some((path) => path.includes('categories?page=2')));
   console.log('F2: recorridos HTTP aprobados con API de contratos local.');

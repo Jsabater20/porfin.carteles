@@ -9,7 +9,7 @@ import { ApiError } from '../src/lib/api/errors';
 import { routePolicy } from '../src/lib/api/policy';
 import { forwardToBackend } from '../src/lib/api/gateway';
 
-const input: CreateOrderInput = { previewId: randomUUID(), customerName: 'Ana Pérez', customerPhone: '5491123456789', requestedDate: '2030-12-01', deliveryMethod: 'SHIPPING', deliveryAddress: 'Calle 123', notes: 'Una observación' };
+const input: CreateOrderInput = { previewId: randomUUID(), customerFirstName: 'Ana', customerLastName: 'Pérez', customerEmail: 'ana@example.com', customerBirthDate: '1995-02-28', customerPhone: '5491123456789', requestedDate: '2030-12-01', deliveryMethod: 'SHIPPING', deliveryAddress: 'Calle 123', notes: 'Una observación' };
 const order = { id: 'c' + 'a'.repeat(24) } as GuestOrder;
 const cartHash = 'a'.repeat(64);
 function memory() {
@@ -20,10 +20,10 @@ const request = (callback: (options: Parameters<PreviewTransport>[1]) => Promise
   async <T>(path: string, options: Parameters<PreviewTransport>[1]) => (path === 'guest-session' ? { csrfToken: 'test-csrf' } : await callback(options)) as T;
 
 test('datos del pedido: normalización, teléfono internacional, fecha real y dirección solo para envío', () => {
-  const fields = { customerName: '  Ana Pe\u0301rez ', customerPhone: '+54 (9) 11-2345 6789', requestedDate: '2030-02-28', deliveryAddress: ' Calle 123 ', notes: '   ' };
+  const fields = { customerFirstName: '  Ana ', customerLastName: ' Pe\u0301rez ', customerEmail: ' ana@example.com ', customerBirthDate: '1995-02-28', customerPhone: '+54 (9) 11-2345 6789', requestedDate: '2030-02-28', deliveryAddress: ' Calle 123 ', notes: '   ' };
   const result = validateCustomer(fields, input.previewId, 'SHIPPING', '2030-01-01');
   assert.deepEqual(result.errors, {});
-  assert.equal(result.input.customerName, 'Ana Pérez');
+  assert.equal(result.input.customerLastName, 'Pérez');
   assert.equal(result.input.customerPhone, '5491123456789');
   assert.equal(result.input.deliveryAddress, 'Calle 123');
   assert.equal('notes' in result.input, false);
@@ -32,6 +32,9 @@ test('datos del pedido: normalización, teléfono internacional, fecha real y di
   for (const phone of ['12345', '0001234567', '+54abc1123456789']) assert.ok(validateCustomer({ ...fields, customerPhone: phone }, input.previewId, 'PICKUP', '2030-01-01').errors.customerPhone);
   assert.ok(validateCustomer({ ...fields, deliveryAddress: '' }, input.previewId, 'SHIPPING', '2030-01-01').errors.deliveryAddress);
   assert.ok(validateCustomer({ ...fields, notes: 'x'.repeat(1001) }, input.previewId, 'PICKUP', '2030-01-01').errors.notes);
+  assert.deepEqual(validateCustomer({ ...fields, customerBirthDate: '', customerPhone: '' }, input.previewId, 'PICKUP', '2030-01-01').errors, {});
+  for (const birth of ['2031-01-01', '1995-02-30', 'invalid']) assert.ok(validateCustomer({ ...fields, customerBirthDate: birth }, input.previewId, 'PICKUP', '2030-01-01').errors.customerBirthDate);
+  for (const email of ['', 'sin-arroba', 'a@b']) assert.ok(validateCustomer({ ...fields, customerEmail: email }, input.previewId, 'PICKUP', '2030-01-01').errors.customerEmail);
   assert.equal(argentinaDate(new Date('2030-01-01T01:30:00Z')), '2029-12-31');
 });
 
@@ -62,7 +65,7 @@ test('recargar recupera el mismo preview y clave; modificar datos no dispara otr
   const second = createOrderManager(request(async (options) => { keys.push(options.idempotencyKey!); assert.deepEqual(options.body, input); return order; }), async () => {});
   second.connect(storage);
   assert.equal(second.getSnapshot().pending?.previewId, input.previewId);
-  await second.submit({ ...input, customerName: 'Otro nombre' }, cartHash);
+  await second.submit({ ...input, customerFirstName: 'Otro nombre' }, cartHash);
   assert.equal(keys.length, 1); assert.match(second.getSnapshot().message, /exactamente/);
   await second.submit(input, 'b'.repeat(64));
   assert.equal(keys.length, 2); assert.equal(keys[0], keys[1]);

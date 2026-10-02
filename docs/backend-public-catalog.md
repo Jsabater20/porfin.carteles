@@ -145,3 +145,20 @@ npm.cmd run test:catalog
 La etapa no requiere migraciones ni dependencias nuevas. Swagger incluye los modelos de respuesta bajo la etiqueta **Catálogo público**.
 
 La sesión invitada y `POST /orders/preview` ya están implementados en la [etapa 6](backend-preview.md), reutilizando este servicio de precios.
+
+## Reorganización del catálogo: etapas 2 y 3
+
+`Product.category` identifica CARTEL, PROP o COMBO. El `type` técnico anterior se conserva: PROP utiliza CUSTOM y COMBO utiliza COMBO. `Category.isOccasion` distingue ocasiones de las familias antiguas. Las tablas y relaciones mantienen sus IDs. La columna category continúa nullable por compatibilidad de migración; las escrituras del servicio y del importador siempre la completan.
+
+- `GET /products?category=CARTEL&type=PREDEFINED&occasion=ID&career=ID`: filtros nuevos. `occasion` y `career` son IDs, no slugs.
+- Categoría PROP/COMBO ignora tipo, ocasión y carrera. CARTEL sin tipo no aplica ocasión ni carrera; GENERIC aplica ocasión; PREDEFINED aplica ambos; CUSTOM no aplica ninguno.
+- Consultas sin parámetros nuevos conservan la semántica anterior de `type`, `categoryId`, `careerId` y `sort`. Con categoría explícita, los padres gobiernan los filtros hijos. `occasion`/`career` prevalecen sobre sus alias antiguos.
+- `GET /occasions`: únicamente ocasiones con carteles genéricos/predeterminados visibles. Admite category/type y paginación.
+- `GET /careers?category=CARTEL&type=PREDEFINED&occasion=ID`: carreras disponibles en esa selección. Sin filtros mantiene el comportamiento anterior.
+- `/categories` y los slugs de productos existentes se conservan. Las tarjetas agregan category y occasions; mantienen categories y type por compatibilidad.
+- El backend administrativo acepta category y occasionIds opcionales. categoryIds continúa disponible para clientes anteriores. occasionIds reemplaza solo las ocasiones y conserva la familia interna. PROP/COMBO siguen enviando su type técnico; el editor visual se adaptará en la etapa 5.
+- Un PATCH de nombre/precio conserva relaciones antiguas aunque no correspondan a los filtros nuevos. No se consolidan productos ni se alteran snapshots de pedidos.
+
+La migración `20261001000100_catalog_classification` verifica que cada producto existente tenga exactamente una familia reconocida antes de clasificarlo. Si los datos difieren, aborta toda la transacción. Se probó con los nueve productos reales en ramas temporales antes de aplicarla.
+
+Verificación: `npm run typecheck`, `npm run test:catalog`, `npm run test:public` y `npm run test:catalog-classification` desde backend. Las pruebas de integración usan esquemas temporales; para pruebas remotas, apuntar DATABASE_URL y DIRECT_URL a una rama aislada sin guardar esos valores en el entorno de producción.

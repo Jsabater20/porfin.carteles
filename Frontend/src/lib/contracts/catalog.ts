@@ -1,8 +1,10 @@
 export type ProductType = 'GENERIC' | 'PREDEFINED' | 'CUSTOM' | 'COMBO';
-export interface Taxonomy { id: string; name: string; slug: string }
+export interface Taxonomy { isOccasion?: boolean; id: string; name: string; slug: string }
 export interface CatalogImage { id: string; url: string; altText: string; position: number; cover: boolean; width: number; height: number }
 export interface BasePrice { currency: 'ARS'; fromCents: number | null; toCents: number | null; hasQuoteVariants: boolean }
 export interface ProductCard {
+  category?: 'CARTEL' | 'PROP' | 'COMBO' | null;
+  occasions?: Taxonomy[];
   id: string; name: string; slug: string; type: ProductType; leadTime: string;
   categories: Taxonomy[]; careers: Taxonomy[]; coverImage: CatalogImage | null; basePrice: BasePrice;
 }

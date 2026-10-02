@@ -1,7 +1,7 @@
 import { Type, Transform } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsObject, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { PersonalizationType, PricingMode, ProductStatus, ProductType } from '@prisma/client';
+import { PersonalizationType, PricingMode, ProductStatus, ProductKind, ProductType } from '@prisma/client';
 import { AdminListQuery } from '../../admins/dto/admin.dto';
 
 const optional = (_object: unknown, value: unknown) => value !== undefined;
@@ -51,6 +51,10 @@ export class ComponentDto {
 }
 
 export class ProductDto {
+  @ApiPropertyOptional({ enum: ProductKind, description: 'Omitir solo para clientes anteriores.' })
+  @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
+  @ApiPropertyOptional({ type: [String], description: 'Ocasiones. Conserva las familias antiguas internamente.' })
+  @ValidateIf(optional) @IsArray() @ArrayMaxSize(20) @ArrayUnique() @IsString({ each: true }) occasionIds?: string[];
   @ApiProperty() @Transform(trim) @IsString() @Length(1, 120) name!: string;
   @ApiProperty() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(150) slug!: string;
   @ApiProperty() @IsString() @Length(1, 5000) description!: string;
@@ -60,7 +64,7 @@ export class ProductDto {
   @ApiPropertyOptional() @IsString() @MaxLength(500) materials = '';
   @ApiPropertyOptional() @IsString() @MaxLength(2000) includes = '';
   @ApiPropertyOptional() @IsString() @MaxLength(500) leadTime = '';
-  @ApiProperty({ type: [String] }) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(20) @ArrayUnique() @IsString({ each: true }) categoryIds!: string[];
+  @ApiPropertyOptional({ type: [String], description: 'Relaciones anteriores; usar occasionIds en clientes nuevos.' }) @IsArray() @ArrayMaxSize(20) @ArrayUnique() @IsString({ each: true }) categoryIds: string[] = [];
   @ApiPropertyOptional({ type: [String] }) @IsArray() @ArrayMaxSize(30) @ArrayUnique() @IsString({ each: true }) careerIds: string[] = [];
   @ApiProperty({ type: [VariantDto] }) @IsArray() @ArrayMinSize(1) @ArrayMaxSize(30) @ValidateNested({ each: true }) @Type(() => VariantDto) variants!: VariantDto[];
   @ApiPropertyOptional({ type: [FieldDto] }) @IsArray() @ArrayMaxSize(30) @ValidateNested({ each: true }) @Type(() => FieldDto) fields: FieldDto[] = [];
@@ -74,6 +78,7 @@ export class PatchProductDto extends PartialType(ProductDto, { skipNullPropertie
 }
 
 export class CatalogQuery extends AdminListQuery {
+  @ApiPropertyOptional({ enum: ProductKind }) @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
   @ApiPropertyOptional() @ValidateIf(optional) @IsString() @MaxLength(120) q?: string;
   @ApiPropertyOptional({ enum: ProductType }) @ValidateIf(optional) @IsEnum(ProductType) type?: ProductType;
   @ApiPropertyOptional({ enum: ProductStatus }) @ValidateIf(optional) @IsEnum(ProductStatus) status?: ProductStatus;

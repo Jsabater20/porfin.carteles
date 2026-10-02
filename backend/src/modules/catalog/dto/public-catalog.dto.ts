@@ -1,7 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
-import { PersonalizationType, PricingMode, ProductType } from '@prisma/client';
+import { PersonalizationType, PricingMode, ProductKind, ProductType } from '@prisma/client';
 
 const optional = (_object: unknown, value: unknown) => value !== undefined;
 export enum PublicCatalogSort { NEWEST = 'newest', NAME_ASC = 'name-asc', NAME_DESC = 'name-desc' }
@@ -14,14 +14,27 @@ export class PublicPageQuery {
 }
 
 export class PublicCatalogQuery extends PublicPageQuery {
+  @ApiPropertyOptional({ enum: ProductKind, description: 'Clase de producto: CARTEL, PROP o COMBO.' })
+  @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
+  @ApiPropertyOptional({ description: 'ID de la ocasión. Solo corresponde a carteles genéricos o predeterminados.' })
+  @ValidateIf(optional) @IsString() @Length(1, 100) occasion?: string;
+  @ApiPropertyOptional({ description: 'ID de la carrera. Solo corresponde a carteles predeterminados.' })
+  @ValidateIf(optional) @IsString() @Length(1, 100) career?: string;
   @ApiPropertyOptional()
   @ValidateIf(optional) @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsString() @MaxLength(120) q?: string;
   @ApiPropertyOptional({ enum: ProductType }) @ValidateIf(optional) @IsEnum(ProductType) type?: ProductType;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @Length(1, 100) categoryId?: string;
-  @ApiPropertyOptional() @ValidateIf(optional) @IsString() @Length(1, 100) careerId?: string;
+  @ApiPropertyOptional({ deprecated: true, description: 'Filtro anterior por ID de categoría; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) categoryId?: string;
+  @ApiPropertyOptional({ deprecated: true, description: 'Alias anterior de career; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) careerId?: string;
   @ApiPropertyOptional({ enum: PublicCatalogSort, default: PublicCatalogSort.NEWEST }) @IsEnum(PublicCatalogSort) sort = PublicCatalogSort.NEWEST;
 }
+export class PublicTaxonomyQuery extends PublicPageQuery {
+  @ApiPropertyOptional({ enum: ProductKind }) @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
+  @ApiPropertyOptional({ enum: ProductType }) @ValidateIf(optional) @IsEnum(ProductType) type?: ProductType;
+  @ApiPropertyOptional({ description: 'ID de la ocasión seleccionada.' })
+  @ValidateIf(optional) @IsString() @Length(1, 100) occasion?: string;
+}
+
 export class PublicProductParams {
   @ApiProperty() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(150) slug!: string;
 }
@@ -81,6 +94,8 @@ export class PublicComponentDto {
   @ApiProperty() position!: number;
 }
 export class PublicProductCardDto {
+  @ApiProperty({ enum: ProductKind, nullable: true, description: 'Puede ser null durante la migración de productos antiguos.' }) category!: ProductKind | null;
+  @ApiProperty({ type: [PublicTaxonomyDto] }) occasions!: PublicTaxonomyDto[];
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
   @ApiProperty() slug!: string;

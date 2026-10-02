@@ -1,3 +1,5 @@
+import { isEmail } from 'class-validator';
+
 export function validateEnvironment(env: Record<string, unknown>) {
   const nodeEnv = String(env.NODE_ENV ?? 'development');
   if (!['development', 'test', 'production'].includes(nodeEnv)) {
@@ -45,7 +47,14 @@ export function validateEnvironment(env: Record<string, unknown>) {
   const proxyHops = Number(env.TRUST_PROXY_HOPS ?? 0);
   if (!Number.isInteger(proxyHops) || proxyHops < 0 || proxyHops > 2) throw new Error('TRUST_PROXY_HOPS debe estar entre 0 y 2.');
   const mailMode = String(env.MAIL_MODE ?? (nodeEnv === 'production' ? 'disabled' : 'file'));
-  if (!['file', 'smtp', 'disabled'].includes(mailMode) || (nodeEnv === 'production' && mailMode === 'file')) throw new Error('MAIL_MODE inválido; el buzón local está prohibido en producción.');
+  if (!['file', 'smtp', 'resend', 'disabled'].includes(mailMode) || (nodeEnv === 'production' && mailMode === 'file')) throw new Error('MAIL_MODE inválido; el buzón local está prohibido en producción.');
+  const resendKey = String(env.RESEND_API_KEY ?? '').trim();
+  const emailFrom = String(env.EMAIL_FROM ?? '').trim();
+  if (mailMode === 'resend') {
+    if (!/^re_[A-Za-z0-9_-]+$/.test(resendKey)) throw new Error('Configurá RESEND_API_KEY para usar Resend.');
+    const match = /^(?:[^<>\r\n]+<([^<>\s]+)>|([^<>\s]+))$/.exec(emailFrom);
+    if (/[\r\n]/.test(emailFrom) || !match || !isEmail(match[1] ?? match[2])) throw new Error('Configurá EMAIL_FROM con una dirección o Nombre <correo@dominio.com>.');
+  }
   const smtpPort = Number(env.SMTP_PORT ?? 587);
   const smtpSecure = String(env.SMTP_SECURE ?? 'false');
   if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535 || !['true', 'false'].includes(smtpSecure)) throw new Error('Configuración SMTP inválida.');
@@ -56,5 +65,5 @@ export function validateEnvironment(env: Record<string, unknown>) {
   if (cloudValues.some(Boolean) && cloudValues.some(value => !value)) throw new Error('Configurá las cuatro variables CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET y CLOUDINARY_UPLOAD_PRESET, o dejá todas vacías.');
   if (cloudValues[0] && (!/^[a-zA-Z0-9_-]+$/.test(cloudValues[0]) || !/^[a-zA-Z0-9_-]+$/.test(cloudValues[3]))) throw new Error('El nombre de Cloudinary y del preset deben usar letras, números, guiones o guiones bajos.');
 
-  return { ...env, CLOUDINARY_CLOUD_NAME: cloudValues[0], CLOUDINARY_API_KEY: cloudValues[1], CLOUDINARY_API_SECRET: cloudValues[2], CLOUDINARY_UPLOAD_PRESET: cloudValues[3], NODE_ENV: nodeEnv, PORT: port, ALLOWED_ORIGINS: origins.join(','), SWAGGER_ENABLED: swagger === 'true', API_ORIGIN: apiOrigin, PASSWORD_RESET_URL: resetUrl, SESSION_TTL_HOURS: sessionTtl, SESSION_SAME_SITE: sameSite, TRUST_PROXY_HOPS: proxyHops, MAIL_MODE: mailMode, SMTP_PORT: smtpPort, SMTP_SECURE: smtpSecure === 'true' };
+  return { ...env, CLOUDINARY_CLOUD_NAME: cloudValues[0], CLOUDINARY_API_KEY: cloudValues[1], CLOUDINARY_API_SECRET: cloudValues[2], CLOUDINARY_UPLOAD_PRESET: cloudValues[3], NODE_ENV: nodeEnv, PORT: port, ALLOWED_ORIGINS: origins.join(','), SWAGGER_ENABLED: swagger === 'true', API_ORIGIN: apiOrigin, PASSWORD_RESET_URL: resetUrl, SESSION_TTL_HOURS: sessionTtl, SESSION_SAME_SITE: sameSite, TRUST_PROXY_HOPS: proxyHops, MAIL_MODE: mailMode, RESEND_API_KEY: resendKey, EMAIL_FROM: emailFrom, SMTP_PORT: smtpPort, SMTP_SECURE: smtpSecure === 'true' };
 }

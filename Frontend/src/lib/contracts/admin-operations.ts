@@ -12,7 +12,7 @@ export interface PaymentInput {orderId:string;quoteId:string;type:'CHARGE'|'REFU
 export interface Movement extends PaymentInput {id:string;occurredAt:string;administratorId:string}
 export interface PaymentSummary {movements:Movement[];chargedCents:number;refundedCents:number;balanceCents:number;quoteTotalCents:number|null;outstandingCents:number|null;paymentStatus:'PENDING'|'PARTIAL'|'PAID'}
 export interface AdminOrder extends OrderListItem {
- customerPhone:string;deliveryMethod:string;deliveryAddress:string|null;notes:string|null;shippingCents:number|null;
+ customerEmail:string|null;customerBirthDate:string|null;customerFirstName:string|null;customerLastName:string|null;customerPhone:string;deliveryMethod:string;deliveryAddress:string|null;notes:string|null;shippingCents:number|null;
  items:{id:string;productName:string;quantity:number;unitPriceCents:number|null;subtotalCents:number|null;pricingMode:'FIXED'|'QUOTE';
  variantSnapshot:{name?:string;attributes?:Record<string,string>;photoCount?:number}|null;
  customizationSnapshot:{answers?:PreviewLine['answers'];selectedOptions?:PreviewLine['selectedOptions']};componentsSnapshot:PreviewLine['components']|null}[];

@@ -197,7 +197,9 @@ test('Etapa 6: invitados y preview con PostgreSQL real', { timeout: 180000 }, as
   });
   await t.test('Rate limits persistentes, cierre y expiración de sesión', async () => {
     await ctx.prisma.guestRateLimit.upsert({ where: { key: tokenHash('guest:preview:session:' + otherSession.id) }, create: { key: tokenHash('guest:preview:session:' + otherSession.id), attempts: 60, expiresAt: new Date(Date.now() + 60000) }, update: { attempts: 60 } });
-    assert.equal((await preview(body, other)).status, 429);
+    const limited = await preview(body, other);
+    const counter = await ctx.prisma.guestRateLimit.findUnique({ where: { key: tokenHash('guest:preview:session:' + otherSession.id) } });
+    assert.equal(limited.status, 429, JSON.stringify({ attempts: counter?.attempts, expiresAt: counter?.expiresAt, now: new Date() }));
     assert.equal((await request('/guest-session', 'DELETE', {}, guest)).status, 204);
     assert.equal(await ctx.prisma.orderPreview.count({ where: { guestSessionId: session.id } }), 0);
     assert.equal((await preview()).status, 401);

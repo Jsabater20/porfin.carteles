@@ -88,7 +88,7 @@ try {
   const checkedNavigate = navigate;
   const auditedNavigate = async (...args) => { await checkedNavigate(...args); if(process.env.AUDIT_ACCESSIBILITY==='1') await auditPage(evaluate,args[0]); };
   const fill = (selector, value) => evaluate(`{const el=document.querySelector(${JSON.stringify(selector)});const proto=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(proto,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));} true`);
-  const click = (selector) => evaluate('document.querySelector(' + JSON.stringify(selector) + ').click();true');
+  const click = async (selector) => { await waitFor('!!document.querySelector(' + JSON.stringify(selector) + ') && !document.querySelector(' + JSON.stringify(selector) + ').matches(":disabled")'); return evaluate('document.querySelector(' + JSON.stringify(selector) + ').click();true'); };
   await send('Page.enable'); await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
 
@@ -99,7 +99,7 @@ try {
     await waitFor('location.pathname==="/admin" && !!document.querySelector(".admin-logout")');
   };
 
-  const clickText=async(text)=>{await evaluate('Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==='+JSON.stringify(text)+').click();true');};
+  const clickText=async(text)=>{const target='Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==='+JSON.stringify(text)+' && !e.matches(":disabled"))';await waitFor('!!'+target);await evaluate(target+'.click();true');};
   const saved=()=>waitFor('document.body.innerText.includes("Cambios guardados.") && !document.querySelector(".editor-fields").disabled');
   await send('Network.enable');
   await send('Fetch.enable',{patterns:[{urlPattern:'https://api.cloudinary.com/*'},{urlPattern:'http://localhost:3100/_next/image*'}]});
@@ -131,7 +131,7 @@ try {
   await waitFor('!!document.querySelector(".admin-table tbody tr")');
   await auditedNavigate('/admin/productos/nuevo','#product-name');
   await click('.editor-save button');await waitFor('!!document.querySelector("#product-name-error")');
-  assert.equal(await evaluate('document.activeElement.id'),'product-name');
+  await waitFor('document.activeElement.id==="product-name"');
   await fill('#product-name','Cartel de recibida');await clickText('Generar dirección desde el nombre');await fill('#product-description','Cartel para celebrar');
   await click('.taxonomy-choices input');await fill('#price-0','15000,25');
   await click('.add-variant');await fill('#variant-name-1','A medida');await fill('#pricing-1','QUOTE');
@@ -156,8 +156,22 @@ try {
   await auditedNavigate('/admin/categorias','#taxonomy-name');await clickText('Eliminar Recibidas');await clickText('Confirmar');
   await waitFor('document.body.innerText.includes("uso") || document.body.innerText.includes("asociad")');
   assert.equal(await ctx.prisma.category.count(),1);
+  // Clasificación del editor: limpiar solo después de una decisión explícita.
+  await auditedNavigate('/admin/productos/nuevo','#product-name');
+  await click('.taxonomy-choices input');
+  await fill('#product-type','GENERIC');
+  assert.equal(await evaluate('document.querySelectorAll(".taxonomy-choices").length'),1);
+  assert.equal(await evaluate('document.querySelector(".taxonomy-choices input").checked'),true);
+  await fill('#product-type','CUSTOM');
+  assert.equal(await evaluate('document.querySelector(".taxonomy-choices")'),null);
+  await fill('#product-category','PROP');
+  assert.equal(await evaluate('document.querySelector("#product-type")'),null);
+  await fill('#product-name','Prop sin ocasión');await clickText('Generar dirección desde el nombre');await fill('#product-description','Un prop');await fill('#price-0','1000');
+  await click('.editor-save button');await waitFor('location.pathname.startsWith("/admin/productos/c") && !!document.querySelector("#product-status")');
+  const prop=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'prop-sin-ocasion'},include:{categories:true}});
+  assert.equal(prop.category,'PROP');assert.equal(prop.type,'CUSTOM');assert.equal(prop.categories.length,0);
   // Combo con referencia y personalización de su componente.
-  await auditedNavigate('/admin/productos/nuevo','#product-name');await fill('#product-name','Combo fiesta');await clickText('Generar dirección desde el nombre');await fill('#product-description','Cartel y accesorios');await fill('#product-type','COMBO');await click('.taxonomy-choices input');await fill('#price-0','20000');
+  await auditedNavigate('/admin/productos/nuevo','#product-name');await fill('#product-name','Combo fiesta');await clickText('Generar dirección desde el nombre');await fill('#product-description','Cartel y accesorios');await fill('#product-category','COMBO');assert.equal(await evaluate('document.querySelector("#product-type")'),null);assert.equal(await evaluate('document.querySelector(".taxonomy-choices")'),null);await fill('#price-0','20000');
   await click('.add-component');await fill('#component-name-0','Cartel principal');await fill('#component-quantity-0','2');await fill('.reference-search','Cartel');
   await waitFor('!!document.querySelector(".reference-picker li button")');await click('.reference-picker li button');
   await click('.add-field');await fill('#field-label-0','Número');await fill('#field-type-0','NUMBER');await fill('#field-min-0','0');await fill('#field-max-0','99');
@@ -184,7 +198,8 @@ try {
   assert.equal(await ctx.prisma.mediaUpload.count(),1);assert.equal(uploadRequests.length,1);
   await selectFile();await fill('#image-alt','Segunda imagen');await clickText('Cargar imagen');
   await waitFor('document.querySelectorAll(".admin-gallery article").length===2 && document.body.innerText.includes("Imagen confirmada")');
-  await evaluate('Array.from(document.querySelectorAll(".admin-gallery article button")).find(e=>e.textContent==="Bajar").click();true');
+  await waitFor('!!Array.from(document.querySelectorAll(".admin-gallery article button")).find(e=>e.textContent==="Bajar" && !e.matches(":disabled"))');
+  await evaluate('Array.from(document.querySelectorAll(".admin-gallery article button")).find(e=>e.textContent==="Bajar" && !e.matches(":disabled")).click();true');
   await waitFor('document.body.innerText.includes("Orden guardado")');
   assert.equal((await ctx.prisma.productImage.findFirst({where:{productId:product.id,cover:true}})).altText,'Segunda imagen');
   const altId=await evaluate('document.querySelector(".admin-gallery input").id');await fill('#'+altId,'Portada actualizada');await clickText('Guardar descripción');await waitFor('document.body.innerText.includes("Descripción guardada")');

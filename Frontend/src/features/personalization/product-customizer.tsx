@@ -23,17 +23,17 @@ function InputField({ field, value, error, onChange }: { field: PersonalizationF
     {error && <p id={id + '-error'} className="field-error">{error}</p>}
   </div>;
 }
-export function ProductCustomizer({ product, editLineId }: { product: ProductDetail; editLineId?: string }) {
+export function ProductCustomizer({ product, editLineId, initialVariantId }: { product: ProductDetail; editLineId?: string; initialVariantId?: string }) {
   const { state } = useCart();
   if (!state.ready) return <><Variants variants={product.variants} /><p role="status">Preparando la personalización…</p><noscript>Activá JavaScript para personalizar el producto y usar el carrito.</noscript></>;
   const editing = editLineId ? state.lines.find((line) => line.lineId === editLineId && line.productId === product.id) : undefined;
   if (editLineId && !editing) return <p className="notice">Este renglón ya no está disponible. <Link className="text-link" href="/carrito">Volver al carrito</Link></p>;
-  return <CustomizerForm key={editLineId || product.id} product={product} editing={editing} />;
+  return <CustomizerForm key={editLineId || product.id} product={product} editing={editing} initialVariantId={initialVariantId} />;
 }
-function CustomizerForm({ product, editing }: { product: ProductDetail; editing?: CartLine }) {
+function CustomizerForm({ product, editing, initialVariantId }: { product: ProductDetail; editing?: CartLine; initialVariantId?: string }) {
   const { store, state } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
-  const [variantId, setVariantId] = useState(editing?.variantId ?? product.variants[0]?.id ?? '');
+  const [variantId, setVariantId] = useState(editing?.variantId ?? product.variants.find(item => item.id === initialVariantId)?.id ?? product.variants[0]?.id ?? '');
   const [quantity, setQuantity] = useState(String(editing?.quantity ?? 1));
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(product.fields.map((field) => [field.key, String(editing?.answers.find((answer) => answer.fieldKey === field.key)?.value ?? '')])));
   const [errors, setErrors] = useState<Record<string, string>>(() => Object.create(null));

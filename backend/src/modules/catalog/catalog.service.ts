@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, ProductType, ProductStatus, PricingMode, PersonalizationType } from '@prisma/client';
+import { Prisma, ProductKind, ProductType, ProductStatus, PricingMode, PersonalizationType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { ADMIN_LOCK } from '../auth/auth.types';
 import { AdminListQuery } from '../admins/dto/admin.dto';
@@ -34,6 +34,10 @@ export class CatalogService {
         if (error.code === 'P2003') throw new ConflictException('El elemento está en uso y no se puede eliminar.');
         if (error.code === 'P2025') throw new NotFoundException('Elemento no encontrado.');
       }
+      // PostgreSQL can report RESTRICT as 23001; Prisma 5 does not map it to P2003.
+      if (error instanceof Prisma.PrismaClientUnknownRequestError && error.message.includes('code: "23001"')) {
+        throw new ConflictException('El elemento está en uso y no se puede eliminar.');
+      }
       throw error;
     }
   }
@@ -47,12 +51,19 @@ export class CatalogService {
   }
 
   createTaxonomy(kind: Taxonomy, dto: TaxonomyDto, sessionId: string) {
-    return this.write(sessionId, tx => kind === 'category' ? tx.category.create({ data: dto }) : tx.career.create({ data: dto }));
+    return this.write(sessionId, tx => kind === 'category' ? tx.category.create({ data: { ...dto, isOccasion: !['carteles', 'props', 'combos'].includes(dto.slug) } }) : tx.career.create({ data: dto }));
   }
 
   updateTaxonomy(kind: Taxonomy, id: string, dto: PatchTaxonomyDto, sessionId: string) {
     if (!Object.values(dto).some(value => value !== undefined)) throw new BadRequestException('Indicá los campos a modificar.');
-    return this.write(sessionId, tx => kind === 'category' ? tx.category.update({ where: { id }, data: dto }) : tx.career.update({ where: { id }, data: dto }));
+    return this.write(sessionId, async tx => {
+      if (kind === 'career') return tx.career.update({ where: { id }, data: dto });
+      const category = await tx.category.findUniqueOrThrow({ where: { id } });
+      if (dto.slug !== undefined && dto.slug !== category.slug && (!category.isOccasion || ['carteles', 'props', 'combos'].includes(dto.slug))) {
+        throw new BadRequestException('Los slugs de familias están reservados para compatibilidad.');
+      }
+      return tx.category.update({ where: { id }, data: dto });
+    });
   }
 
   deleteTaxonomy(kind: Taxonomy, id: string, sessionId: string) {
@@ -61,7 +72,7 @@ export class CatalogService {
 
   async list(query: CatalogQuery) {
     const where: Prisma.ProductWhereInput = {
-      type: query.type, status: query.status,
+      type: query.type, category: query.category, status: query.status,
       ...(query.q ? { OR: [{ name: { contains: query.q, mode: 'insensitive' } }, { description: { contains: query.q, mode: 'insensitive' } }] } : {}),
       ...(query.categoryId ? { categories: { some: { categoryId: query.categoryId } } } : {}),
       ...(query.careerId ? { careers: { some: { careerId: query.careerId } } } : {}),
@@ -73,10 +84,17 @@ export class CatalogService {
     return { items, total, page: query.page, limit: query.limit };
   }
 
+  private async consolidatedInto(tx: Prisma.TransactionClient, id: string) {
+    const metadata = await tx.applicationMetadata.findUnique({ where: { key: 'catalog:three-images:v1' } });
+    if (!metadata) return [];
+    const record = JSON.parse(metadata.value) as { sourceId: string; destinations: { id: string; slug: string; name: string }[] };
+    return record.sourceId === id ? record.destinations : [];
+  }
+
   async get(id: string) {
     const product = await this.prisma.product.findUnique({ where: { id }, include });
     if (!product) throw new NotFoundException('Producto no encontrado.');
-    return product;
+    return { ...product, consolidatedInto: await this.consolidatedInto(this.prisma, id) };
   }
 
   private input(product: FullProduct): ProductDto {
@@ -88,6 +106,41 @@ export class CatalogService {
       fields: product.fields.map(item => ({ key: item.key, label: item.label, type: item.type, required: item.required, componentKey: item.componentKey ?? undefined, minLength: item.minLength ?? undefined, maxLength: item.maxLength ?? undefined, minValue: item.minValue ?? undefined, maxValue: item.maxValue ?? undefined, options: item.options.map(option => ({ key: option.key, label: option.label, additionalCents: option.additionalCents })) })),
       components: product.components.map(item => ({ key: item.key, name: item.name, quantity: item.quantity, referenceProductId: item.referenceProductId ?? undefined })),
     };
+  }
+
+  private async classify(tx: Prisma.TransactionClient, dto: ProductDto, patch: Partial<ProductDto>, current?: FullProduct) {
+    const families: Record<string, ProductKind> = { carteles: 'CARTEL', props: 'PROP', combos: 'COMBO' };
+    let categories = await tx.category.findMany({ where: { id: { in: dto.categoryIds } } });
+    if (categories.length !== dto.categoryIds.length) throw new BadRequestException('Hay categorías inexistentes.');
+    const previousFamilyIds = patch.categoryIds === undefined ? current?.categories.filter(item => !item.category.isOccasion).map(item => item.categoryId) ?? [] : [];
+    if (patch.occasionIds !== undefined) {
+      const occasions = await tx.category.findMany({ where: { id: { in: patch.occasionIds }, isOccasion: true } });
+      if (occasions.length !== patch.occasionIds.length) throw new BadRequestException('Hay ocasiones inexistentes o IDs de familias usados como ocasión.');
+      dto.categoryIds = [...new Set([...categories.filter(item => !item.isOccasion).map(item => item.id), ...previousFamilyIds, ...patch.occasionIds])];
+      categories = await tx.category.findMany({ where: { id: { in: dto.categoryIds } } });
+    }
+    let familyKinds = [...new Set(categories.filter(item => !item.isOccasion).map(item => families[item.slug]))];
+    if (familyKinds.some(kind => !kind) || familyKinds.length > 1) throw new BadRequestException('La familia del producto es ambigua.');
+    const legacyChanged = patch.category === undefined && (patch.categoryIds !== undefined || patch.type !== undefined);
+    dto.category = patch.category ?? (!legacyChanged ? current?.category ?? undefined : undefined)
+      ?? familyKinds[0] ?? (dto.type === 'COMBO' ? 'COMBO' : current?.category === 'COMBO' ? 'CARTEL' : current?.category ?? 'CARTEL');
+    // New clients may change category without knowing the hidden family relation.
+    if (patch.category !== undefined && patch.categoryIds === undefined && familyKinds[0] && familyKinds[0] !== dto.category) {
+      const family = await tx.category.findFirst({ where: { isOccasion: false, slug: Object.keys(families).find(slug => families[slug] === dto.category) } });
+      dto.categoryIds = [...categories.filter(item => item.isOccasion).map(item => item.id), ...(family ? [family.id] : [])];
+      familyKinds = family ? [dto.category] : [];
+    }
+    if (familyKinds[0] && familyKinds[0] !== dto.category) throw new BadRequestException('La categoría no coincide con la familia indicada.');
+    if ((dto.category === 'COMBO') !== (dto.type === 'COMBO') || (dto.category === 'PROP' && dto.type !== 'CUSTOM')) {
+      throw new BadRequestException('El tipo técnico no corresponde a la categoría: PROP usa CUSTOM y COMBO usa COMBO.');
+    }
+    const supportsOccasion = dto.category === 'CARTEL' && (dto.type === 'GENERIC' || dto.type === 'PREDEFINED');
+    if (patch.occasionIds?.length && !supportsOccasion) throw new BadRequestException('Este producto no admite ocasiones.');
+    if (patch.category !== undefined && patch.careerIds?.length && !(dto.category === 'CARTEL' && dto.type === 'PREDEFINED')) {
+      throw new BadRequestException('Las carreras corresponden a carteles predeterminados.');
+    }
+    // A name/price PATCH never deletes legacy relations. Only explicit relation updates replace them.
+    delete dto.occasionIds;
   }
 
   private unique(items: { key: string }[], label: string) {
@@ -155,8 +208,10 @@ export class CatalogService {
 
   create(dto: ProductDto, sessionId: string) {
     return this.write(sessionId, async tx => {
+      dto = { ...dto };
+      await this.classify(tx, dto, { ...dto });
       await this.validate(tx, dto);
-      const { categoryIds, careerIds, variants, fields, components, ...data } = dto;
+      const { categoryIds, careerIds, occasionIds, variants, fields, components, ...data } = dto;
       const product = await tx.product.create({ data });
       await this.relations(tx, product.id, dto);
       return tx.product.findUniqueOrThrow({ where: { id: product.id }, include });
@@ -169,7 +224,9 @@ export class CatalogService {
     return this.write(sessionId, async tx => {
       const current = await tx.product.findUnique({ where: { id }, include });
       if (!current) throw new NotFoundException('Producto no encontrado.');
+      if ((await this.consolidatedInto(tx, id)).length) throw new ConflictException('Este producto está archivado por consolidación. Editá los productos de destino.');
       const dto = { ...this.input(current), ...changes } as ProductDto;
+      await this.classify(tx, dto, patch, current);
       await this.validate(tx, dto, id);
       const { categoryIds, careerIds, variants, fields, components, ...data } = dto;
       await tx.product.update({ where: { id }, data });
@@ -182,6 +239,7 @@ export class CatalogService {
     return this.write(sessionId, async tx => {
       const current = await tx.product.findUnique({ where: { id } });
       if (!current) throw new NotFoundException('Producto no encontrado.');
+      if ((await this.consolidatedInto(tx, id)).length) throw new ConflictException('Este producto está archivado por consolidación. Editá los productos de destino.');
       if (current.status !== ProductStatus.HIDDEN) throw new ConflictException('Ocultá el producto antes de eliminarlo.');
       return tx.product.delete({ where: { id } });
     });

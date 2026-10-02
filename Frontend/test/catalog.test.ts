@@ -46,7 +46,7 @@ test('contacto no convierte javascript, HTTP ni credenciales en enlaces', () => 
 
 test('el gateway expone consultas de catálogo y contenido sin abrir operaciones fuera de la lista permitida', async () => {
   const config = { backendUrl: 'http://127.0.0.1:3001/api/v1', webOrigin: 'http://localhost:3000' };
-  for (const path of ['products', 'products/cartel-de-recibida', 'categories', 'careers', 'content/home', 'content/faq']) {
+  for (const path of ['products', 'products/cartel-de-recibida', 'categories', 'occasions', 'careers', 'content/home', 'content/faq']) {
     let called = false;
     const response = await forwardToBackend(new Request('http://localhost:3000/api/backend/' + path + '?q=fiesta&page=2', { headers: { cookie: 'porfin_session=private' } }), path.split('/'), config, async (url, init) => {
       called = true;

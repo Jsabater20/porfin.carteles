@@ -75,6 +75,12 @@ model AuthRateLimit {
   @@index([expiresAt])
 }
 
+enum ProductKind {
+  CARTEL
+  PROP
+  COMBO
+}
+
 enum ProductType {
   GENERIC
   PREDEFINED
@@ -122,6 +128,7 @@ enum PaymentMovementType {
 }
 
 model Category {
+  isOccasion Boolean @default(true)
   id       String            @id @default(cuid())
   name     String            @unique
   slug     String            @unique
@@ -140,6 +147,7 @@ model Product {
   name         String
   slug         String                 @unique
   description  String
+  category     ProductKind?
   type         ProductType
   status       ProductStatus          @default(HIDDEN)
   measurements String                 @default("")
@@ -310,6 +318,10 @@ model Order {
   guestSession       GuestSession?     @relation(fields: [guestSessionId], references: [id], onDelete: SetNull)
   reference          String            @unique
   customerName       String
+  customerFirstName String?
+  customerLastName String?
+  customerEmail String?
+  customerBirthDate DateTime? @db.Date
   customerPhone      String
   requestedDate      DateTime          @db.Date
   deliveryMethod     String

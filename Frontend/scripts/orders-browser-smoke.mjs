@@ -35,7 +35,7 @@ try {
   ws = new WebSocket(tabs.find((tab) => tab.type === 'page').webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let seq = 0;
-  const pending = new Map(), exceptions = [];
+  const pending = new Map(), exceptions = [], whatsappAttempts = [];
   const send = (method, params = {}) => new Promise((resolve, reject) => {
     const id = ++seq, timer = setTimeout(() => { pending.delete(id); reject(new Error('Timeout ' + method)); }, 20000);
     pending.set(id, { resolve, reject, timer }); ws.send(JSON.stringify({ id, method, params }));
@@ -46,6 +46,7 @@ try {
       const item = pending.get(message.id); clearTimeout(item.timer); pending.delete(message.id);
       if (message.error) item.reject(new Error(JSON.stringify(message.error))); else item.resolve(message.result);
     }
+    if (message.method === 'Fetch.requestPaused') { whatsappAttempts.push(message.params.request.url); void send('Fetch.failRequest', { requestId: message.params.requestId, errorReason: 'Aborted' }); }
     if (message.method === 'Page.javascriptDialogOpening') void send('Page.handleJavaScriptDialog', { accept: true });
     if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails.text);
   };
@@ -69,11 +70,12 @@ try {
   const cart = () => evaluate('JSON.parse(localStorage.getItem("porfin.cart.v1"))');
   const submitProduct = async () => { await click('.customizer button[type="submit"]'); await waitFor('!!document.querySelector(".success-notice")'); };
   await send('Page.enable'); await send('Runtime.enable');
+  await send('Fetch.enable', { patterns: [{ urlPattern: 'https://wa.me/*', requestStage: 'Request' }] });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
 
   const futureDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  const fillCustomer = async (name = 'Ana Pérez') => {
-    await fill('#order-customerName', name); await fill('#order-customerPhone', '+54 9 11 2345 6789');
+  const fillCustomer = async (name = 'Ana') => {
+    await fill('#order-customerFirstName', name); await fill('#order-customerLastName', 'Pérez'); await fill('#order-customerEmail', 'ana@example.com'); await fill('#order-customerPhone', '+54 9 11 2345 6789');
     await fill('#order-requestedDate', futureDate);
     if (await evaluate('!!document.querySelector("#order-deliveryAddress")')) await fill('#order-deliveryAddress', 'Calle 123, Córdoba');
     await fill('#order-notes', 'Entregar por la tarde');
@@ -88,8 +90,8 @@ try {
   assert.equal(await evaluate('document.querySelector(".order-submit").disabled'), true);
   await fill('#order-delivery', 'SHIPPING'); await validate(); await accept();
   await click('.order-submit');
-  await waitFor('!!document.querySelector("#error-customerName")');
-  assert.equal(await evaluate('document.activeElement.id'), 'order-customerName');
+  await waitFor('!!document.querySelector("#error-customerFirstName")');
+  assert.equal(await evaluate('document.activeElement.id'), 'order-customerFirstName');
   await fillCustomer(); await fill('#order-deliveryAddress', '');
   await click('.order-submit'); await waitFor('!!document.querySelector("#error-deliveryAddress")');
   assert.equal(api.state.orders.size, 0);
@@ -117,6 +119,9 @@ try {
   assert.equal(api.state.orderCalls.length, 1);
   await fillCustomer(); await click('.order-submit');
   await waitFor('!!document.querySelector(".order-receipt")');
+  await waitFor('!location.search.includes("whatsapp")');
+  for (let attempt = 0; attempt < 50 && !whatsappAttempts.length; attempt++) await delay(100);
+  assert.equal(whatsappAttempts.length, 1, 'Abre WhatsApp al completar el formulario una sola vez');
   const firstPath = await evaluate('location.pathname');
   assert.equal(api.state.orders.size, 1); assert.equal(api.state.orderCalls[0].key, api.state.orderCalls[1].key);
   assert.equal((await cart()).lines[0].quantity, 3, 'Conserva el carrito editado mientras el pedido estaba pendiente');
@@ -126,6 +131,7 @@ try {
   await waitFor('!!document.querySelector(".order-actions [role=status]")');
   await auditedNavigate(firstPath, '.order-receipt');
   assert.equal(api.state.orderCalls.length, 2);
+  assert.equal(whatsappAttempts.length, 1, 'Revisitar el recibo no vuelve a redirigir');
   console.log('OK validaciones, envío, respuesta perdida, recarga, misma clave, recibo privado y copia de WhatsApp');
 
   await auditedNavigate('/pedido', '.order-page');

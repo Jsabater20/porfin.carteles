@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useAdmin } from '@/features/auth/admin-provider';
@@ -10,7 +11,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { session, message, loggingOut, manager } = useAdmin();
   if (!session) return <main className="container loading-state" id="main-content" role="status">Actualizando el acceso…</main>;
   return <div className="admin-shell">
-    <aside className="admin-sidebar" aria-label="Panel de administración"><Link href="/admin" className="brand"><span aria-hidden="true">✳</span> Por fin!</Link><p className="eyebrow">Administración</p>
+    <aside className="admin-sidebar" aria-label="Panel de administración"><Link href="/admin" className="brand"><BrandLogo /></Link><p className="eyebrow">Administración</p>
       <nav aria-label="Navegación administrativa">{adminNavigation(session.admin.role).map((item) => item.enabled ? <Link key={item.label} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={active(item.href) ? "admin-nav-item active" : "admin-nav-item"}>{item.label}</Link> : <span key={item.label} className="admin-nav-item" aria-disabled="true">{item.label}<small>Próximamente</small></span>)}</nav>
       <Link href="/" className="text-link">Volver a la tienda ↗</Link>
     </aside>

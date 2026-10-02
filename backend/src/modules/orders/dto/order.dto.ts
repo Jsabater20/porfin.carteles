@@ -1,15 +1,18 @@
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, QuoteStatus } from '@prisma/client';
-import { IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
+import { IsEmail, IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
 import { DeliveryMethod } from './preview.dto';
 
 export class CreateOrderDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID('4') previewId!: string;
 
-  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Length(1, 120) customerName!: string;
-  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Matches(/^\+?[0-9()\-\s]{6,30}$/) customerPhone!: string;
+  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Length(1, 60) customerFirstName!: string;
+  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Length(1, 60) customerLastName!: string;
+  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsEmail() @Length(3, 254) customerEmail!: string;
+  @ApiPropertyOptional({ format: 'date' }) @ValidateIf((_o, value) => value !== undefined) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) customerBirthDate?: string;
+  @ApiPropertyOptional() @ValidateIf((_o, value) => value !== undefined) @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Matches(/^\+?[0-9()\-\s]{6,30}$/) customerPhone?: string;
   @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) requestedDate!: string;
   @ApiProperty({ enum: DeliveryMethod }) @IsEnum(DeliveryMethod) deliveryMethod!: DeliveryMethod;
   @ApiPropertyOptional() @ValidateIf((_o, value) => value !== undefined) @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(0, 400) deliveryAddress?: string;
@@ -30,6 +33,16 @@ export class OrderResponseDto {
   @ApiProperty({ format: 'cuid' }) id!: string;
   @ApiProperty() reference!: string;
   @ApiProperty() status!: string;
+  @ApiProperty() customerName!: string;
+  @ApiProperty({ type: String, nullable: true }) customerFirstName!: string | null;
+  @ApiProperty({ type: String, nullable: true }) customerLastName!: string | null;
+  @ApiProperty({ type: String, nullable: true, format: 'email' }) customerEmail!: string | null;
+  @ApiProperty({ type: String, nullable: true, format: 'date-time' }) customerBirthDate!: string | null;
+  @ApiProperty() customerPhone!: string;
+  @ApiProperty({ format: 'date-time' }) requestedDate!: string;
+  @ApiProperty({ enum: DeliveryMethod }) deliveryMethod!: DeliveryMethod;
+  @ApiProperty({ type: String, nullable: true }) deliveryAddress!: string | null;
+  @ApiProperty({ type: String, nullable: true }) notes!: string | null;
   @ApiProperty({ type: [OrderItemDto] }) items!: OrderItemDto[];
   @ApiProperty() knownSubtotalCents!: number;
   @ApiProperty() pendingQuoteCount!: number;

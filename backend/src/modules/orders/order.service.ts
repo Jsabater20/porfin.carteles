@@ -21,7 +21,7 @@ export class OrderService {
 
   async create(dto: CreateOrderDto, guestSessionId: string, idempotencyKey: string) {
     const key = idempotencyKey.toLowerCase();
-    const requestHash = tokenHash(JSON.stringify({ previewId: dto.previewId, customerName: dto.customerName, customerPhone: dto.customerPhone, requestedDate: dto.requestedDate, deliveryMethod: dto.deliveryMethod, deliveryAddress: dto.deliveryAddress ?? null, notes: dto.notes ?? null }));
+    const requestHash = tokenHash(JSON.stringify({ previewId: dto.previewId, customerFirstName: dto.customerFirstName, customerLastName: dto.customerLastName, customerEmail: dto.customerEmail, customerBirthDate: dto.customerBirthDate ?? null, customerPhone: dto.customerPhone ?? null, requestedDate: dto.requestedDate, deliveryMethod: dto.deliveryMethod, deliveryAddress: dto.deliveryAddress ?? null, notes: dto.notes ?? null }));
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
         return await this.prisma.$transaction(async tx => {
@@ -41,9 +41,10 @@ export class OrderService {
           const result = preview.result as unknown as PreviewResponseDto;
           if (dto.deliveryMethod === DeliveryMethod.UNDECIDED || dto.deliveryMethod !== input.deliveryMethod) throw new BadRequestException('Elegí la entrega y volvé a validar el carrito.');
           if (dto.deliveryMethod === DeliveryMethod.SHIPPING && !dto.deliveryAddress) throw new BadRequestException('Ingresá la dirección de envío.');
-          const phone = dto.customerPhone.replace(/[^0-9]/g, '');
-          if (!/^[1-9][0-9]{7,14}$/.test(phone)) throw new BadRequestException('Ingresá un teléfono internacional válido.');
+          const phone = (dto.customerPhone ?? '').replace(/[^0-9]/g, '');
+          if (dto.customerPhone !== undefined && !/^[1-9][0-9]{7,14}$/.test(phone)) throw new BadRequestException('Ingresá un teléfono internacional válido.');
           const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+          if (dto.customerBirthDate && dto.customerBirthDate > today) throw new BadRequestException('La fecha de nacimiento no puede estar en el futuro.');
           if (dto.requestedDate < today) throw new BadRequestException('La fecha solicitada no puede estar en el pasado.');
           const currentItems = [];
           try {
@@ -57,16 +58,38 @@ export class OrderService {
           if (settings?.deliveryMethods.length && !settings.deliveryMethods.includes(dto.deliveryMethod)) throw new ConflictException('La modalidad de entrega ya no está disponible.');
           const reference = 'CAR-' + randomUUID().toUpperCase();
           const amount = (cents: number) => (cents / 100).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+          const displayDate = (value: string) => value.split('-').reverse().join('/');
           const whatsappMessage = [
-            `Hola! Quiero consultar el pedido ${reference}.`,
-            ...currentItems.map(item => `${item.quantity} × ${item.productName} (${item.variantName}): ${item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)}`),
-            `Subtotal conocido: ${amount(result.summary.knownSubtotalCents)}. Pendientes de cotización: ${result.summary.pendingQuoteLines}.`,
-            `Entrega: ${dto.deliveryMethod === DeliveryMethod.PICKUP ? 'Retiro' : 'Envío a confirmar'}. Fecha solicitada: ${dto.requestedDate}.`,
-            `Cliente: ${dto.customerName}. Teléfono: ${phone}.`,
-            'Total final pendiente de confirmación. Las fotos se envían por este chat.',
+            'Hola Porfin Carteles! Quisiera consultar este pedido:',
+            reference,
+            ...currentItems.flatMap(item => [
+              item.quantity + ' × ' + item.productName + ' (' + item.variantName + '): ' + (item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)),
+              ...Object.entries(item.variantAttributes).map(([label, value]) => '  ' + label + ': ' + value),
+              ...item.components.map(component => '  Incluye: ' + component.quantity + ' × ' + component.name + ' por unidad'),
+              ...item.answers.map(answer => {
+                const component = item.components.find(c => c.key === answer.componentKey);
+                return '  ' + (component ? component.name + ' — ' : '') + answer.label + ': ' + answer.displayValue;
+              }),
+              ...(item.photoCountTotal ? ['  Fotos para enviar por este chat: ' + item.photoCountTotal] : []),
+            ]),
+            '',
+            'Nombre: ' + dto.customerFirstName,
+            'Apellido: ' + dto.customerLastName,
+            'Mail: ' + dto.customerEmail,
+            ...(dto.customerBirthDate ? ['Fecha de nacimiento: ' + displayDate(dto.customerBirthDate)] : []),
+            ...(phone ? ['Teléfono: ' + phone] : []),
+            'Lo necesitaría para: ' + displayDate(dto.requestedDate),
+            'Entrega: ' + (dto.deliveryMethod === DeliveryMethod.PICKUP ? 'Retiro' : 'Envío a confirmar'),
+            ...(dto.deliveryMethod === DeliveryMethod.SHIPPING ? ['Dirección: ' + dto.deliveryAddress] : []),
+            ...(dto.notes ? ['Observaciones: ' + dto.notes] : []),
+            'Subtotal conocido: ' + amount(result.summary.knownSubtotalCents) + '. Pendientes de cotización: ' + result.summary.pendingQuoteLines + '.',
+            '',
+            'Entiendo que el pedido, la disponibilidad, la fecha y el precio final quedan pendientes de confirmación por la emprendedora en este chat.',
           ].join('\n');
           const order = await tx.order.create({ data: {
-            guestSessionId, reference, customerName: dto.customerName, customerPhone: phone,
+            guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,
+            customerFirstName: dto.customerFirstName, customerLastName: dto.customerLastName, customerEmail: dto.customerEmail,
+            customerBirthDate: dto.customerBirthDate ? new Date(dto.customerBirthDate) : null,
             requestedDate: new Date(dto.requestedDate), deliveryMethod: dto.deliveryMethod,
             deliveryAddress: dto.deliveryMethod === DeliveryMethod.SHIPPING ? dto.deliveryAddress : null, notes: dto.notes ?? null,
             knownSubtotalCents: result.summary.knownSubtotalCents, pendingQuoteCount: result.summary.pendingQuoteLines,
@@ -170,6 +193,7 @@ export class OrderService {
   private serialize(order: OrderWithItems, idempotencyKey?: string) {
     return moneyJson({
       id: order.id, reference: order.reference, status: order.status, customerName: order.customerName,
+      customerFirstName: order.customerFirstName, customerLastName: order.customerLastName, customerEmail: order.customerEmail, customerBirthDate: order.customerBirthDate,
       customerPhone: order.customerPhone, requestedDate: order.requestedDate, deliveryMethod: order.deliveryMethod,
       deliveryAddress: order.deliveryAddress, notes: order.notes,
       items: order.items.map(item => ({

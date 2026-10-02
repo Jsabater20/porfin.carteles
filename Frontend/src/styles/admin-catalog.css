@@ -6,7 +6,7 @@
 .editor-section h2 { margin-top:0; }
 .editor-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
 .editor-section .custom-field, .taxonomy-form .custom-field { margin-bottom:1rem; min-width:0; }
-.editor-section input:not([type=checkbox]), .editor-section select, .editor-section textarea, .admin-filters input, .admin-filters select { width:100%; min-width:0; padding:.65rem; border:1px solid var(--line); border-radius:var(--radius-small); background:white; color:var(--ink); font:inherit; }
+.editor-section input:not([type=checkbox]), .editor-section select, .editor-section textarea, .admin-filters input, .admin-filters select { width:100%; min-width:0; padding:.65rem; border:1px solid var(--control-border); border-radius:var(--radius-small); background:var(--canvas); color:var(--ink); font:inherit; }
 .editor-section input[type=file] { overflow:hidden; }
 .editor-section textarea { resize:vertical; }
 .editor-section label, .admin-filters label { display:grid; gap:.35rem; }
@@ -31,5 +31,5 @@
 .admin-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:1rem; margin-top:1rem; }
 .reference-picker { margin-block:1rem; }
 .reference-results { display:flex; flex-wrap:wrap; gap:.5rem; margin-block:.5rem; }
-.success-notice { border-left:3px solid #3a684a; }
+.success-notice { border-left:3px solid var(--success); }
 @media(max-width:700px) { .editor-grid,.admin-filters { grid-template-columns:1fr; } .editor-section,.collection-row,.taxonomy-form { padding:.8rem; } .admin-table th,.admin-table td { padding:.35rem; } }

@@ -17,12 +17,12 @@ export async function replyOrder(request, response, state, settings, path) {
   const preview = [...state.previews.values()].find((entry) => entry.result.id === input.previewId)?.result;
   if (!preview) return send(404, { message: 'Validación no encontrada.' });
   if (Date.parse(preview.expiresAt) <= Date.now()) return send(410, { message: 'La validación venció.' });
-  if (!input.customerName || !input.customerPhone || !input.requestedDate || !['PICKUP', 'SHIPPING'].includes(input.deliveryMethod) || input.deliveryMethod !== preview.summary.shipping.method || input.deliveryMethod === 'SHIPPING' && !input.deliveryAddress) return send(400, { message: 'Datos incompletos.' });
+  if (!input.customerFirstName || !input.customerLastName || !input.customerEmail || !input.requestedDate || !['PICKUP', 'SHIPPING'].includes(input.deliveryMethod) || input.deliveryMethod !== preview.summary.shipping.method || input.deliveryMethod === 'SHIPPING' && !input.deliveryAddress) return send(400, { message: 'Datos incompletos.' });
   const reference = 'CAR-' + randomUUID().toUpperCase();
   const message = 'Hola! Quiero consultar el pedido ' + reference + '.\n' + preview.items.map((item) => item.quantity + ' × ' + item.productName + (item.unitPriceCents === null ? ': A cotizar' : '')).join('\n') + '\nTotal final pendiente de confirmación.';
   const order = {
     id: 'c' + randomUUID().replaceAll('-', '').slice(0, 24), reference, status: 'PENDING_CONFIRMATION',
-    customerName: input.customerName, customerPhone: input.customerPhone, requestedDate: input.requestedDate + 'T00:00:00.000Z',
+    customerName: input.customerFirstName + ' ' + input.customerLastName, customerFirstName: input.customerFirstName, customerLastName: input.customerLastName, customerEmail: input.customerEmail, customerBirthDate: input.customerBirthDate || null, customerPhone: input.customerPhone || '', requestedDate: input.requestedDate + 'T00:00:00.000Z',
     deliveryMethod: input.deliveryMethod, deliveryAddress: input.deliveryAddress ?? null, notes: input.notes ?? null,
     knownSubtotalCents: preview.summary.knownSubtotalCents, pendingQuoteCount: preview.summary.pendingQuoteLines, shippingCents: preview.summary.shipping.amountCents,
     createdAt: new Date().toISOString(), idempotencyKey: key,

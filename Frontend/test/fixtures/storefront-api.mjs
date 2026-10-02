@@ -14,6 +14,7 @@ const career = { id: 'career-1', name: 'Medicina', slug: 'medicina' };
 const variant = (id, mode, price) => ({ id, key: id, name: mode === 'QUOTE' ? 'Diseño especial' : 'Modelo clásico', pricingMode: mode, priceCents: price, attributes: { Tamaño: 'Grande' }, photoCount: mode === 'QUOTE' ? 3 : 0 });
 export const products = Array.from({ length: 25 }, (_, index) => ({
   id: 'product-' + index, slug: 'producto-' + index, name: ['Cartel de recibida', 'Cartel personalizado', 'Combo de celebración'][index] ?? 'Cartel ' + String(index).padStart(2, '0'),
+  category: index === 2 ? 'COMBO' : 'CARTEL',
   type: index === 1 ? 'CUSTOM' : index === 2 ? 'COMBO' : 'PREDEFINED', leadTime: 'Consultar disponibilidad',
   categories: [categories[0]], careers: [career], coverImage: null,
   basePrice: { currency: 'ARS', fromCents: index === 1 ? null : 12345, toCents: index === 1 ? null : 12345, hasQuoteVariants: index <= 1 },
@@ -42,16 +43,17 @@ export async function startFixtureApi(port = 3101) {
     if (path === 'orders' || /^orders\/c[a-z0-9]{24}$/.test(path)) return replyOrder(request, response, state, settings, path);
     if ((path === 'health' || path === 'health/ready')) return send(200, { status: 'ok' });
     if (path === 'settings/public') return send(200, settings);
-    if (path === 'categories' || path === 'careers') {
-      const all = path === 'categories' ? categories : [career];
+    if (path === 'categories' || path === 'careers' || path === 'occasions') {
+      const all = path !== 'careers' ? categories : [career];
       const limit = Number(url.searchParams.get('limit') || 24), page = Number(url.searchParams.get('page') || 1);
       return send(200, { items: all.slice((page - 1) * limit, page * limit), total: all.length, page, limit });
     }
     if (path === 'products') {
       let all = products.filter((item) => !url.searchParams.get('q') || item.name.toLowerCase().includes(url.searchParams.get('q').toLowerCase()));
-      for (const key of ['type', 'categoryId', 'careerId']) {
+      if (url.searchParams.get('category')) all = all.filter(item => item.category === url.searchParams.get('category'));
+      for (const key of ['type', 'categoryId', 'careerId', 'occasion', 'career']) {
         const value = url.searchParams.get(key);
-        if (value) all = all.filter((item) => key === 'type' ? item.type === value : item[key === 'categoryId' ? 'categories' : 'careers'].some((taxonomy) => taxonomy.id === value));
+        if (value) all = all.filter((item) => key === 'type' ? item.type === value : item[key === 'categoryId' || key === 'occasion' ? 'categories' : 'careers'].some((taxonomy) => taxonomy.id === value));
       }
       const sort = url.searchParams.get('sort');
       if (sort?.startsWith('name-')) all = [...all].sort((a, b) => a.name.localeCompare(b.name) * (sort === 'name-desc' ? -1 : 1));
