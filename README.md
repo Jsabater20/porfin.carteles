@@ -131,7 +131,7 @@ La configuración de Railway, Neon, Cloudinary y SMTP no se realizó durante las
 
 Cada etapa debe compilar y poder probarse antes de continuar. Las protecciones se implementan con cada funcionalidad.
 
-Railway usará `backend` como raíz del servicio y `backend/railway.json`. Las migraciones deben aplicarse antes del arranque en el despliegue. Configurar HTTPS, orígenes exactos y proxy confiable según el entorno real.
+Railway puede usar la raíz del repositorio con `railway.json`; esa configuración instala y compila solamente `backend`, aplica sus migraciones antes del arranque y ejecuta `backend/dist/main.js`. También se conserva `backend/railway.json` para servicios que configuren `backend` como Root Directory. Configurar HTTPS, orígenes exactos y proxy confiable según el entorno real.
 
 `backend/legacy/`, `docs/reference/frontend-prototype/` y `docs/reference/schema-before-stages.prisma` conservan prototipos anteriores, fuera de la API y de la compilación.
 
