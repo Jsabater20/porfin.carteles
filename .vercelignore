@@ -1,0 +1,17 @@
+.agents
+.codex
+.git
+.github
+.local
+.npm-cache
+.vercel
+backend
+docs
+node_modules
+Frontend/node_modules
+Frontend/.next
+Frontend/.test-build
+Frontend/.env*
+Frontend/.vercel
+.env*
+*.log

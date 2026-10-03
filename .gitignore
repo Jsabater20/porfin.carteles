@@ -1,5 +1,6 @@
 backend/data/
 .local/
+.vercel/
 .env
 node_modules/
 dist/

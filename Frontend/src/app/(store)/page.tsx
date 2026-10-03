@@ -6,7 +6,6 @@ import { getContent } from '@/features/content/queries';
 import { ContentBody } from '@/features/content/content-body';
 import { getTaxonomy } from '@/features/catalog/queries';
 import { ProductCard } from '@/features/catalog/product-card';
-import { BrandLogo } from '@/components/brand-logo';
 import { CatalogCollections } from '@/features/catalog/catalog-collections';
 
 export default async function HomePage() {
@@ -17,7 +16,7 @@ export default async function HomePage() {
   return (
     <>
       <section className="brand-hero" aria-labelledby="home-title">
-        <BrandLogo hero />
+        <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> Carteles hechos para celebrar</p>
         <h1 id="home-title">{content.data?.title || 'Un detalle especial para cada celebración.'}</h1>
         <p className="hero-description">{content.data?.subtitle || 'Carteles, props y combos personalizados para celebrar a tu manera.'}</p>
         <div className="actions">
@@ -41,9 +40,8 @@ export default async function HomePage() {
           <div className="section-heading"><p className="eyebrow">Simple, como tiene que ser</p><h2>Tu idea, paso a paso.</h2></div>
           <ol className="steps">
             <li><span className="step-number">01</span><h3>Elegí tu cartel o combo</h3><p>Encontrá la propuesta que acompaña tu celebración.</p></li>
-            <li><span className="step-number">02</span><h3>Dale tu toque</h3><p>Completá los textos y las opciones que lo hacen tuyo.</p></li>
-            <li><span className="step-number">03</span><h3>Revisá el carrito y completá tus datos</h3><p>Antes de ir a WhatsApp, completá el formulario e indicá para cuándo lo necesitarías.</p></li>
-            <li><span className="step-number">04</span><h3>Confirmamos por WhatsApp</h3><p>Enviá el mensaje con tu pedido. La emprendedora debe confirmar disponibilidad, fecha y presupuesto por el chat.</p></li>
+            <li><span className="step-number">02</span><h3>Revisá el carrito y completá tus datos</h3><p>Antes de ir a WhatsApp, completá el formulario e indicá para cuándo lo necesitarías.</p></li>
+            <li><span className="step-number">03</span><h3>Confirmamos por WhatsApp</h3><p>Enviá el mensaje con tu pedido. La emprendedora debe confirmar disponibilidad, fecha y presupuesto por el chat.</p></li>
           </ol>
           <Link href="/preguntas-frecuentes" className="text-link how-faq-link">Ver preguntas frecuentes</Link>
         </div>
