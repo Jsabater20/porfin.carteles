@@ -116,7 +116,7 @@ Las pruebas de integración del backend requieren una base con permiso para crea
 
 ## Despliegue
 
-- **Railway:** Root Directory `backend`; usa `backend/railway.json`, ejecuta las migraciones y publica NestJS.
+- **Railway:** Root Directory en la raíz del repositorio; usa `railway.json`, instala y compila `backend`, ejecuta las migraciones y publica NestJS.
 - **Neon:** `DATABASE_URL` pooled para ejecución y `DIRECT_URL` directa para migraciones.
 - **Vercel:** Root Directory `Frontend`; requiere `BACKEND_API_URL` y `WEB_ORIGIN` de producción.
 - **Cloudinary:** almacena las imágenes del catálogo.
