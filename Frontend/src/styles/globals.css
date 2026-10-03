@@ -68,8 +68,11 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .footer-inner p { font-size: .82rem; color: var(--muted); margin-block: 1rem 0; }
 .footer-inner > a { font-size: .8rem; }
 .footer-contact { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .65rem 1.25rem; color: var(--muted); font-size: .78rem; }
-.footer-contact a { text-decoration: underline; text-underline-offset: 4px; }
+.footer-contact a { display: inline-flex; align-items: center; gap: .5rem; padding-block: .25rem; text-decoration: none; }
+.footer-contact a span { text-decoration: underline; text-underline-offset: 4px; }
 .footer-contact a:hover { color: var(--accent); }
+.footer-contact-icon { width: 21px; height: 21px; flex: 0 0 auto; }
+.instagram-icon { color: #e1306c; }
 .whatsapp-float { position: fixed; z-index: 90; right: max(1.25rem, env(safe-area-inset-right)); bottom: max(1.25rem, env(safe-area-inset-bottom)); display: grid; place-items: center; width: 60px; height: 60px; border: 2px solid rgba(255,255,255,.88); border-radius: 50%; background: #25d366; color: #fff; box-shadow: 0 10px 28px rgba(24, 43, 66, .28); transition: transform .15s ease, box-shadow .15s ease; }
 .whatsapp-float:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(24, 43, 66, .34); }
 .whatsapp-float svg { width: 34px; height: 34px; }

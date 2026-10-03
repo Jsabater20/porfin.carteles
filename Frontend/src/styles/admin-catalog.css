@@ -23,6 +23,24 @@
 .admin-product-list { display:grid; gap:1rem; margin-block:1rem; }
 .admin-product-list .panel-card { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
 .admin-product-list h2 { margin:0; font-size:1.4rem; }
+.admin-product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr)); gap:1.35rem; margin-block:1.5rem; }
+.admin-product-card { display:flex; flex-direction:column; min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); }
+.admin-product-card-media { position:relative; display:block; overflow:hidden; }
+.admin-product-card-media .product-image { transition:transform .2s ease; }
+.admin-product-card-media:hover .product-image { transform:scale(1.015); }
+.admin-product-card-media:focus-visible { outline-offset:-4px; }
+.admin-product-status { position:absolute; top:.8rem; right:.8rem; padding:.35rem .65rem; border:1px solid rgba(255,255,255,.72); border-radius:999px; background:rgba(24,43,66,.9); color:#fff; box-shadow:0 4px 14px rgba(24,43,66,.18); font-size:.69rem; font-weight:700; letter-spacing:.03em; }
+.admin-product-status[data-status='HIDDEN'] { background:rgba(86,91,102,.92); }
+.admin-product-status[data-status='UNAVAILABLE'] { background:rgba(135,72,72,.92); }
+.admin-product-card-copy { display:flex; flex:1; flex-direction:column; padding:1.2rem; }
+.admin-product-card-copy .eyebrow { margin-bottom:.5rem; }
+.admin-product-card-copy h2 { margin:0; font-size:1.38rem; }
+.admin-product-card-copy h2 a:hover { color:var(--accent-dark); }
+.admin-product-card-meta { margin:.7rem 0 1.15rem; color:var(--muted); font-size:.82rem; }
+.admin-product-card-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.8rem; margin-top:auto; padding-top:1rem; border-top:1px solid var(--line); }
+.admin-product-card-actions a { display:flex; align-items:center; justify-content:space-between; gap:.5rem; min-width:0; color:var(--ink); font-size:.82rem; font-weight:700; }
+.admin-product-card-actions a:hover { color:var(--accent); }
+.admin-product-card-actions a span { color:var(--accent); font-size:1rem; }
 .admin-table-wrap { max-width:100%; overflow-x:auto; }
 .admin-table { border-collapse:collapse; width:100%; background:var(--paper); }
 .admin-table caption { text-align:left; padding-block:1rem; font-weight:bold; }
