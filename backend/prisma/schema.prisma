@@ -115,6 +115,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum OrderSource {
+  STOREFRONT
+  MANUAL
+}
+
 enum QuoteStatus {
   DRAFT
   SENT
@@ -324,6 +329,8 @@ model Order {
   customerBirthDate DateTime? @db.Date
   customerPhone      String
   requestedDate      DateTime          @db.Date
+  scheduledDate      DateTime          @db.Date
+  source             OrderSource       @default(STOREFRONT)
   deliveryMethod     String
   deliveryAddress    String?
   notes              String?
@@ -343,6 +350,7 @@ model Order {
 
   @@index([guestSessionId, createdAt])
   @@index([status, createdAt])
+  @@index([scheduledDate, status])
 }
 
 model OrderQuote {

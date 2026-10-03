@@ -101,7 +101,6 @@ test('Etapa 4: imágenes con PostgreSQL real y proveedor simulado', { timeout: 1
     assert.equal(text.body.altText, 'Nuevo texto');
     assert.equal((await call(gallery + '/' + first.id, 'PATCH', { url: 'https://externo.example' })).status, 400);
     await assert.rejects(ctx.prisma.productImage.update({ where: { id: first.id }, data: { cover: true } }));
-    assert.equal((await call('/admin/products/' + productId, 'DELETE', {})).status, 409);
     assert.equal((await call(gallery + '/' + second.id, 'DELETE', {})).status, 204);
     const remaining = await call(gallery); assert.equal(remaining.body[0].cover, true); assert.equal(remaining.body[0].position, 0);
     await due(firstUpload.uploadId);
@@ -141,9 +140,10 @@ test('Etapa 4: imágenes con PostgreSQL real y proveedor simulado', { timeout: 1
     assert.equal((await call('/admin/products/' + abandonedId, 'DELETE', {})).status, 204);
     assert.equal((await ctx.prisma.mediaUpload.findUniqueOrThrow({ where: { id: abandoned.uploadId } })).productId, null);
     assert.equal((await complete(abandoned)).status, 409);
-    assert.equal((await call(gallery + '/' + first.id, 'DELETE', {})).status, 204);
-    assert.equal((await complete(firstUpload)).status, 409, 'No resucitar una imagen eliminada');
     assert.equal((await call('/admin/products/' + productId, 'DELETE', {})).status, 204);
+    assert.equal(await ctx.prisma.productImage.count({ where: { productId } }), 0);
+    assert.ok((await ctx.prisma.mediaUpload.findUniqueOrThrow({ where: { id: firstUpload.uploadId } })).cancelledAt);
+    assert.equal((await complete(firstUpload)).status, 409, 'No resucitar una imagen eliminada junto con el producto');
     await due(firstUpload.uploadId); await due(abandoned.uploadId);
     failDelete = true; await cleaner.runOnce();
     const failed = await ctx.prisma.mediaUpload.findUniqueOrThrow({ where: { id: firstUpload.uploadId } });

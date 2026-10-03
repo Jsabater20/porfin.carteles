@@ -1,7 +1,7 @@
 import { moneyToCents } from '../admin-catalog/model';
 import type { OrderStatus,QuoteStatus,QuoteInput,ContentInput } from '../../lib/contracts/admin-operations';
 export const ORDER_LABELS:Record<OrderStatus,string>={PENDING_CONFIRMATION:'Por confirmar',CONFIRMED:'Confirmado',IN_PRODUCTION:'En producción',READY:'Listo',DELIVERED:'Entregado',CANCELLED:'Cancelado'};
-export const ORDER_NEXT:Record<OrderStatus,OrderStatus[]>={PENDING_CONFIRMATION:['CONFIRMED','CANCELLED'],CONFIRMED:['IN_PRODUCTION','CANCELLED'],IN_PRODUCTION:['READY','CANCELLED'],READY:['DELIVERED','CANCELLED'],DELIVERED:[],CANCELLED:[]};
+export const ORDER_NEXT:Record<OrderStatus,OrderStatus[]>={PENDING_CONFIRMATION:['CONFIRMED','CANCELLED'],CONFIRMED:['PENDING_CONFIRMATION','IN_PRODUCTION','CANCELLED'],IN_PRODUCTION:['READY','CANCELLED'],READY:['DELIVERED','CANCELLED'],DELIVERED:[],CANCELLED:[]};
 export const QUOTE_LABELS:Record<QuoteStatus,string>={DRAFT:'Borrador',SENT:'Enviado',ACCEPTED:'Aceptado',REJECTED:'Rechazado'};
 export const QUOTE_NEXT:Record<QuoteStatus,QuoteStatus[]>={DRAFT:['SENT','REJECTED'],SENT:['ACCEPTED','REJECTED'],ACCEPTED:[],REJECTED:[]};
 export const money=(cents:number|null)=>cents===null?'Por confirmar':new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(cents/100);

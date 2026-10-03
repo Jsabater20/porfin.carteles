@@ -6,6 +6,8 @@ const routes: Record<string, Partial<Record<ApiMethod, ApiScope>>> = {
   'orders/preview': { POST: 'guest' },
   orders: { POST: 'guest' },
   'admin/orders': { GET: 'admin' },
+  'admin/orders/calendar': { GET: 'admin' },
+  'admin/orders/manual': { POST: 'admin' },
   'admin/payments': { POST: 'admin' },
   'admin/content': { GET: 'admin', PATCH: 'admin' },
   'admin/admins': { GET: 'admin', POST: 'admin' },
@@ -32,6 +34,7 @@ const routes: Record<string, Partial<Record<ApiMethod, ApiScope>>> = {
 export function routePolicy(path: string, method: string): ApiScope | undefined {
   if (/^admin\/orders\/c[a-z0-9]{24}$/.test(path) && method === 'GET') return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/status$/.test(path) && method === 'PATCH') return 'admin';
+  if (/^admin\/orders\/c[a-z0-9]{24}\/schedule$/.test(path) && method === 'PATCH') return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/quotes$/.test(path) && method === 'POST') return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/quotes\/c[a-z0-9]{24}\/status$/.test(path) && method === 'PATCH') return 'admin';
   if (/^admin\/payments\/orders\/c[a-z0-9]{24}$/.test(path) && method === 'GET') return 'admin';

@@ -7,7 +7,7 @@ import { tokenHash } from '../../common/utils/credentials';
 import { adminTransaction } from '../../common/utils/admin-transaction';
 import { moneyJson } from '../../common/utils/money';
 import { ADMIN_LOCK } from '../auth/auth.types';
-import { CreateOrderDto, CreateOrderQuoteDto } from './dto/order.dto';
+import { CreateManualOrderDto, CreateOrderDto, CreateOrderQuoteDto } from './dto/order.dto';
 import { DeliveryMethod, PreviewDto, PreviewResponseDto } from './dto/preview.dto';
 import { PreviewService } from './preview.service';
 
@@ -96,7 +96,7 @@ export class OrderService {
             guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,
             customerFirstName: dto.customerFirstName, customerLastName: dto.customerLastName, customerEmail: dto.customerEmail,
             customerBirthDate: dto.customerBirthDate ? new Date(dto.customerBirthDate) : null,
-            requestedDate: new Date(dto.requestedDate), deliveryMethod: dto.deliveryMethod,
+            requestedDate: new Date(dto.requestedDate), scheduledDate: new Date(dto.requestedDate), deliveryMethod: dto.deliveryMethod,
             deliveryAddress: dto.deliveryMethod === DeliveryMethod.SHIPPING ? dto.deliveryAddress : null, notes: dto.notes ?? null,
             knownSubtotalCents: result.summary.knownSubtotalCents, pendingQuoteCount: result.summary.pendingQuoteLines,
             shippingCents: dto.deliveryMethod === DeliveryMethod.PICKUP ? 0 : null,
@@ -135,10 +135,38 @@ export class OrderService {
   async list(page = 1) {
     const where = {};
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.order.findMany({ where, skip: (page - 1) * 25, take: 25, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: { id: true, reference: true, customerName: true, status: true, requestedDate: true, knownSubtotalCents: true, pendingQuoteCount: true, createdAt: true } }),
+      this.prisma.order.findMany({ where, skip: (page - 1) * 25, take: 25, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: { id: true, reference: true, customerName: true, status: true, requestedDate: true, scheduledDate: true, source: true, knownSubtotalCents: true, pendingQuoteCount: true, createdAt: true } }),
       this.prisma.order.count({ where }),
     ], { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
     return moneyJson({ items, total, page, pageSize: 25 });
+  }
+  async calendar(from: string, to: string) {
+    if (from > to) throw new BadRequestException('El rango del calendario no es válido.');
+    const start = new Date(from), end = new Date(to);
+    if ((end.getTime() - start.getTime()) / 86400000 > 62) throw new BadRequestException('El calendario admite rangos de hasta 62 días.');
+    const items = await this.prisma.order.findMany({
+      where: { scheduledDate: { gte: start, lte: end } },
+      orderBy: [{ scheduledDate: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, reference: true, customerName: true, status: true, requestedDate: true, scheduledDate: true, source: true, knownSubtotalCents: true, pendingQuoteCount: true, createdAt: true },
+    });
+    return moneyJson({ items });
+  }
+  createManual(dto: CreateManualOrderDto, sessionId: string) {
+    return adminTransaction(this.prisma, sessionId, async (tx, administratorId) => {
+      const reference = 'MAN-' + randomUUID().toUpperCase();
+      const order = await tx.order.create({
+        data: {
+          reference, customerName: dto.customerName, customerEmail: dto.customerEmail ?? null, customerPhone: (dto.customerPhone ?? '').replace(/[^0-9]/g, ''),
+          requestedDate: new Date(dto.scheduledDate), scheduledDate: new Date(dto.scheduledDate), source: 'MANUAL', deliveryMethod: dto.deliveryMethod,
+          notes: dto.notes ?? null, knownSubtotalCents: 0, pendingQuoteCount: 1, status: dto.status,
+          items: { create: { productName: dto.description, customizationSnapshot: { answers: [], selectedOptions: [] }, pricingMode: 'QUOTE', quantity: 1 } },
+          events: { create: { type: 'MANUAL_ORDER_CREATED', details: { administratorId, description: dto.description, scheduledDate: dto.scheduledDate } } },
+        },
+        include: detail,
+      });
+      const { guestSessionId: _guest, payments, ...safe } = order;
+      return moneyJson({ ...safe, payments: payments.map(({ idempotencyKey: _key, requestHash: _hash, ...payment }) => payment) });
+    });
   }
   async adminGet(id: string) {
     const order = await this.prisma.order.findUnique({ where: { id }, include: detail });
@@ -151,7 +179,7 @@ export class OrderService {
       const current = await tx.order.findUnique({ where: { id: orderId } });
       if (!current) throw new NotFoundException('Pedido no encontrado.');
       const allowed: Record<OrderStatus, OrderStatus[]> = {
-        PENDING_CONFIRMATION: ['CONFIRMED', 'CANCELLED'], CONFIRMED: ['IN_PRODUCTION', 'CANCELLED'],
+        PENDING_CONFIRMATION: ['CONFIRMED', 'CANCELLED'], CONFIRMED: ['PENDING_CONFIRMATION', 'IN_PRODUCTION', 'CANCELLED'],
         IN_PRODUCTION: ['READY', 'CANCELLED'], READY: ['DELIVERED', 'CANCELLED'], DELIVERED: [], CANCELLED: [],
       };
       if (!allowed[current.status].includes(nextStatus)) throw new ConflictException('La transición de estado no es válida.');
@@ -160,6 +188,17 @@ export class OrderService {
       await tx.orderEvent.create({ data: { orderId, type: 'STATUS_CHANGED', details: { from: current.status, to: nextStatus, administratorId, reason: reason?.trim() || null } } });
       const updated = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true, events: { orderBy: { createdAt: 'asc' } } } });
       return { ...this.serialize(updated), events: updated.events };
+    });
+  }
+  updateSchedule(orderId: string, scheduledDate: string, sessionId: string) {
+    return adminTransaction(this.prisma, sessionId, async (tx, administratorId) => {
+      const current = await tx.order.findUnique({ where: { id: orderId } });
+      if (!current) throw new NotFoundException('Pedido no encontrado.');
+      const from = current.scheduledDate.toISOString().slice(0, 10);
+      if (from === scheduledDate) return { id: current.id, scheduledDate: current.scheduledDate };
+      const updated = await tx.order.update({ where: { id: orderId }, data: { scheduledDate: new Date(scheduledDate) } });
+      await tx.orderEvent.create({ data: { orderId, type: 'DELIVERY_DATE_CHANGED', details: { from, to: scheduledDate, administratorId } } });
+      return { id: updated.id, scheduledDate: updated.scheduledDate };
     });
   }
   createQuote(orderId: string, dto: CreateOrderQuoteDto, sessionId: string) {
@@ -200,7 +239,7 @@ export class OrderService {
     return moneyJson({
       id: order.id, reference: order.reference, status: order.status, customerName: order.customerName,
       customerFirstName: order.customerFirstName, customerLastName: order.customerLastName, customerEmail: order.customerEmail, customerBirthDate: order.customerBirthDate,
-      customerPhone: order.customerPhone, requestedDate: order.requestedDate, deliveryMethod: order.deliveryMethod,
+      customerPhone: order.customerPhone, requestedDate: order.requestedDate, scheduledDate: order.scheduledDate, source: order.source, deliveryMethod: order.deliveryMethod,
       deliveryAddress: order.deliveryAddress, notes: order.notes,
       items: order.items.map(item => ({
         id: item.id, productId: item.productId, productName: item.productName,

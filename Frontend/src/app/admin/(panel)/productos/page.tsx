@@ -9,6 +9,7 @@ import { Pagination } from '@/features/admin-catalog/pagination';
 import { AdminCatalogFilters } from '@/features/admin-catalog/catalog-filters';
 import { TYPES, STATUSES, KINDS, productKind, isOccasion } from '@/features/admin-catalog/model';
 import { ProductImage } from '@/features/catalog/product-image';
+import { ProductCardActions } from '@/features/admin-catalog/product-card-actions';
 
 const quantity = (amount: number, singular: string, plural: string) => `${amount} ${amount === 1 ? singular : plural}`;
 
@@ -32,10 +33,7 @@ export default async function Products({ searchParams }: { searchParams: Promise
        <p className="eyebrow">{KINDS[kind]}{kind === 'CARTEL' ? ' · ' + TYPES[product.type] : ''}</p>
        <h2><Link href={editHref}>{product.name}</Link></h2>
        <p className="admin-product-card-meta">{quantity(product.variants.length, 'variante', 'variantes')} · {quantity(product.images.length, 'imagen', 'imágenes')}</p>
-       <nav className="admin-product-card-actions" aria-label={`Administrar ${product.name}`}>
-         <Link href={editHref}>Editar ficha <span aria-hidden="true">→</span></Link>
-         <Link href={editHref + '/imagenes'}>Imágenes <span aria-hidden="true">→</span></Link>
-       </nav>
+       <ProductCardActions id={product.id} status={product.status}/>
      </div>
    </article>;
  })}</div>}

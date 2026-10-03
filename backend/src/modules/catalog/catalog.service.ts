@@ -71,8 +71,12 @@ export class CatalogService {
   }
 
   async list(query: CatalogQuery) {
+    const consolidation = await this.prisma.applicationMetadata.findUnique({ where: { key: 'catalog:three-images:v1' }, select: { value: true } });
+    let archivedId: string | undefined;
+    try { archivedId = consolidation ? (JSON.parse(consolidation.value) as { sourceId?: string }).sourceId : undefined; } catch { archivedId = undefined; }
     const where: Prisma.ProductWhereInput = {
       type: query.type, category: query.category, status: query.status,
+      ...(archivedId ? { id: { not: archivedId } } : {}),
       ...(query.q ? { OR: [{ name: { contains: query.q, mode: 'insensitive' } }, { description: { contains: query.q, mode: 'insensitive' } }] } : {}),
       ...(query.categoryId ? { categories: { some: { categoryId: query.categoryId } } } : {}),
       ...(query.careerId ? { careers: { some: { careerId: query.careerId } } } : {}),
@@ -241,6 +245,11 @@ export class CatalogService {
       if (!current) throw new NotFoundException('Producto no encontrado.');
       if ((await this.consolidatedInto(tx, id)).length) throw new ConflictException('Este producto está archivado por consolidación. Editá los productos de destino.');
       if (current.status !== ProductStatus.HIDDEN) throw new ConflictException('Ocultá el producto antes de eliminarlo.');
+      const images = await tx.productImage.findMany({ where: { productId: id }, select: { uploadId: true } });
+      const now = new Date();
+      await tx.productImage.deleteMany({ where: { productId: id } });
+      await tx.mediaUpload.updateMany({ where: { productId: id }, data: { productId: null, cancelledAt: now, cleanupAfter: now } });
+      if (images.length) await tx.mediaUpload.updateMany({ where: { id: { in: images.map(image => image.uploadId) } }, data: { productId: null, cancelledAt: now, cleanupAfter: now } });
       return tx.product.delete({ where: { id } });
     });
   }

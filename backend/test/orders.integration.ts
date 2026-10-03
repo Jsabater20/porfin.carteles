@@ -20,7 +20,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
   await ctx.prisma.storeSettings.create({ data: { id: 1, whatsappNumber: '5491199999999', deliveryMethods: ['PICKUP', 'SHIPPING'] } });
   const product = await ctx.prisma.product.create({ data: { name: 'Cartel', slug: 'cartel-pedido', description: 'Prueba', type: 'PREDEFINED', status: 'PUBLISHED', variants: { create: { key: 'base', name: 'Tres fotos', pricingMode: 'FIXED', priceCents: 10000, photoCount: 3, attributes: { size: 'A3' }, position: 0 } }, fields: { create: { key: 'nombre', label: 'Nombre', type: 'SHORT_TEXT', required: true, position: 0 } } }, include: { variants: true } });
   const variant = product.variants[0];
-  const line = { lineId: 'cartel', productId: product.id, variantId: variant.id, quantity: 2, answers: [{ fieldKey: 'nombre', value: 'Ana' }] };
+  const line = { lineId: 'cartel', productId: product.id, variantId: variant.id, quantity: 2, answers: [{ fieldKey: 'idea', value: 'Un cartel para Ana' }] };
   const preview = async (items = [line]) => {
     const result = await req('/orders/preview', 'POST', { items, deliveryMethod: 'SHIPPING' }, guest, randomUUID()); assert.equal(result.status, 200, JSON.stringify(result.body)); return result.body;
   };
@@ -54,6 +54,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     for (const result of results) assert.equal(result.status, 200, JSON.stringify(result.body));
     assert.equal(new Set(results.map(r => r.body.id)).size, 1); assert.equal(await ctx.prisma.order.count(), 1);
     order = results[0].body;
+    assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
     for (const text of ['Hola Porfin Carteles!', 'Mail: ana@example.com', 'Nombre: Ana', 'Apellido: Pérez', 'size: A3', '6', 'Calle 123', 'emprendedora']) assert.ok(order.whatsapp.message.includes(text), text);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
@@ -76,6 +77,18 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     assert.equal(event.details.administratorId, administrator.id); assert.equal(event.details.from, 'PENDING_CONFIRMATION');
     assert.equal((await adminReq('/admin/orders?page=0')).status, 400);
     assert.equal((await adminReq('/admin/orders')).body.total, 1);
+  });
+  await t.test('Agenda, reprogramación y carga manual de pedidos', async () => {
+    const movedDate = new Date(Date.now() + 35 * 86400000).toISOString().slice(0, 10);
+    const changed = await adminReq(`/admin/orders/${order.id}/schedule`, 'PATCH', { scheduledDate: movedDate });
+    assert.equal(changed.status, 200); assert.equal(changed.body.scheduledDate.slice(0, 10), movedDate);
+    const manualDate = new Date(Date.now() + 40 * 86400000).toISOString().slice(0, 10);
+    const manual = await adminReq('/admin/orders/manual', 'POST', { customerName: 'Pedido de Instagram', customerPhone: '+5493425550000', scheduledDate: manualDate, description: 'Cartel personalizado', status: 'PENDING_CONFIRMATION' });
+    assert.equal(manual.status, 201, JSON.stringify(manual.body)); assert.equal(manual.body.source, 'MANUAL'); assert.equal(manual.body.items[0].productName, 'Cartel personalizado');
+    const calendar = await adminReq(`/admin/orders/calendar?from=${movedDate}&to=${manualDate}`);
+    assert.equal(calendar.status, 200); assert.deepEqual(calendar.body.items.map((item: any) => item.id).sort(), [order.id, manual.body.id].sort());
+    assert.equal((await adminReq('/admin/orders/calendar?from=2026-12-31&to=2026-01-01')).status, 400);
+    const details = await adminReq('/admin/orders/' + order.id); assert.equal(details.body.events.at(-1).type, 'DELIVERY_DATE_CHANGED');
   });
   await t.test('Presupuestos inmutables, versiones concurrentes y aceptación de la última revisión', async () => {
     const results = await Promise.all([createQuote(32500), createQuote(35000)]);

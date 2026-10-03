@@ -12,7 +12,7 @@ import { PrismaService } from '../../src/database/prisma.service';
 
 export async function integrationApp(environment: Record<string, string> = {}, beforeConfigure?: (app: NestExpressApplication) => void) {
   if (existsSync('.env')) process.loadEnvFile('.env');
-  const originalUrl = process.env.DATABASE_URL;
+  const originalUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
   if (!originalUrl) throw new Error('Configurá DATABASE_URL para las pruebas de integración.');
   const schema = `test_auth_${randomBytes(8).toString('hex')}`;
   const connection = new URL(originalUrl);
@@ -37,7 +37,10 @@ export async function integrationApp(environment: Record<string, string> = {}, b
   };
   try {
     const migration = spawnSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env: process.env, encoding: 'utf8', timeout: 60000 });
-    if (migration.status !== 0) throw new Error('Test schema migration failed: ' + ((migration.error as NodeJS.ErrnoException | undefined)?.code ?? migration.stderr?.match(/P[0-9]{4}/)?.[0] ?? 'exit ' + migration.status));
+    if (migration.status !== 0) {
+      const diagnostic = (migration.stderr || migration.stdout || '').replace(/postgres(?:ql)?:\/\/\S+/gi, '[DATABASE_URL]').trim().slice(-1200);
+      throw new Error('Test schema migration failed: ' + ((migration.error as NodeJS.ErrnoException | undefined)?.code ?? (diagnostic || 'exit ' + migration.status)));
+    }
     const { AppModule } = await import('../../src/app.module');
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false, bodyParser: false, abortOnError: false });
     const [scope] = await app.get(PrismaService).$queryRaw<{ schema: string }[]>`SELECT current_schema() AS schema`;

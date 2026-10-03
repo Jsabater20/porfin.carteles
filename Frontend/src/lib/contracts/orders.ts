@@ -8,7 +8,7 @@ export interface GuestOrder {
   id: string; reference: string;
   status: 'PENDING_CONFIRMATION' | 'CONFIRMED' | 'IN_PRODUCTION' | 'READY' | 'DELIVERED' | 'CANCELLED';
   customerFirstName: string | null; customerLastName: string | null; customerEmail: string | null; customerBirthDate: string | null;
-  customerName: string; customerPhone: string; requestedDate: string; deliveryMethod: 'PICKUP' | 'SHIPPING';
+  customerName: string; customerPhone: string; requestedDate: string; scheduledDate: string; source: 'STOREFRONT' | 'MANUAL'; deliveryMethod: 'PICKUP' | 'SHIPPING' | 'TO_CONFIRM';
   deliveryAddress: string | null; notes: string | null; createdAt: string; idempotencyKey?: string;
   knownSubtotalCents: number; pendingQuoteCount: number; shippingCents: number | null;
   items: { id: string; productId: string | null; productName: string; variantName: string; quantity: number;

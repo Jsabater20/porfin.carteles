@@ -1,8 +1,11 @@
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, QuoteStatus } from '@prisma/client';
-import { IsEmail, IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
+import { IsEmail, IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
 import { DeliveryMethod } from './preview.dto';
+
+const trimText = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().normalize('NFC') : value;
+const optionalValue = (_object: unknown, value: unknown) => value !== undefined;
 
 export class CreateOrderDto {
   @ApiProperty({ format: 'uuid' })
@@ -56,6 +59,27 @@ export class UpdateOrderStatusDto {
   @ApiProperty({ enum: OrderStatus }) @IsEnum(OrderStatus) status!: OrderStatus;
   @ApiPropertyOptional() @ValidateIf((_o, value) => value !== undefined) @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(0, 500) reason?: string;
 }
+
+export class OrderCalendarQueryDto {
+  @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) from!: string;
+  @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) to!: string;
+}
+
+export class UpdateOrderScheduleDto {
+  @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) scheduledDate!: string;
+}
+
+export class CreateManualOrderDto {
+  @ApiProperty() @Transform(trimText) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(1, 120) customerName!: string;
+  @ApiPropertyOptional() @ValidateIf(optionalValue) @Transform(trimText) @IsEmail() @Length(3, 254) customerEmail?: string;
+  @ApiPropertyOptional() @ValidateIf(optionalValue) @Transform(trimText) @IsString() @Matches(/^\+?[0-9()\-\s]{6,30}$/) customerPhone?: string;
+  @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) scheduledDate!: string;
+  @ApiProperty() @Transform(trimText) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(1, 500) description!: string;
+  @ApiPropertyOptional({ enum: ['TO_CONFIRM', 'PICKUP', 'SHIPPING'], default: 'TO_CONFIRM' }) @IsOptional() @IsIn(['TO_CONFIRM', 'PICKUP', 'SHIPPING']) deliveryMethod: 'TO_CONFIRM' | 'PICKUP' | 'SHIPPING' = 'TO_CONFIRM';
+  @ApiPropertyOptional({ enum: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED], default: OrderStatus.PENDING_CONFIRMATION }) @IsOptional() @IsIn([OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]) status: 'PENDING_CONFIRMATION' | 'CONFIRMED' = OrderStatus.PENDING_CONFIRMATION;
+  @ApiPropertyOptional() @ValidateIf(optionalValue) @Transform(trimText) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(0, 1000) notes?: string;
+}
+
 
 export class CreateOrderQuoteItemDto {
   @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(1, 160) productName!: string;

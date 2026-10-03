@@ -4,7 +4,7 @@ import { AdminRole, OrderStatus } from '@prisma/client';
 import { Roles } from '../../common/decorators/auth.decorators';
 import { AuthenticatedRequest } from '../auth/auth.types';
 import { OrderService } from './order.service';
-import { CreateOrderQuoteDto, UpdateOrderStatusDto, UpdateQuoteStatusDto } from './dto/order.dto';
+import { CreateManualOrderDto, CreateOrderQuoteDto, OrderCalendarQueryDto, UpdateOrderScheduleDto, UpdateOrderStatusDto, UpdateQuoteStatusDto } from './dto/order.dto';
 
 @ApiTags('Pedidos administrativos')
 @ApiCookieAuth('session')
@@ -20,6 +20,13 @@ export class AdminOrdersController {
     if (!/^[1-9][0-9]{0,5}$/.test(page)) throw new BadRequestException('Página inválida.');
     return this.orders.list(Number(page));
   }
+  @Get('calendar')
+  calendar(@Query() query: OrderCalendarQueryDto) { return this.orders.calendar(query.from, query.to); }
+  @Post('manual')
+  @ApiOperation({ summary: 'Registrar en la agenda un pedido recibido fuera de la tienda online' })
+  createManual(@Body() dto: CreateManualOrderDto, @Req() request: AuthenticatedRequest) {
+    return this.orders.createManual(dto, request.adminSession.id);
+  }
   @Get(':id')
   get(@Param('id') id: string) { return this.orders.adminGet(id); }
   @Patch(':id/quotes/:quoteId/status')
@@ -30,6 +37,11 @@ export class AdminOrdersController {
   @ApiOperation({ summary: 'Cambiar el estado de un pedido y registrar el historial del cambio' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto, @Req() request: AuthenticatedRequest) {
     return this.orders.updateStatus(id, dto.status, request.adminSession.id, dto.reason);
+  }
+  @Patch(':id/schedule')
+  @ApiOperation({ summary: 'Reprogramar la fecha de entrega de un pedido' })
+  updateSchedule(@Param('id') id: string, @Body() dto: UpdateOrderScheduleDto, @Req() request: AuthenticatedRequest) {
+    return this.orders.updateSchedule(id, dto.scheduledDate, request.adminSession.id);
   }
 
   @Post(':id/quotes')

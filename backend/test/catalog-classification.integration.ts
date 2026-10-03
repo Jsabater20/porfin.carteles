@@ -33,7 +33,7 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal(result2.status, 201); sign = result2.body; assert.equal(sign.category, 'CARTEL');
   });
   await t.test('PATCH conserva IDs, relaciones e información histórica', async () => {
-    const order = await ctx.prisma.order.create({ data: { reference: 'CLASSIFICATION-HISTORY', customerName: 'Cliente de prueba', customerPhone: '', requestedDate: new Date('2026-12-01'), deliveryMethod: 'pickup', knownSubtotalCents: 0, items: { create: { productId: sign.id, productName: 'Nombre histórico', variantSnapshot: { id: sign.variants[0].id }, customizationSnapshot: {}, pricingMode: 'QUOTE', quantity: 1 } } }, include: { items: true } });
+    const order = await ctx.prisma.order.create({ data: { reference: 'CLASSIFICATION-HISTORY', customerName: 'Cliente de prueba', customerPhone: '', requestedDate: new Date('2026-12-01'), scheduledDate: new Date('2026-12-01'), deliveryMethod: 'pickup', knownSubtotalCents: 0, items: { create: { productId: sign.id, productName: 'Nombre histórico', variantSnapshot: { id: sign.variants[0].id }, customizationSnapshot: {}, pricingMode: 'QUOTE', quantity: 1 } } }, include: { items: true } });
     const result = await call('/admin/products/' + sign.id, 'PATCH', { name: 'Nombre nuevo' });
     assert.equal(result.status, 200); assert.equal(result.body.category, 'CARTEL'); assert.equal(result.body.variants[0].id, sign.variants[0].id);
     assert.deepEqual(result.body.categories, sign.categories); assert.deepEqual(result.body.careers, sign.careers);

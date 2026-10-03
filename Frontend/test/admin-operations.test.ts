@@ -50,7 +50,7 @@ test('publicación exige título y FAQ con preguntas completas; listas y claves 
  assert.deepEqual(validateContent({...valid,body:'<script>alert(1)</script>'}),[],'El texto plano se conserva; React lo escapa.');
 });
 test('rutas privadas de operación aceptan solo sus métodos exactos',()=>{
- for(const [path,method] of [['admin/orders','GET'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
+ for(const [path,method] of [['admin/orders','GET'],['admin/orders/calendar','GET'],['admin/orders/manual','POST'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/schedule','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
  for(const [path,method] of [['admin/orders','POST'],['admin/payments','DELETE'],['admin/admins/'+id,'DELETE'],['admin/content/home','PATCH'],['admin/admins/'+id+'/password','PATCH']])assert.equal(routePolicy(path,method),undefined);
 });
 test('pasarela de pagos preserva clave y CSRF, filtra sesión invitada y bloquea origen ajeno',async()=>{

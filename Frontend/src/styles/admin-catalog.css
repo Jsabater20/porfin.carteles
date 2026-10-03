@@ -44,6 +44,10 @@
 .admin-product-card-actions a { display:flex; align-items:center; justify-content:space-between; gap:.5rem; min-width:0; color:var(--ink); font-size:.82rem; font-weight:700; }
 .admin-product-card-actions a:hover { color:var(--accent); }
 .admin-product-card-actions a span { color:var(--accent); font-size:1rem; }
+.admin-product-card-controls { margin-top:auto; }
+.admin-product-visibility { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding-top:.85rem; }
+.admin-product-visibility .text-button { min-height:40px; }
+.admin-card-message { margin:.65rem 0 0; color:var(--error); font-size:.78rem; }
 .admin-table-wrap { max-width:100%; overflow-x:auto; }
 .admin-table { border-collapse:collapse; width:100%; background:var(--paper); }
 .admin-table caption { text-align:left; padding-block:1rem; font-weight:bold; }
