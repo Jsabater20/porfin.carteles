@@ -29,8 +29,7 @@
       "name": "Cartel genérico",
       "type": "GENERIC",
       "categories": [
-        "carteles",
-        "recibidas"
+        "carteles"
       ],
       "sourcePage": 2,
       "description": "Elegí un diseño genérico y personalizá el texto, el color de fondo y el color de la tipografía.",
@@ -59,30 +58,6 @@
           },
           "photoCount": 0,
           "active": true
-        },
-        {
-          "key": "generico-rectangular",
-          "name": "Genérico · Rectangular · 60 × 100 cm · con 3 imágenes",
-          "pricingMode": "QUOTE",
-          "priceCents": null,
-          "attributes": {
-            "base": "generico",
-            "medidas": "60 × 100 cm"
-          },
-          "photoCount": 3,
-          "active": true
-        },
-        {
-          "key": "generico-circular",
-          "name": "Genérico · Circular · 70 cm de diámetro · con 3 imágenes",
-          "pricingMode": "QUOTE",
-          "priceCents": null,
-          "attributes": {
-            "base": "generico",
-            "medidas": "70 cm de diámetro"
-          },
-          "photoCount": 3,
-          "active": true
         }
       ],
       "fields": [
@@ -108,22 +83,6 @@
           "type": "SHORT_TEXT",
           "required": false,
           "maxLength": 200,
-          "options": []
-        },
-        {
-          "key": "carrera",
-          "label": "Temática (opcional)",
-          "type": "SHORT_TEXT",
-          "required": false,
-          "maxLength": 200,
-          "options": []
-        },
-        {
-          "key": "imagenes",
-          "label": "Indicaciones para las imágenes (opción con 3 imágenes)",
-          "type": "LONG_TEXT",
-          "required": false,
-          "maxLength": 2000,
           "options": []
         }
       ],

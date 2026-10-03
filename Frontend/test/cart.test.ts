@@ -16,7 +16,8 @@ const field = (patch: Partial<PersonalizationField> = {}): PersonalizationField 
 });
 const line = (lineId = 'line-1', name = 'Ana'): CartLine => ({
   lineId, productId: 'product-1', variantId: 'variant-1', quantity: 1, answers: [{ fieldKey: 'name', value: name }],
-  display: { slug: 'cartel', name: 'Cartel', variantName: 'Clásico', unitEstimateCents: 1000, photoCount: 3, labels: [{ fieldKey: 'name', label: 'Nombre' }] },
+  display: { slug: 'cartel', name: 'Cartel', variantName: 'Clásico', unitEstimateCents: 1000, photoCount: 3, category: 'CARTEL', displayType: 'PREDEFINED_THREE_IMAGES',
+    occasions: [{ id: 'occasion-1', name: 'Recibida', slug: 'recibida' }], careers: [{ id: 'career-1', name: 'Medicina', slug: 'medicina' }], labels: [{ fieldKey: 'name', label: 'Nombre' }] },
 });
 function setup() {
   const memory = new Map<string, string>();
@@ -75,6 +76,7 @@ test('carrito conserva personalizaciones distintas y persiste solo datos de comp
   assert.ok(saved.expiresAt > Date.now() + CART_TTL - 1000);
   assert.deepEqual(Object.keys(saved).sort(), ['deliveryMethod', 'expiresAt', 'lines', 'version']);
   assert.equal(restoreCart(memory.get(CART_KEY)!).data.lines[1].answers[0].value, 'Sol');
+  assert.equal(restoreCart(memory.get(CART_KEY)!).data.lines[0].display.displayType, 'PREDEFINED_THREE_IMAGES');
 });
 
 test('edición conserva lineId; cantidades, renglones y duplicados se limitan', (t) => {

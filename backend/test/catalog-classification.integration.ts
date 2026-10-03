@@ -26,7 +26,10 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     const result = await call('/admin/products', 'POST', { ...base, slug: 'props', type: 'CUSTOM', categoryIds: [family.id] });
     assert.equal(result.status, 201, JSON.stringify(result.body)); prop = result.body;
     assert.equal(prop.category, 'PROP'); assert.equal(family.isOccasion, false); assert.equal(occasion.isOccasion, true);
-    const result2 = await call('/admin/products', 'POST', { ...base, slug: 'predeterminado', type: 'PREDEFINED', categoryIds: [cartelFamily.id, occasion.id], careerIds: [career.id] });
+    const result2 = await call('/admin/products', 'POST', { ...base, slug: 'predeterminado', type: 'PREDEFINED', categoryIds: [cartelFamily.id, occasion.id], careerIds: [career.id], variants: [
+      { key: 'base', name: 'Base', pricingMode: 'QUOTE', priceCents: null, photoCount: 0 },
+      { key: 'tres-imagenes', name: 'Tres imágenes', pricingMode: 'QUOTE', priceCents: null, photoCount: 3 },
+    ] });
     assert.equal(result2.status, 201); sign = result2.body; assert.equal(sign.category, 'CARTEL');
   });
   await t.test('PATCH conserva IDs, relaciones e información histórica', async () => {
@@ -59,6 +62,7 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal((await call('/products?category=PROP&type=PREDEFINED&occasion=missing&career=missing')).body.total, 2);
     assert.equal((await call('/products?category=CARTEL&type=GENERIC&occasion=' + occasion.id + '&career=missing')).body.total, 1);
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
+    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
     assert.equal((await call('/products?type=CUSTOM')).body.total, 2);
     assert.equal((await call('/products?categoryId=' + family.id)).body.total, 1);
     assert.equal((await call('/products?type=PREDEFINED&careerId=' + career.id)).body.items[0].id, sign.id);
@@ -71,6 +75,7 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.deepEqual((await call('/occasions')).body.items.map((c: any) => c.id), [occasion.id]);
     assert.equal((await call('/categories')).body.total, 3);
     assert.equal((await call('/careers?category=CARTEL&type=PREDEFINED&occasion=' + occasion.id)).body.total, 1);
+    assert.equal((await call('/careers?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=' + occasion.id)).body.total, 1);
     assert.equal((await call('/careers?category=CARTEL&type=GENERIC')).body.total, 0);
     await call('/admin/products/' + sign.id, 'PATCH', { status: 'HIDDEN' });
     assert.equal((await call('/careers?category=CARTEL&type=PREDEFINED')).body.total, 0);

@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/format/money';
 import { useCart } from '@/features/cart/provider';
 import type { CartLine } from '@/features/cart/model';
 import { estimateUnit, validateAnswers } from './validate';
+import { categoryLabels, displayTypeLabels, getDisplayType } from '@/features/catalog/classification';
 
 function InputField({ field, value, error, onChange }: { field: PersonalizationField; value: string; error?: string; onChange: (value: string) => void }) {
   const id = 'personalization-' + field.key;
@@ -42,17 +43,18 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   const [message, setMessage] = useState('');
   const [added, setAdded] = useState(false);
   const variant = product.variants.find((item) => item.id === variantId);
-  const validation = validateAnswers(product.fields, values);
+  const visibleFields = product.fields.filter(field => field.key !== 'imagenes' || Boolean(variant?.photoCount));
+  const validation = validateAnswers(visibleFields, values);
   const estimate = variant ? estimateUnit(product, variant, validation.answers) : null;
   const groups = new Map<string, { label: string; fields: PersonalizationField[] }>();
-  for (const field of product.fields) {
+  for (const field of visibleFields) {
     const key = field.componentKey ?? '';
     if (!groups.has(key)) groups.set(key, { label: key ? product.components.find((item) => item.key === key)?.name ?? 'Personalización' : 'Datos del producto', fields: [] });
     groups.get(key)!.fields.push(field);
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = validateAnswers(product.fields, values);
+    const result = validateAnswers(visibleFields, values);
     const count = Number(quantity);
     const invalidQuantity = !quantity.trim() || !Number.isInteger(count) || count < 1 || count > 100;
     setVariantError(variant ? '' : 'Elegí una variante disponible.');
@@ -65,6 +67,7 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
     const line: CartLine = {
       lineId: editing?.lineId ?? crypto.randomUUID(), productId: product.id, variantId: variant.id, quantity: count, answers: result.answers,
       display: { slug: product.slug, name: product.name, variantName: variant.name, unitEstimateCents: estimate.unit, photoCount: variant.photoCount,
+        category: product.category, displayType: getDisplayType(product.category, product.type, variant.photoCount), occasions: product.occasions ?? [], careers: product.careers,
         labels: result.answers.map((answer) => {
           const field = product.fields.find((item) => item.key === answer.fieldKey)!;
           const component = product.components.find((item) => item.key === field.componentKey);
@@ -86,6 +89,7 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
       </select>{variantError && <p id="variant-error" className="field-error">{variantError}</p>}
     </div>
     {variant && <div className="variant-detail" aria-live="polite">
+      {product.category && <p className="muted form-note"><strong>Categoría:</strong> {categoryLabels[product.category]}{product.category === 'CARTEL' ? ` · Tipo: ${displayTypeLabels[getDisplayType(product.category, product.type, variant.photoCount)]}` : ''}</p>}
       <p className="variant-price">{estimate?.unit === null ? 'A cotizar' : estimate ? formatMoney(estimate.unit) : 'A confirmar'}</p>
       <p className="muted form-note">Importe orientativo por unidad{estimate && estimate.additional > 0 ? ` · adicionales elegidos: ${formatMoney(estimate.additional)}` : ''}. Se vuelve a validar en el carrito.</p>
       {Object.keys(variant.attributes).length > 0 && <dl className="attributes">{Object.entries(variant.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>}

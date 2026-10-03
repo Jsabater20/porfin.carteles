@@ -11,6 +11,9 @@ test('filtros nuevos respetan sus padres y limpian página', () => {
   assert.equal(generic.occasion, 'recibida'); assert.equal(generic.career, ''); assert.equal(generic.page, 1);
   assert.equal(storeHref(normalizeStoreFilters({ ...selected, type: 'CUSTOM' })), '/catalogo?category=CARTEL&type=CUSTOM');
   assert.equal(storeHref(parseStoreFilters({ category: '', type: 'PREDEFINED', occasion: 'x', page: '8' })), '/catalogo');
+  const photos = parseStoreFilters({ category: 'CARTEL', type: 'PREDEFINED_THREE_IMAGES', occasion: 'recibida', career: 'arquitectura' });
+  assert.equal(hasOccasion(photos), true); assert.equal(hasCareer(photos), true);
+  assert.equal(storeHref(photos), '/catalogo?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=recibida&career=arquitectura');
 });
 test('URLs nuevas omiten sort y conservan filtros en paginación', () => {
   const filters = parseStoreFilters({ category: 'CARTEL', type: 'PREDEFINED', occasion: 'o', career: 'c', q: '  fiesta & más  ', page: '2', sort: 'name-desc' });

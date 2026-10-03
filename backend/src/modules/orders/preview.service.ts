@@ -7,6 +7,7 @@ import { PricingService } from '../pricing/pricing.service';
 import { PREVIEW_TTL_MS } from '../guest-sessions/guest.constants';
 import { DeliveryMethod, PreviewDto, PreviewLineDto, PreviewLineResultDto, PreviewResponseDto } from './dto/preview.dto';
 import { validatePersonalization } from './personalization';
+import { catalogDisplayType } from '../../common/catalog-classification';
 
 const SCOPE = 'ORDER_PREVIEW';
 
@@ -86,7 +87,9 @@ export class PreviewService {
     const product = await tx.product.findFirst({
       where: { id: line.productId, status: 'PUBLISHED' },
       select: {
-        slug: true, type: true,
+        slug: true, type: true, category: true,
+        categories: { where: { category: { isOccasion: true } }, select: { category: { select: { id: true, name: true, slug: true } } } },
+        careers: { select: { career: { select: { id: true, name: true, slug: true } } } },
         variants: { where: { id: line.variantId, active: true }, select: { photoCount: true, attributes: true } },
         fields: { orderBy: { position: 'asc' }, include: { options: true } },
         components: { orderBy: { position: 'asc' }, select: { key: true, name: true, quantity: true, position: true } },
@@ -100,7 +103,14 @@ export class PreviewService {
       productId: line.productId, variantId: line.variantId, quantity: line.quantity,
       selections: answers.filter(answer => answer.type === 'SELECT').map(answer => ({ fieldKey: answer.fieldKey, optionKey: answer.value as string })),
     }, tx);
-    return { ...priced, variantAttributes: variant.attributes as Prisma.JsonObject, lineId: line.lineId, slug: product.slug, type: product.type, answers, components: product.components, photoCountPerUnit: variant.photoCount, photoCountTotal: variant.photoCount * line.quantity, photoDelivery: variant.photoCount ? 'WHATSAPP' : 'NONE' };
+    return {
+      ...priced, variantAttributes: variant.attributes as Prisma.JsonObject, lineId: line.lineId, slug: product.slug,
+      type: product.type, category: product.category, displayType: catalogDisplayType(product.category, product.type, variant.photoCount),
+      occasions: product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) ? product.categories.map(item => item.category) : [],
+      careers: product.category === 'CARTEL' && product.type === 'PREDEFINED' ? product.careers.map(item => item.career) : [],
+      answers, components: product.components, photoCountPerUnit: variant.photoCount,
+      photoCountTotal: variant.photoCount * line.quantity, photoDelivery: variant.photoCount ? 'WHATSAPP' : 'NONE',
+    };
   }
 
   async get(id: string, guestSessionId: string) {

@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsArray, IsEnum, IsInt, IsString, Length, Matches, Max, MaxLength, Min, ValidateBy, ValidateNested } from 'class-validator';
-import { PersonalizationType, PricingMode, ProductType } from '@prisma/client';
+import { PersonalizationType, PricingMode, ProductKind, ProductType } from '@prisma/client';
+import { CatalogDisplayType } from '../../../common/catalog-classification';
 
 export enum DeliveryMethod { UNDECIDED = 'UNDECIDED', PICKUP = 'PICKUP', SHIPPING = 'SHIPPING' }
 
@@ -51,6 +52,11 @@ export class PreviewComponentDto {
   @ApiProperty() quantity!: number;
   @ApiProperty() position!: number;
 }
+export class PreviewTaxonomyDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() slug!: string;
+}
 export class PreviewLineResultDto {
   @ApiProperty({ type: Object }) variantAttributes!: Record<string, any>;
   @ApiProperty() lineId!: string;
@@ -58,6 +64,10 @@ export class PreviewLineResultDto {
   @ApiProperty() productName!: string;
   @ApiProperty() slug!: string;
   @ApiProperty({ enum: ProductType }) type!: ProductType;
+  @ApiProperty({ enum: ProductKind, nullable: true }) category!: ProductKind | null;
+  @ApiProperty({ enum: CatalogDisplayType }) displayType!: CatalogDisplayType;
+  @ApiProperty({ type: [PreviewTaxonomyDto] }) occasions!: PreviewTaxonomyDto[];
+  @ApiProperty({ type: [PreviewTaxonomyDto] }) careers!: PreviewTaxonomyDto[];
   @ApiProperty() variantId!: string;
   @ApiProperty() variantName!: string;
   @ApiProperty() quantity!: number;

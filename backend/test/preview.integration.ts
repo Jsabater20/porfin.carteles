@@ -22,8 +22,11 @@ test('Etapa 6: invitados y preview con PostgreSQL real', { timeout: 180000 }, as
   const guestToken = guest.cookie.split('=')[1];
   const session = await ctx.prisma.guestSession.findUniqueOrThrow({ where: { tokenHash: tokenHash(guestToken) } });
   const otherSession = await ctx.prisma.guestSession.findUniqueOrThrow({ where: { tokenHash: tokenHash(other.cookie.split('=')[1]) } });
+  const occasion = await ctx.prisma.category.create({ data: { name: 'Recibida preview', slug: 'recibida-preview', isOccasion: true } });
+  const career = await ctx.prisma.career.create({ data: { name: 'Medicina preview', slug: 'medicina-preview' } });
   const product = await ctx.prisma.product.create({
-    data: { name: 'Cartel', slug: 'cartel-preview', description: 'Cartel con fotos', type: 'PREDEFINED', status: 'PUBLISHED',
+    data: { name: 'Cartel', slug: 'cartel-preview', description: 'Cartel con fotos', category: 'CARTEL', type: 'PREDEFINED', status: 'PUBLISHED',
+      categories: { create: { categoryId: occasion.id } }, careers: { create: { careerId: career.id } },
       variants: { create: [
         { key: 'base', name: 'Tres fotos', pricingMode: 'FIXED', priceCents: 10000, attributes: {}, photoCount: 3, position: 0 },
         { key: 'inactiva', name: 'Inactiva', pricingMode: 'FIXED', priceCents: 1, attributes: {}, active: false, position: 1 },
@@ -85,6 +88,9 @@ test('Etapa 6: invitados y preview con PostgreSQL real', { timeout: 180000 }, as
     assert.deepEqual(saved.summary.shipping, { method: 'SHIPPING', status: 'TO_CONFIRM', amountCents: null });
     assert.equal(saved.items[0].unitPriceCents, 10500); assert.equal(saved.items[1].subtotalCents, null);
     assert.equal(saved.items[0].photoCountPerUnit, 3); assert.equal(saved.items[0].photoCountTotal, 6); assert.equal(saved.items[0].photoDelivery, 'WHATSAPP');
+    assert.equal(saved.items[0].category, 'CARTEL'); assert.equal(saved.items[0].displayType, 'PREDEFINED_THREE_IMAGES');
+    assert.deepEqual(saved.items[0].occasions, [{ id: occasion.id, name: occasion.name, slug: occasion.slug }]);
+    assert.deepEqual(saved.items[0].careers, [{ id: career.id, name: career.name, slug: career.slug }]);
     assert.equal(saved.items[0].answers[0].value, 'Ana'); assert.equal(saved.items[0].answers[1].value, 0);
     assert.equal(saved.items[0].answers[2].displayValue, 'Dorado');
     assert.ok(new Date(saved.expiresAt).getTime() <= Date.now() + 15 * 60000);

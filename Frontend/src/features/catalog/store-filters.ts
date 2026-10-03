@@ -2,15 +2,15 @@
 import type { Taxonomy } from '../../lib/contracts/catalog';
 
 export const categories = { CARTEL: 'Carteles', PROP: 'Props', COMBO: 'Combos' } as const;
-export const signTypes = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', CUSTOM: 'Personalizado' } as const;
+export const signTypes = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', PREDEFINED_THREE_IMAGES: 'Predeterminado con 3 imágenes a elección', CUSTOM: 'Personalizado' } as const;
 export interface StoreFilters {
   q: string; category: keyof typeof categories | ''; type: keyof typeof signTypes | '';
   occasion: string; career: string; page: number; legacy?: CatalogFilters;
 }
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? '';
 const clean = (value: string, max: number) => value.toWellFormed().replace(/\u0000/g, '').trim().slice(0, max).toWellFormed();
-export const hasOccasion = (f: StoreFilters) => f.category === 'CARTEL' && (f.type === 'GENERIC' || f.type === 'PREDEFINED');
-export const hasCareer = (f: StoreFilters) => f.category === 'CARTEL' && f.type === 'PREDEFINED';
+export const hasOccasion = (f: StoreFilters) => f.category === 'CARTEL' && (f.type === 'GENERIC' || f.type === 'PREDEFINED' || f.type === 'PREDEFINED_THREE_IMAGES');
+export const hasCareer = (f: StoreFilters) => f.category === 'CARTEL' && (f.type === 'PREDEFINED' || f.type === 'PREDEFINED_THREE_IMAGES');
 
 export function normalizeStoreFilters(filters: StoreFilters): StoreFilters {
   const next = { ...filters };

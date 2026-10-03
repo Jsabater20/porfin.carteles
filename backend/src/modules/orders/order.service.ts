@@ -12,6 +12,8 @@ import { DeliveryMethod, PreviewDto, PreviewResponseDto } from './dto/preview.dt
 import { PreviewService } from './preview.service';
 
 const SCOPE = 'ORDER_CREATE';
+const CATEGORY_LABELS = { CARTEL: 'Cartel', PROP: 'Prop', COMBO: 'Combo' } as const;
+const DISPLAY_TYPE_LABELS = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', PREDEFINED_THREE_IMAGES: 'Predeterminado con 3 imágenes a elección', CUSTOM: 'Personalizado', COMBO: 'Combo' } as const;
 const detail = { items: true, events: { orderBy: { createdAt: 'asc' as const } }, quotes: { orderBy: { version: 'asc' as const }, include: { items: true } }, payments: { orderBy: { occurredAt: 'asc' as const } } } satisfies Prisma.OrderInclude;
 type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: true } }>;
 
@@ -64,6 +66,10 @@ export class OrderService {
             reference,
             ...currentItems.flatMap(item => [
               item.quantity + ' × ' + item.productName + ' (' + item.variantName + '): ' + (item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)),
+              '  Categoría: ' + (item.category ? CATEGORY_LABELS[item.category] : 'Sin clasificar'),
+              '  Tipo: ' + DISPLAY_TYPE_LABELS[item.displayType],
+              ...item.occasions.map(occasion => '  Ocasión: ' + occasion.name),
+              ...item.careers.map(career => '  Carrera: ' + career.name),
               ...Object.entries(item.variantAttributes).map(([label, value]) => '  ' + label + ': ' + value),
               ...item.components.map(component => '  Incluye: ' + component.quantity + ' × ' + component.name + ' por unidad'),
               ...item.answers.map(answer => {
@@ -97,7 +103,7 @@ export class OrderService {
             whatsappMessage, whatsappUrl: settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}` : null,
             items: { create: currentItems.map(item => ({
               productId: item.productId, productName: item.productName,
-              variantSnapshot: { id: item.variantId, name: item.variantName, attributes: item.variantAttributes, photoCount: item.photoCountPerUnit, pricingMode: item.pricingMode, baseUnitCents: item.baseUnitCents, unitPriceCents: item.unitPriceCents },
+              variantSnapshot: { id: item.variantId, name: item.variantName, attributes: item.variantAttributes, photoCount: item.photoCountPerUnit, pricingMode: item.pricingMode, baseUnitCents: item.baseUnitCents, unitPriceCents: item.unitPriceCents, category: item.category, displayType: item.displayType, occasions: item.occasions, careers: item.careers } as unknown as Prisma.InputJsonObject,
               customizationSnapshot: { answers: item.answers, selectedOptions: item.selectedOptions } as unknown as Prisma.InputJsonObject,
               componentsSnapshot: item.components as unknown as Prisma.InputJsonArray,
               pricingMode: item.pricingMode, unitPriceCents: item.unitPriceCents, quantity: item.quantity, subtotalCents: item.subtotalCents,

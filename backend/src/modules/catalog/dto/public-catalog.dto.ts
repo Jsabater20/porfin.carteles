@@ -2,6 +2,7 @@ import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { PersonalizationType, PricingMode, ProductKind, ProductType } from '@prisma/client';
+import { CatalogDisplayType } from '../../../common/catalog-classification';
 
 const optional = (_object: unknown, value: unknown) => value !== undefined;
 export enum PublicCatalogSort { NEWEST = 'newest', NAME_ASC = 'name-asc', NAME_DESC = 'name-desc' }
@@ -23,14 +24,14 @@ export class PublicCatalogQuery extends PublicPageQuery {
   @ApiPropertyOptional()
   @ValidateIf(optional) @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsString() @MaxLength(120) q?: string;
-  @ApiPropertyOptional({ enum: ProductType }) @ValidateIf(optional) @IsEnum(ProductType) type?: ProductType;
+  @ApiPropertyOptional({ enum: CatalogDisplayType }) @ValidateIf(optional) @IsEnum(CatalogDisplayType) type?: CatalogDisplayType;
   @ApiPropertyOptional({ deprecated: true, description: 'Filtro anterior por ID de categoría; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) categoryId?: string;
   @ApiPropertyOptional({ deprecated: true, description: 'Alias anterior de career; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) careerId?: string;
   @ApiPropertyOptional({ enum: PublicCatalogSort, default: PublicCatalogSort.NEWEST }) @IsEnum(PublicCatalogSort) sort = PublicCatalogSort.NEWEST;
 }
 export class PublicTaxonomyQuery extends PublicPageQuery {
   @ApiPropertyOptional({ enum: ProductKind }) @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
-  @ApiPropertyOptional({ enum: ProductType }) @ValidateIf(optional) @IsEnum(ProductType) type?: ProductType;
+  @ApiPropertyOptional({ enum: CatalogDisplayType }) @ValidateIf(optional) @IsEnum(CatalogDisplayType) type?: CatalogDisplayType;
   @ApiPropertyOptional({ description: 'ID de la ocasión seleccionada.' })
   @ValidateIf(optional) @IsString() @Length(1, 100) occasion?: string;
 }

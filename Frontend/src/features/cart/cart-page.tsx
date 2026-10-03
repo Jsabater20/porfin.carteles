@@ -7,15 +7,26 @@ import { formatMoney } from '@/lib/format/money';
 import type { DeliveryMethod } from '@/lib/contracts/preview';
 import type { CartLine } from './model';
 import { useCart } from './provider';
+import { categoryLabels, displayTypeLabels } from '@/features/catalog/classification';
 
 function CartRow({ line, index }: { line: CartLine; index: number }) {
   const { store, preview } = useCart();
   const [error, setError] = useState('');
   const messages = preview.lineErrors[line.lineId] ?? [];
   const validated = preview.status === 'ready' ? preview.preview?.items.find((item) => item.lineId === line.lineId) : undefined;
+  const category = validated?.category ?? line.display.category;
+  const displayType = validated?.displayType ?? line.display.displayType;
+  const occasions = validated?.occasions ?? line.display.occasions ?? [];
+  const careers = validated?.careers ?? line.display.careers ?? [];
   return <article className="cart-row" aria-labelledby={'cart-title-' + line.lineId}>
     <div className="cart-row-heading"><div><p className="eyebrow">Producto {index + 1}</p><h2 id={'cart-title-' + line.lineId}><Link href={`/productos/${line.display.slug}`}>{validated?.productName ?? line.display.name}</Link></h2>
       <p className="muted">{validated?.variantName ?? line.display.variantName}</p></div><button type="button" className="text-button" onClick={() => store.remove(line.lineId)} aria-label={'Quitar ' + line.display.name + ', producto ' + (index + 1)}>Quitar</button></div>
+    {(category || displayType || occasions.length > 0 || careers.length > 0) && <dl className="cart-answers">
+      {category && <div><dt>Categoría</dt><dd>{categoryLabels[category]}</dd></div>}
+      {displayType && <div><dt>{category === 'CARTEL' ? 'Tipo de cartel' : 'Tipo'}</dt><dd>{displayTypeLabels[displayType]}</dd></div>}
+      {occasions.length > 0 && <div><dt>Ocasión</dt><dd>{occasions.map(item => item.name).join(', ')}</dd></div>}
+      {careers.length > 0 && <div><dt>Carrera</dt><dd>{careers.map(item => item.name).join(', ')}</dd></div>}
+    </dl>}
     {line.answers.length > 0 && <dl className="cart-answers">{line.answers.map((answer) => {
       const serverAnswer = validated?.answers.find((item) => item.fieldKey === answer.fieldKey);
       const component = validated?.components.find((item) => item.key === serverAnswer?.componentKey);

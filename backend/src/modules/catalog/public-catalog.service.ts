@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { PublicCatalogQuery, PublicCatalogSort, PublicTaxonomyQuery } from './dto/public-catalog.dto';
+import { CatalogDisplayType } from '../../common/catalog-classification';
 
 // Proyección explícita: no publicar IDs de cargas, assets, referencias a
 // borradores de combos ni futuros campos privados agregados al modelo.
@@ -29,6 +30,16 @@ const detail = {
 export class PublicCatalogService {
   constructor(private readonly prisma: PrismaService, private readonly pricing: PricingService) {}
 
+  private typeFilter(type: CatalogDisplayType): Prisma.ProductWhereInput {
+    if (type === CatalogDisplayType.PREDEFINED_THREE_IMAGES) {
+      return { type: 'PREDEFINED', variants: { some: { active: true, photoCount: 3 } } };
+    }
+    if (type === CatalogDisplayType.PREDEFINED) {
+      return { type: 'PREDEFINED', variants: { some: { active: true, photoCount: { not: 3 } } } };
+    }
+    return { type };
+  }
+
   private filters(query: PublicCatalogQuery): Prisma.ProductWhereInput {
     const and: Prisma.ProductWhereInput[] = [visible];
     if (query.q) and.push({ OR: [
@@ -38,7 +49,7 @@ export class PublicCatalogService {
     const canonical = query.category !== undefined || query.occasion !== undefined || query.career !== undefined;
     if (!canonical) {
       // Existing links retain their original meaning, including type=COMBO.
-      if (query.type) and.push({ type: query.type });
+      if (query.type) and.push(this.typeFilter(query.type));
       if (query.categoryId) and.push({ categories: { some: { categoryId: query.categoryId } } });
       if (query.careerId) and.push({ careers: { some: { careerId: query.careerId } } });
       return { AND: and };
@@ -46,9 +57,9 @@ export class PublicCatalogService {
     if (query.category) and.push({ category: query.category });
     // Parent filters determine which children have an effect.
     if (query.category !== 'CARTEL') return { AND: and };
-    const type = query.type === 'COMBO' ? undefined : query.type;
-    if (type) and.push({ type });
-    if (type === 'GENERIC' || type === 'PREDEFINED') {
+    const type = query.type === CatalogDisplayType.COMBO ? undefined : query.type;
+    if (type) and.push(this.typeFilter(type));
+    if (type === CatalogDisplayType.GENERIC || type === CatalogDisplayType.PREDEFINED || type === CatalogDisplayType.PREDEFINED_THREE_IMAGES) {
       if (query.occasion) {
         and.push({ categories: { some: { categoryId: query.occasion, category: { isOccasion: true } } } });
       } else if (query.categoryId) {
@@ -56,7 +67,7 @@ export class PublicCatalogService {
         and.push({ categories: { some: { categoryId: query.categoryId } } });
       }
     }
-    if (type === 'PREDEFINED' && (query.career ?? query.careerId)) {
+    if ((type === CatalogDisplayType.PREDEFINED || type === CatalogDisplayType.PREDEFINED_THREE_IMAGES) && (query.career ?? query.careerId)) {
       and.push({ careers: { some: { careerId: query.career ?? query.careerId } } });
     }
     return { AND: and };
@@ -90,7 +101,7 @@ export class PublicCatalogService {
     const product = await this.prisma.$transaction(tx => tx.product.findFirst({ where: { ...visible, slug }, select: detail }), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
     if (!product) {
       if (slug === 'cartel-tres-imagenes' && await this.prisma.applicationMetadata.findUnique({ where: { key: 'catalog:three-images:v1' } })) {
-        throw new GoneException('Las opciones de tres imágenes ahora están en cartel-generico y cartel-predeterminado. Abrí /productos/cartel-tres-imagenes para elegir.');
+        throw new GoneException('Las opciones de tres imágenes ahora están dentro de cartel-predeterminado. Abrí /productos/cartel-tres-imagenes para elegir.');
       }
       throw new NotFoundException('Producto no encontrado.');
     }
@@ -102,11 +113,12 @@ export class PublicCatalogService {
     let product: Prisma.ProductWhereInput = visible;
     if (kind !== 'category' && scoped) {
       const category = query.category ?? 'CARTEL';
-      const type = query.type ?? (kind === 'career' ? 'PREDEFINED' : undefined);
-      if (category !== 'CARTEL' || (kind === 'career' && type !== 'PREDEFINED') || type === 'CUSTOM' || type === 'COMBO') {
+      const type = query.type ?? (kind === 'career' ? CatalogDisplayType.PREDEFINED : undefined);
+      const predefined = type === CatalogDisplayType.PREDEFINED || type === CatalogDisplayType.PREDEFINED_THREE_IMAGES;
+      if (category !== 'CARTEL' || (kind === 'career' && !predefined) || type === CatalogDisplayType.CUSTOM || type === CatalogDisplayType.COMBO) {
         return { items: [], total: 0, page: query.page, limit: query.limit };
       }
-      product = { AND: [visible, { category: 'CARTEL', type: type ?? { in: ['GENERIC', 'PREDEFINED'] } },
+      product = { AND: [visible, { category: 'CARTEL' }, type ? this.typeFilter(type) : { type: { in: ['GENERIC', 'PREDEFINED'] } },
         ...(kind === 'career' && query.occasion ? [{ categories: { some: { categoryId: query.occasion, category: { isOccasion: true } } } }] : []),
       ] };
     }

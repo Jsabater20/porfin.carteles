@@ -1,10 +1,12 @@
 import type { Answer, DeliveryMethod, PreviewInput } from '../../lib/contracts/preview';
+import type { CartClassification, CatalogDisplayType, ProductCategory } from '../catalog/classification';
+import type { Taxonomy } from '../../lib/contracts/catalog';
 
 export const CART_KEY = 'porfin.cart.v1';
 export const CART_TTL = 7 * 24 * 60 * 60 * 1000;
 export interface CartLine {
   lineId: string; productId: string; variantId: string; quantity: number; answers: Answer[];
-  display: {
+  display: CartClassification & {
     slug: string; name: string; variantName: string; unitEstimateCents: number | null;
     photoCount: number; labels: { fieldKey: string; label: string; optionLabel?: string }[];
   };
@@ -22,6 +24,16 @@ const object = (value: unknown): value is Record<string, unknown> => typeof valu
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && [...value].length <= max && value.isWellFormed() && !value.includes(String.fromCharCode(0));
 const id = (value: unknown): value is string => text(value, 100) && value.length > 0;
 const amount = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const productCategory = (value: unknown): value is ProductCategory => ['CARTEL', 'PROP', 'COMBO'].includes(String(value));
+const displayType = (value: unknown): value is CatalogDisplayType => ['GENERIC', 'PREDEFINED', 'PREDEFINED_THREE_IMAGES', 'CUSTOM', 'COMBO'].includes(String(value));
+function taxonomies(value: unknown): Taxonomy[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > 100) throw new Error();
+  return value.map(item => {
+    if (!object(item) || !id(item.id) || !text(item.name, 200) || !text(item.slug, 150) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.slug)) throw new Error();
+    return { id: item.id, name: item.name, slug: item.slug };
+  });
+}
 export function restoreCart(raw: string | null, now = Date.now()): { data: CartData; notice: string; expiresAt: number } {
   const empty = (notice = '') => ({ data: emptyCart(), notice, expiresAt: 0 });
   if (!raw) return empty();
@@ -49,8 +61,13 @@ export function restoreCart(raw: string | null, now = Date.now()): { data: CartD
         if (!object(label) || !text(label.fieldKey, 80) || !text(label.label, 400) || label.optionLabel !== undefined && !text(label.optionLabel, 200)) throw new Error();
         return { fieldKey: label.fieldKey, label: label.label, ...(label.optionLabel !== undefined ? { optionLabel: label.optionLabel as string } : {}) };
       });
+      if (d.category !== undefined && d.category !== null && !productCategory(d.category)) throw new Error();
+      if (d.displayType !== undefined && !displayType(d.displayType)) throw new Error();
+      const occasions = taxonomies(d.occasions), careers = taxonomies(d.careers);
       return { lineId: line.lineId, productId: line.productId, variantId: line.variantId, quantity: line.quantity, answers,
-        display: { slug: d.slug, name: d.name, variantName: d.variantName, unitEstimateCents: d.unitEstimateCents as number | null, photoCount: d.photoCount, labels } };
+        display: { slug: d.slug, name: d.name, variantName: d.variantName, unitEstimateCents: d.unitEstimateCents as number | null, photoCount: d.photoCount, labels,
+          ...(d.category !== undefined ? { category: d.category as ProductCategory | null } : {}), ...(d.displayType !== undefined ? { displayType: d.displayType as CatalogDisplayType } : {}),
+          ...(occasions !== undefined ? { occasions } : {}), ...(careers !== undefined ? { careers } : {}) } };
     });
     if (new Set(lines.map((line) => line.lineId)).size !== lines.length) throw new Error();
     const data: CartData = { lines, deliveryMethod: saved.deliveryMethod as DeliveryMethod };
