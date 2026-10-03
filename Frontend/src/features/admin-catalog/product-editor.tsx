@@ -53,10 +53,10 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
     });
   }
   function classify(category: NonNullable<typeof draft.category>, type = draft.type) {
-    if (category !== 'COMBO' && draft.components.length && !window.confirm('Al dejar de ser combo se quitarán sus componentes y las asociaciones de los campos. Las variantes se conservan. ¿Continuar?')) return;
+    if (category !== 'COMBO' && draft.components.length && !window.confirm('Al dejar de ser combo se quitarán sus componentes. Las variantes se conservan. ¿Continuar?')) return;
     setDraft(changeClassification(draft, category, type));
   }
-  const field = (key: 'name' | 'slug' | 'description' | 'measurements' | 'materials' | 'includes' | 'leadTime', label: string, multiline = false) => <Field id={'product-' + key} label={label} value={draft[key]} onChange={(value) => setDraft({ ...draft, [key]: value })} error={errors[key]} multiline={multiline} />;
+  const field = (key: 'name' | 'slug' | 'description' | 'measurements' | 'includes', label: string, multiline = false) => <Field id={'product-' + key} label={label} value={draft[key]} onChange={(value) => setDraft({ ...draft, [key]: value })} error={errors[key]} multiline={multiline} />;
   if (product?.consolidatedInto?.length) return <section className="editor-section"><h1>{product.name}</h1><p>Este producto está archivado. Sus variantes se administran en los siguientes productos:</p><ul>{product.consolidatedInto.map(item => <li key={item.id}><Link href={'/admin/productos/' + item.id}>{item.name}</Link></li>)}</ul><Link href="/admin/productos">Volver al listado</Link></section>;
   return <div className="product-editor">
     <header className="editor-heading"><div><p className="eyebrow">Catálogo</p><h1>{product ? 'Editar producto' : 'Nuevo producto'}</h1></div><Link className="text-link" href="/admin/productos">Volver al listado</Link></header>
@@ -72,7 +72,7 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
             {draft.category === 'CARTEL' && <div className="custom-field"><label htmlFor="product-type">Tipo de cartel</label><select id="product-type" value={draft.type} onChange={e => classify('CARTEL', e.target.value as typeof draft.type)}>{Object.entries(SIGN_TYPES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>}
             {product ? <div className="custom-field"><label htmlFor="product-status">Visibilidad</label><select id="product-status" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as typeof draft.status })}>{Object.entries(STATUSES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div> : <p className="notice">El producto se creará oculto. Después podrás agregar imágenes y publicarlo.</p>}
           </div>
-          <div className="editor-grid">{field('measurements', 'Medidas')}{field('materials', 'Materiales')}{field('includes', 'Qué incluye', true)}{field('leadTime', 'Tiempo de preparación')}</div>
+          <div className="editor-grid">{field('measurements', 'Medidas')}{field('includes', 'Qué incluye', true)}</div>
         </Section>
         {(supportsOccasions(draft) || supportsCareers(draft)) && <Section title="Ocasiones y carreras"><div className="editor-grid">{(['occasionIds', 'careerIds'] as const).filter(key => key === 'occasionIds' ? supportsOccasions(draft) : supportsCareers(draft)).map(key => <fieldset className="taxonomy-choices" key={key}><legend>{key === 'occasionIds' ? 'Ocasiones (opcional)' : 'Carreras (opcional)'}</legend>{(key === 'occasionIds' ? categories.filter(isOccasion) : careers).map(item => <label key={item.id}><input type="checkbox" checked={(draft[key] ?? []).includes(item.id)} onChange={e => setDraft({ ...draft, [key]: e.target.checked ? [...(draft[key] ?? []), item.id] : (draft[key] ?? []).filter(id => id !== item.id) })} />{item.name}</label>)}{errors[key] && <p className="field-error">{errors[key]}</p>}</fieldset>)}</div><Link href="/admin/categorias" className="text-link">Administrar ocasiones</Link></Section>}
         <CollectionsEditor draft={draft} setDraft={setDraft} errors={errors} productId={product?.id} />

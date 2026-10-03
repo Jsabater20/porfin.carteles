@@ -27,13 +27,9 @@ export function authMessage(mode: AuthMode, error: unknown) {
   if (mode === 'reset') return 'No pudimos confirmar el cambio. Podés reintentar o probar iniciar sesión con tu contraseña nueva.';
   return 'No pudimos iniciar sesión. Revisá la conexión y volvé a intentar.';
 }
-export const adminNavigation = (role: 'ADMIN' | 'OWNER') => [
+export const adminNavigation = (_role: 'ADMIN' | 'OWNER') => [
   { label: 'Inicio', href: '/admin', enabled: true },
   { label: 'Productos', href: '/admin/productos', enabled: true },
-  { label: 'Ocasiones', href: '/admin/categorias', enabled: true },
-  { label: 'Carreras', href: '/admin/carreras', enabled: true },
   { label: 'Pedidos', href: '/admin/pedidos', enabled: true },
-  { label: 'Contenido', href: '/admin/contenido', enabled: true },
-  { label: 'Configuración', href: '/admin/configuracion', enabled: true },
-  ...(role === 'OWNER' ? [{ label: 'Administradores', href: '/admin/administradores', enabled: true }] : []),
+  { label: 'Editar inicio', href: '/admin/contenido', enabled: true },
 ];

@@ -13,7 +13,6 @@ export function ProductCard({ product, catalogClassification = false }: { produc
           <span className="eyebrow">{(catalogClassification && product.category === 'PROP') || product.categories.some(category => category.slug === 'props') ? 'Props · carteles chicos' : productTypes[product.type]}</span>
           <h3>{product.name}</h3>
           <CatalogPrice price={product.basePrice} />
-          {product.leadTime && <p className="card-lead-time">{product.leadTime}</p>}
           <span className="card-action">Ver producto <span aria-hidden="true">↗</span></span>
         </div>
       </Link>

@@ -13,7 +13,6 @@ export function ContactDetails({ settings }: { settings: PublicSettings | null }
     {settings.businessHours && <div><h2>Horarios</h2><p className="preserve-lines">{settings.businessHours}</p></div>}
     {settings.deliveryMethods.length > 0 && <p>Modalidades: {settings.deliveryMethods.map((method) => method === 'PICKUP' ? 'retiro' : 'envío').join(' y ')}.</p>}
     {settings.deliveryNotes && <p className="preserve-lines">{settings.deliveryNotes}</p>}
-    {settings.leadTimeText && <div><h2>Tiempos de preparación</h2><p className="preserve-lines">{settings.leadTimeText}</p></div>}
-    {!links.length && !settings.contactEmail && !settings.pickupAddress && !settings.businessHours && !settings.deliveryMethods.length && !settings.deliveryNotes && !settings.leadTimeText && <p className="muted">Los datos de contacto y entrega estarán disponibles pronto.</p>}
+    {!links.length && !settings.contactEmail && !settings.pickupAddress && !settings.businessHours && !settings.deliveryMethods.length && !settings.deliveryNotes && <p className="muted">Los datos de contacto y entrega estarán disponibles pronto.</p>}
   </section>;
 }

@@ -42,9 +42,9 @@ export function validateContent(input:ContentInput) {
  if(input.featuredProductIds && (input.page!=='home'||input.featuredProductIds.length>12||new Set(input.featuredProductIds).size!==input.featuredProductIds.length))errors.push('Hasta 12 productos destacados distintos, solo en Inicio.');
  return errors;
 }
-export const SETTING_TEXT={storeName:['Nombre de la tienda',120],description:['Descripción',2000],pickupAddress:['Dirección de retiro',500],deliveryNotes:['Información de entrega',2000],leadTimeText:['Plazos de preparación',1000],businessHours:['Horarios',500]} as const;
+export const SETTING_TEXT={storeName:['Nombre de la tienda',120],description:['Descripción',2000],pickupAddress:['Dirección de retiro',500],deliveryNotes:['Información de entrega',2000],businessHours:['Horarios',500]} as const;
 export const SETTING_CONTACT={whatsappNumber:'WhatsApp internacional (sin +)',contactEmail:'Correo de contacto',instagramUrl:'Instagram (HTTPS)',facebookUrl:'Facebook (HTTPS)',tiktokUrl:'TikTok (HTTPS)'} as const;
-export function settingsInput(raw:StoreInput):StoreInput {return Object.fromEntries([...Object.keys(SETTING_TEXT),...Object.keys(SETTING_CONTACT),'deliveryMethods'].map(key=>[key,raw[key as keyof StoreInput]])) as unknown as StoreInput;}
+export function settingsInput(raw:StoreInput):StoreInput {return Object.fromEntries([...Object.keys(SETTING_TEXT),...Object.keys(SETTING_CONTACT),'leadTimeText','deliveryMethods'].map(key=>[key,raw[key as keyof StoreInput]])) as unknown as StoreInput;}
 export function validateSettings(input:StoreInput) {
  const errors:string[]=[];
  for(const [key,[label,max]] of Object.entries(SETTING_TEXT))if(!validText(input[key as keyof typeof SETTING_TEXT],max,key==='storeName'?1:0))errors.push(label+': revisá el texto (máximo '+max+').');

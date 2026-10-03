@@ -23,8 +23,7 @@
 .image-placeholder small { font-size: .75rem; text-align: center; }
 .catalog-price { display: flex; flex-direction: column; gap: .15rem; }
 .catalog-price strong { font-size: 1.12rem; }
-.catalog-price small, .card-lead-time { font-size: .75rem; color: var(--muted); }
-.card-lead-time { margin-block: .75rem 0; }
+.catalog-price small { font-size: .75rem; color: var(--muted); }
 .card-action { display: flex; justify-content: space-between; padding-top: 1rem; margin-top: auto; color: var(--accent); font-weight: 600; font-size: .82rem; }
 .catalog-empty { text-align: center; border: 1px dashed var(--line); padding: 3rem 1.5rem; border-radius: var(--radius); }
 .catalog-empty h2 { font-size: 1.7rem; }
@@ -56,9 +55,8 @@
 .product-information { max-width: 850px; padding-top: 3rem; }
 .product-information > section { padding-block: 1.7rem; border-top: 1px solid var(--line); }
 .product-information h2 { font-size: 1.7rem; }
-.component-list, .personalization-list { padding-left: 1.2rem; }
-.component-list li, .personalization-list > li { margin-block: .8rem; }
-.personalization-list ul { margin-top: .5rem; color: var(--muted); font-size: .9rem; }
+.component-list { padding-left: 1.2rem; }
+.component-list li { margin-block: .8rem; }
 .preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
 .home-section { padding-bottom: 4rem; }
 .heading-row { display: flex; justify-content: space-between; gap: 1.5rem; align-items: baseline; flex-wrap: wrap; }

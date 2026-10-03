@@ -8,6 +8,7 @@ import { PREVIEW_TTL_MS } from '../guest-sessions/guest.constants';
 import { DeliveryMethod, PreviewDto, PreviewLineDto, PreviewLineResultDto, PreviewResponseDto } from './dto/preview.dto';
 import { validatePersonalization } from './personalization';
 import { catalogDisplayType } from '../../common/catalog-classification';
+import { PRODUCT_IDEA_FIELD } from '../../common/product-idea';
 
 const SCOPE = 'ORDER_PREVIEW';
 
@@ -91,14 +92,13 @@ export class PreviewService {
         categories: { where: { category: { isOccasion: true } }, select: { category: { select: { id: true, name: true, slug: true } } } },
         careers: { select: { career: { select: { id: true, name: true, slug: true } } } },
         variants: { where: { id: line.variantId, active: true }, select: { photoCount: true, attributes: true } },
-        fields: { orderBy: { position: 'asc' }, include: { options: true } },
         components: { orderBy: { position: 'asc' }, select: { key: true, name: true, quantity: true, position: true } },
       },
     });
     if (!product) throw new BadRequestException('Producto no disponible.');
     const variant = product.variants[0];
     if (!variant) throw new BadRequestException('Variante no disponible para este producto.');
-    const answers = validatePersonalization(product.fields, line.answers);
+    const answers = validatePersonalization([{ ...PRODUCT_IDEA_FIELD }], line.answers);
     const priced = await this.pricing.calculate({
       productId: line.productId, variantId: line.variantId, quantity: line.quantity,
       selections: answers.filter(answer => answer.type === 'SELECT').map(answer => ({ fieldKey: answer.fieldKey, optionKey: answer.value as string })),

@@ -6,6 +6,7 @@ import type { Request } from 'express';
 import { guestCookie, guestCookieName, guestCookieOptions, guestCsrfToken } from '../src/modules/guest-sessions/guest-cookie';
 import { csrfToken } from '../src/common/utils/credentials';
 import { validatePersonalization } from '../src/modules/orders/personalization';
+import { PRODUCT_IDEA_FIELD } from '../src/common/product-idea';
 
 test('Cookie invitada segura, separación de CSRF y cookies ambiguas', () => {
   const config = new ConfigService({ NODE_ENV: 'production', SESSION_SAME_SITE: 'lax' });
@@ -27,4 +28,14 @@ test('Personalización normaliza Unicode y respeta límites sin convertir númer
   const number = [{ ...fields[0], type: 'NUMBER' as const, minLength: null, maxLength: null, minValue: 0, maxValue: 10 }];
   assert.equal(validatePersonalization(number, [{ fieldKey: 'nombre', value: 0 }])[0].value, 0);
   assert.throws(() => validatePersonalization(number, [{ fieldKey: 'nombre', value: '0' }]));
+});
+
+test('La idea libre reemplaza los campos configurables del catálogo', () => {
+  const fields = [{ ...PRODUCT_IDEA_FIELD }];
+  assert.deepEqual(validatePersonalization(fields, [{ fieldKey: 'idea', value: '  Colores pastel y nombre Ana  ' }]), [{
+    fieldKey: 'idea', label: 'Contanos tu idea', type: 'LONG_TEXT', componentKey: null,
+    value: 'Colores pastel y nombre Ana', displayValue: 'Colores pastel y nombre Ana',
+  }]);
+  assert.throws(() => validatePersonalization(fields, []));
+  assert.throws(() => validatePersonalization(fields, [{ fieldKey: 'nombre', value: 'Ana' }]));
 });

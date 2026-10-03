@@ -3,7 +3,6 @@ import {productMetadata} from '@/lib/seo';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ApiError } from '@/lib/api/errors';
-import { formatMoney } from '@/lib/format/money';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RetryButton } from '@/components/ui/retry-button';
 import { getProduct } from '@/features/catalog/queries';
@@ -43,22 +42,15 @@ export default async function ProductPage({ params, searchParams }: Props) {
         <p className="eyebrow">{productTypes[product.type]}</p><h1>{product.name}</h1>
         {product.description && <p className="muted preserve-lines">{product.description}</p>}
         <ProductCustomizer key={product.id + (editLineId ?? '') + (typeof query.variante === 'string' ? query.variante : '')} product={product} editLineId={editLineId} initialVariantId={typeof query.variante === 'string' ? query.variante : undefined} />
-        {product.leadTime && <p><strong>Preparación:</strong> {product.leadTime}</p>}
         <div className="tag-list">{product.categories.map((category) => <Link key={category.id} className="tag" href={`/catalogo?categoryId=${encodeURIComponent(category.id)}`}>{category.name}</Link>)}
           {product.careers.map((career) => <Link key={career.id} className="tag" href={`/catalogo?careerId=${encodeURIComponent(career.id)}`}>{career.name}</Link>)}</div>
       </div>
     </div>
     <div className="product-information">
-      {(product.measurements || product.materials || product.includes) && <section><h2>Sobre este producto</h2>
-        <dl className="attributes">{[['Medidas', product.measurements], ['Materiales', product.materials], ['Qué incluye', product.includes]].map(([label, value]) => value && <div key={label}><dt>{label}</dt><dd className="preserve-lines">{value}</dd></div>)}</dl>
+      {(product.measurements || product.includes) && <section><h2>Sobre este producto</h2>
+        <dl className="attributes">{[['Medidas', product.measurements], ['Qué incluye', product.includes]].map(([label, value]) => value && <div key={label}><dt>{label}</dt><dd className="preserve-lines">{value}</dd></div>)}</dl>
       </section>}
       {product.components.length > 0 && <section><h2>Qué trae el combo</h2><ul className="component-list">{product.components.map((component) => <li key={component.key}><strong>{component.quantity} ×</strong> {component.name}</li>)}</ul><p className="muted">El precio corresponde al conjunto. Los elementos incluidos son los detallados en esta ficha.</p></section>}
-      {product.fields.length > 0 && <section><h2>Opciones de personalización</h2><p className="muted">Estos son los datos que vas a poder completar al preparar tu pedido.</p>
-        <ul className="personalization-list">{product.fields.map((field) => <li key={field.key}><strong>{field.label}</strong>{field.required && <span className="muted"> · obligatorio</span>}
-          {field.componentKey && <span className="muted"> · {product.components.find((component) => component.key === field.componentKey)?.name || field.componentKey}</span>}
-          {field.options.length > 0 && <ul>{field.options.map((option) => <li key={option.key}>{option.label}{option.additionalCents > 0 ? ` (+${formatMoney(option.additionalCents)})` : ' (sin adicional)'}</li>)}</ul>}
-        </li>)}</ul>
-      </section>}
     </div>
   </div>;
 }

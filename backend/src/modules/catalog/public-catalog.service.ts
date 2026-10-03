@@ -4,6 +4,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { PublicCatalogQuery, PublicCatalogSort, PublicTaxonomyQuery } from './dto/public-catalog.dto';
 import { CatalogDisplayType } from '../../common/catalog-classification';
+import { PRODUCT_IDEA_FIELD } from '../../common/product-idea';
 
 // Proyección explícita: no publicar IDs de cargas, assets, referencias a
 // borradores de combos ni futuros campos privados agregados al modelo.
@@ -21,8 +22,6 @@ const detail = {
   ...card, description: true, measurements: true, materials: true, includes: true,
   images: { orderBy: { position: 'asc' }, select: image },
   variants: { where: { active: true }, orderBy: { position: 'asc' }, select: { id: true, key: true, name: true, pricingMode: true, priceCents: true, attributes: true, photoCount: true } },
-  fields: { orderBy: { position: 'asc' }, select: { key: true, label: true, type: true, required: true, position: true, componentKey: true, minLength: true, maxLength: true, minValue: true, maxValue: true,
-    options: { orderBy: { position: 'asc' }, select: { key: true, label: true, additionalCents: true, position: true } } } },
   components: { orderBy: { position: 'asc' }, select: { key: true, name: true, quantity: true, position: true } },
 } satisfies Prisma.ProductSelect;
 
@@ -105,7 +104,7 @@ export class PublicCatalogService {
       }
       throw new NotFoundException('Producto no encontrado.');
     }
-    return { ...this.present(product), description: product.description, measurements: product.measurements, materials: product.materials, includes: product.includes, images: product.images, variants: product.variants, fields: product.fields, components: product.components };
+    return { ...this.present(product), description: product.description, measurements: product.measurements, materials: product.materials, includes: product.includes, images: product.images, variants: product.variants, fields: [{ ...PRODUCT_IDEA_FIELD }], components: product.components };
   }
 
   async taxonomy(kind: 'category' | 'career' | 'occasion', query: PublicTaxonomyQuery) {

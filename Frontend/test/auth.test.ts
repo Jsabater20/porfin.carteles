@@ -30,10 +30,10 @@ test('errores no enumeran cuentas, y 429 respeta segundos o fecha HTTP', () => {
   assert.equal(retryDelay(new ApiError(429, 'Límite')), 60);
   assert.equal(retryDelay(new ApiError(503, 'Caída')), 0);
 });
-test('ADMIN no recibe la opción de administrar cuentas y OWNER tiene todas las secciones habilitadas', () => {
-  assert.equal(adminNavigation('ADMIN').some((item) => item.label === 'Administradores'), false);
-  assert.equal(adminNavigation('OWNER').some((item) => item.label === 'Administradores'), true);
-  assert.equal(adminNavigation('OWNER').filter((item) => item.enabled).length, 8);
+test('el panel muestra únicamente las cuatro tareas principales', () => {
+  const expected = ['Inicio', 'Productos', 'Pedidos', 'Editar inicio'];
+  assert.deepEqual(adminNavigation('ADMIN').map(item => item.label), expected);
+  assert.deepEqual(adminNavigation('OWNER').map(item => item.label), expected);
 });
 test('logout obtiene CSRF actual; doble clic hace una sola escritura y respuesta tardía no restaura sesión', async () => {
   const current = session(), calls: string[] = [], exits: string[] = [];

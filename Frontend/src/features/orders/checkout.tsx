@@ -86,7 +86,6 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
           {input('customerEmail', 'Mail *', 'email')}
           {input('customerPhone', 'Teléfono con código de país (opcional)', 'tel', 'Por ejemplo: +54 9 11 2345 6789.')}
           {input('requestedDate', '¿Para cuándo lo necesitarías? *', 'date', 'La fecha queda pendiente hasta que la emprendedora la confirme por WhatsApp.')}
-          {settings?.leadTimeText && <p className="muted preserve-lines">{settings.leadTimeText}</p>}
           {delivery === 'SHIPPING' && input('deliveryAddress', 'Dirección de envío *', 'text', 'Incluí calle, número, localidad y provincia.')}
           {input('notes', 'Observaciones (opcional)', 'text', 'Hasta 1000 caracteres. Las fotos se envían por WhatsApp.')}
         </fieldset>
