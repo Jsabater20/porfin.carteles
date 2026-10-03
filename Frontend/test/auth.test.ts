@@ -32,8 +32,7 @@ test('errores no enumeran cuentas, y 429 respeta segundos o fecha HTTP', () => {
 });
 test('el panel muestra únicamente las cuatro tareas principales', () => {
   const expected = ['Inicio', 'Productos', 'Pedidos', 'Editar inicio'];
-  assert.deepEqual(adminNavigation('ADMIN').map(item => item.label), expected);
-  assert.deepEqual(adminNavigation('OWNER').map(item => item.label), expected);
+  assert.deepEqual(adminNavigation().map(item => item.label), expected);
 });
 test('logout obtiene CSRF actual; doble clic hace una sola escritura y respuesta tardía no restaura sesión', async () => {
   const current = session(), calls: string[] = [], exits: string[] = [];

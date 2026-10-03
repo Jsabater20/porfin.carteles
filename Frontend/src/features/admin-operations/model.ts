@@ -1,10 +1,9 @@
 import { moneyToCents } from '../admin-catalog/model';
-import type { OrderStatus,QuoteStatus,QuoteInput,ContentInput,StoreInput } from '../../lib/contracts/admin-operations';
+import type { OrderStatus,QuoteStatus,QuoteInput,ContentInput } from '../../lib/contracts/admin-operations';
 export const ORDER_LABELS:Record<OrderStatus,string>={PENDING_CONFIRMATION:'Por confirmar',CONFIRMED:'Confirmado',IN_PRODUCTION:'En producción',READY:'Listo',DELIVERED:'Entregado',CANCELLED:'Cancelado'};
 export const ORDER_NEXT:Record<OrderStatus,OrderStatus[]>={PENDING_CONFIRMATION:['CONFIRMED','CANCELLED'],CONFIRMED:['IN_PRODUCTION','CANCELLED'],IN_PRODUCTION:['READY','CANCELLED'],READY:['DELIVERED','CANCELLED'],DELIVERED:[],CANCELLED:[]};
 export const QUOTE_LABELS:Record<QuoteStatus,string>={DRAFT:'Borrador',SENT:'Enviado',ACCEPTED:'Aceptado',REJECTED:'Rechazado'};
 export const QUOTE_NEXT:Record<QuoteStatus,QuoteStatus[]>={DRAFT:['SENT','REJECTED'],SENT:['ACCEPTED','REJECTED'],ACCEPTED:[],REJECTED:[]};
-export const PAGE_LABELS={home:'Inicio',about:'Nosotros',contact:'Contacto',faq:'Preguntas frecuentes'};
 export const money=(cents:number|null)=>cents===null?'Por confirmar':new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(cents/100);
 // Construir el texto con partes numéricas evita diferencias de ICU entre Node y Chrome.
 export function date(value:string) {
@@ -40,17 +39,5 @@ export function validateContent(input:ContentInput) {
  for(const items of [input.sections,input.faqItems])if(new Set(items.map(x=>x.key)).size!==items.length||items.some(x=>!(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).test(x.key)||x.key.length>80))errors.push('Hay identificadores repetidos o inválidos.');
  if(input.page==='faq'&&input.published&&!input.faqItems.length)errors.push('Agregá al menos una pregunta antes de publicar.');
  if(input.featuredProductIds && (input.page!=='home'||input.featuredProductIds.length>12||new Set(input.featuredProductIds).size!==input.featuredProductIds.length))errors.push('Hasta 12 productos destacados distintos, solo en Inicio.');
- return errors;
-}
-export const SETTING_TEXT={storeName:['Nombre de la tienda',120],description:['Descripción',2000],pickupAddress:['Dirección de retiro',500],deliveryNotes:['Información de entrega',2000],businessHours:['Horarios',500]} as const;
-export const SETTING_CONTACT={whatsappNumber:'WhatsApp internacional (sin +)',contactEmail:'Correo de contacto',instagramUrl:'Instagram (HTTPS)',facebookUrl:'Facebook (HTTPS)',tiktokUrl:'TikTok (HTTPS)'} as const;
-export function settingsInput(raw:StoreInput):StoreInput {return Object.fromEntries([...Object.keys(SETTING_TEXT),...Object.keys(SETTING_CONTACT),'leadTimeText','deliveryMethods'].map(key=>[key,raw[key as keyof StoreInput]])) as unknown as StoreInput;}
-export function validateSettings(input:StoreInput) {
- const errors:string[]=[];
- for(const [key,[label,max]] of Object.entries(SETTING_TEXT))if(!validText(input[key as keyof typeof SETTING_TEXT],max,key==='storeName'?1:0))errors.push(label+': revisá el texto (máximo '+max+').');
- if(input.whatsappNumber&&!/^[1-9][0-9]{7,14}$/.test(input.whatsappNumber))errors.push('WhatsApp requiere entre 8 y 15 dígitos internacionales, sin +.');
- if(input.contactEmail&&(input.contactEmail.length>254||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.contactEmail)))errors.push('Revisá el correo de contacto.');
- for(const key of ['instagramUrl','facebookUrl','tiktokUrl'] as const){const value=input[key];if(!value)continue;try{const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||!url.hostname.includes('.')||!validText(value,500))throw new Error();}catch{errors.push('La dirección de '+key.replace('Url','')+' debe ser HTTPS, sin credenciales.');}}
- if(input.deliveryMethods.length>2||new Set(input.deliveryMethods).size!==input.deliveryMethods.length||input.deliveryMethods.some(m=>!['PICKUP','SHIPPING'].includes(m)))errors.push('Revisá las modalidades de entrega.');
  return errors;
 }

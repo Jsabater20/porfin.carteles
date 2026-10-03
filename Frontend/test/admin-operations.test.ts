@@ -1,10 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {date,timestamp,buildQuote,ORDER_NEXT,QUOTE_NEXT,validateContent,validateSettings,settingsInput} from '../src/features/admin-operations/model';
+import {date,timestamp,buildQuote,ORDER_NEXT,QUOTE_NEXT,validateContent} from '../src/features/admin-operations/model';
 import {readAttempt,prepareAttempt,attemptStorageKey,type AttemptStorage} from '../src/features/admin-operations/payment-attempt';
 import {routePolicy} from '../src/lib/api/policy';
 import {forwardToBackend} from '../src/lib/api/gateway';
-import type {ContentInput,StoreInput,PaymentInput} from '../src/lib/contracts/admin-operations';
+import type {ContentInput,PaymentInput} from '../src/lib/contracts/admin-operations';
 test('fechas de entrega y horarios se formatean de manera estable, incluso a medianoche',()=>{
  assert.equal(date('2026-10-29T00:00:00.000Z'),'29/10/2026');
  assert.equal(timestamp('2026-09-29T03:01:00.000Z'),'29/09/2026 00:01');
@@ -49,14 +49,8 @@ test('publicación exige título y FAQ con preguntas completas; listas y claves 
  assert.ok(validateContent({...valid,featuredProductIds:[id]}).length);
  assert.deepEqual(validateContent({...valid,body:'<script>alert(1)</script>'}),[],'El texto plano se conserva; React lo escapa.');
 });
-const settings:StoreInput={storeName:'Tienda',description:'',whatsappNumber:null,contactEmail:null,instagramUrl:null,facebookUrl:null,tiktokUrl:null,pickupAddress:'',deliveryMethods:[],deliveryNotes:'',leadTimeText:'',businessHours:''};
-test('configuración admite borrar contactos y no serializa secretos ni metadatos',()=>{
- assert.deepEqual(validateSettings(settings),[]);assert.ok(validateSettings({...settings,whatsappNumber:'+5491123456789'}).length);assert.deepEqual(validateSettings({...settings,whatsappNumber:'5491123456789',contactEmail:'hola@example.test'}),[]);
- for(const url of ['javascript:alert(1)','http://instagram.com','https://user:password@instagram.com','https://localhost'])assert.ok(validateSettings({...settings,instagramUrl:url}).length);
- assert.deepEqual(settingsInput({...settings,id:1,updatedAt:'date',CLOUDINARY_API_SECRET:'secret'} as StoreInput),settings);
-});
 test('rutas privadas de operación aceptan solo sus métodos exactos',()=>{
- for(const [path,method] of [['admin/orders','GET'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/settings','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
+ for(const [path,method] of [['admin/orders','GET'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
  for(const [path,method] of [['admin/orders','POST'],['admin/payments','DELETE'],['admin/admins/'+id,'DELETE'],['admin/content/home','PATCH'],['admin/admins/'+id+'/password','PATCH']])assert.equal(routePolicy(path,method),undefined);
 });
 test('pasarela de pagos preserva clave y CSRF, filtra sesión invitada y bloquea origen ajeno',async()=>{

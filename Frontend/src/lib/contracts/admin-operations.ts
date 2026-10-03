@@ -1,7 +1,6 @@
 import type { GuestOrder } from './orders';
 import type { PreviewLine } from './preview';
 import type { PublicContent,ContentKey } from './content';
-import type { PublicSettings } from './settings';
 export type OrderStatus=GuestOrder['status'];
 export type QuoteStatus='DRAFT'|'SENT'|'ACCEPTED'|'REJECTED';
 export interface OrderListItem {id:string;reference:string;customerName:string;status:OrderStatus;requestedDate:string;knownSubtotalCents:number;pendingQuoteCount:number;createdAt:string}
@@ -22,5 +21,4 @@ export interface AdminOrder extends OrderListItem {
 export interface EditablePage extends Pick<PublicContent,'page'|'title'|'subtitle'|'body'|'sections'|'faqItems'> {published:boolean}
 export interface ContentIndex {availablePages:ContentKey[];pages:EditablePage[];featuredProductIds:string[]}
 export interface ContentInput extends EditablePage {featuredProductIds?:string[]}
-export type StoreInput=Omit<PublicSettings,'whatsappUrl'>;
 export interface Administrator {id:string;name:string;email:string;role:'OWNER'|'ADMIN';active:boolean}

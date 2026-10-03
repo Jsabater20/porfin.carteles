@@ -14,6 +14,8 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
   const ready = useEditorReady();
   const { manager, loggingOut } = useAdmin(); const router = useRouter();
   const [draft, setDraft] = useState(() => draftProduct(product));
+  const [availableCategories, setAvailableCategories] = useState(categories);
+  const [availableCareers, setAvailableCareers] = useState(careers);
   const [baseline, setBaseline] = useState(() => product ? productInput(product) : null);
   const [savedDraft, setSavedDraft] = useState(() => JSON.stringify(draftProduct(product)));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,6 +58,11 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
     if (category !== 'COMBO' && draft.components.length && !window.confirm('Al dejar de ser combo se quitarán sus componentes. Las variantes se conservan. ¿Continuar?')) return;
     setDraft(changeClassification(draft, category, type));
   }
+  function addTaxonomy(key: 'occasionIds' | 'careerIds', item: Taxonomy) {
+    if (key === 'occasionIds') setAvailableCategories(current => current.some(entry => entry.id === item.id) ? current : [...current, item].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+    else setAvailableCareers(current => current.some(entry => entry.id === item.id) ? current : [...current, item].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+    setDraft(current => ({ ...current, [key]: (current[key] ?? []).includes(item.id) ? current[key] : [...(current[key] ?? []), item.id] }));
+  }
   const field = (key: 'name' | 'slug' | 'description' | 'measurements' | 'includes', label: string, multiline = false) => <Field id={'product-' + key} label={label} value={draft[key]} onChange={(value) => setDraft({ ...draft, [key]: value })} error={errors[key]} multiline={multiline} />;
   if (product?.consolidatedInto?.length) return <section className="editor-section"><h1>{product.name}</h1><p>Este producto está archivado. Sus variantes se administran en los siguientes productos:</p><ul>{product.consolidatedInto.map(item => <li key={item.id}><Link href={'/admin/productos/' + item.id}>{item.name}</Link></li>)}</ul><Link href="/admin/productos">Volver al listado</Link></section>;
   return <div className="product-editor">
@@ -74,7 +81,7 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
           </div>
           <div className="editor-grid">{field('measurements', 'Medidas')}{field('includes', 'Qué incluye', true)}</div>
         </Section>
-        {(supportsOccasions(draft) || supportsCareers(draft)) && <Section title="Ocasiones y carreras"><div className="editor-grid">{(['occasionIds', 'careerIds'] as const).filter(key => key === 'occasionIds' ? supportsOccasions(draft) : supportsCareers(draft)).map(key => <fieldset className="taxonomy-choices" key={key}><legend>{key === 'occasionIds' ? 'Ocasiones (opcional)' : 'Carreras (opcional)'}</legend>{(key === 'occasionIds' ? categories.filter(isOccasion) : careers).map(item => <label key={item.id}><input type="checkbox" checked={(draft[key] ?? []).includes(item.id)} onChange={e => setDraft({ ...draft, [key]: e.target.checked ? [...(draft[key] ?? []), item.id] : (draft[key] ?? []).filter(id => id !== item.id) })} />{item.name}</label>)}{errors[key] && <p className="field-error">{errors[key]}</p>}</fieldset>)}</div><Link href="/admin/categorias" className="text-link">Administrar ocasiones</Link></Section>}
+        {(supportsOccasions(draft) || supportsCareers(draft)) && <Section title="Ocasiones y carreras"><p className="muted">Marcá las opciones que correspondan. Si no existe una, podés agregarla acá mismo.</p><div className="editor-grid">{(['occasionIds', 'careerIds'] as const).filter(key => key === 'occasionIds' ? supportsOccasions(draft) : supportsCareers(draft)).map(key => <fieldset className="taxonomy-choices" key={key}><legend>{key === 'occasionIds' ? 'Ocasiones (opcional)' : 'Carreras (opcional)'}</legend>{(key === 'occasionIds' ? availableCategories.filter(isOccasion) : availableCareers).map(item => <label key={item.id}><input type="checkbox" checked={(draft[key] ?? []).includes(item.id)} onChange={e => setDraft({ ...draft, [key]: e.target.checked ? [...(draft[key] ?? []), item.id] : (draft[key] ?? []).filter(id => id !== item.id) })} />{item.name}</label>)}<InlineTaxonomyCreator kind={key === 'occasionIds' ? 'categories' : 'careers'} disabled={busy || loggingOut} onCreated={item => addTaxonomy(key, item)} />{errors[key] && <p className="field-error">{errors[key]}</p>}</fieldset>)}</div></Section>}
         <CollectionsEditor draft={draft} setDraft={setDraft} errors={errors} productId={product?.id} />
         <div className="editor-save"><button type="submit" className="button">{busy ? 'Guardando…' : product ? 'Guardar cambios' : 'Crear producto oculto'}</button><span className="muted">{dirty ? 'Hay cambios sin guardar.' : 'Sin cambios pendientes.'}</span></div>
       </fieldset>
@@ -86,4 +93,21 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
       <Confirm label="Eliminar producto" question="¿Eliminar este producto definitivamente? Debe estar oculto y sin imágenes ni referencias desde combos." disabled={busy || baseline?.status !== 'HIDDEN'} onConfirm={() => run(async () => { await manager.request('admin/products/' + product.id, { method: 'DELETE', body: {} }); setSavedDraft(JSON.stringify(draft)); router.replace('/admin/productos'); router.refresh(); })} />
     </section>}
   </div>;
+}
+
+function InlineTaxonomyCreator({ kind, disabled, onCreated }: { kind: 'categories' | 'careers'; disabled: boolean; onCreated: (item: Taxonomy) => void }) {
+  const { manager } = useAdmin();
+  const [name, setName] = useState(''), [message, setMessage] = useState(''), [saving, setSaving] = useState(false);
+  const label = kind === 'categories' ? 'ocasión' : 'carrera';
+  async function create() {
+    const clean = name.trim(), slug = slugify(clean).slice(0, 120).replace(/-$/, '');
+    if (!clean || [...clean].length > 120 || !slug) { setMessage(`Escribí un nombre válido para la ${label}.`); return; }
+    setSaving(true); setMessage('');
+    try {
+      const item = await manager.request<Taxonomy>('admin/' + kind, { method: 'POST', body: { name: clean, slug } });
+      onCreated(item); setName(''); setMessage(`${kind === 'categories' ? 'Ocasión' : 'Carrera'} agregada y seleccionada.`);
+    } catch (error) { setMessage(error instanceof ApiError ? error.message : `No pudimos agregar la ${label}.`); }
+    finally { setSaving(false); }
+  }
+  return <div className="inline-taxonomy-create"><Field id={'new-' + kind} label={`Agregar otra ${label}`} hint="Escribí el nombre; se seleccionará automáticamente." value={name} onChange={setName} /><button type="button" className="text-button" disabled={disabled || saving} onClick={() => void create()}>{saving ? 'Agregando…' : `Agregar ${label}`}</button>{message && <p className={message.includes('agregada') ? 'muted' : 'field-error'} role="status">{message}</p>}</div>;
 }

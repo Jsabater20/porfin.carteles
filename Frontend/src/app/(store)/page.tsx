@@ -3,7 +3,6 @@ import {publicMetadata} from '@/lib/seo';
 export async function generateMetadata(){const [settings,content]=await Promise.all([getStoreSettings(),getContent('home')]);return publicMetadata(content.data?.title||settings?.storeName||'Por fin! · Carteles para celebrar',content.data?.subtitle||settings?.description||'Carteles y combos personalizados para tus celebraciones.','/');}
 import { getStoreSettings } from '@/features/settings/queries';
 import { getContent } from '@/features/content/queries';
-import { ContentBody } from '@/features/content/content-body';
 import { getTaxonomy } from '@/features/catalog/queries';
 import { ProductCard } from '@/features/catalog/product-card';
 import { CatalogCollections } from '@/features/catalog/catalog-collections';
@@ -34,7 +33,7 @@ export default async function HomePage() {
       {!!content.data?.featuredProducts.length && <section className="container home-section"><div className="section-heading heading-row"><div><p className="eyebrow">Elegidos para vos</p><h2>Para tu próxima celebración.</h2></div><Link className="text-link" href="/catalogo">Ver todo el catálogo</Link></div>
         <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
       </section>}
-      {content.data && (content.data.body || content.data.sections.length > 0 || content.data.faqItems.length > 0) && <div className="container home-section"><ContentBody content={content.data} /></div>}
+      {content.data?.body && <section className="container home-section home-promo"><p className="eyebrow">Novedades</p><p className="preserve-lines">{content.data.body}</p></section>}
       <section id="como-pedir" className="how-section">
         <div className="container">
           <div className="section-heading"><p className="eyebrow">Simple, como tiene que ser</p><h2>Tu idea, paso a paso.</h2></div>

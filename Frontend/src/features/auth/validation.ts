@@ -27,7 +27,7 @@ export function authMessage(mode: AuthMode, error: unknown) {
   if (mode === 'reset') return 'No pudimos confirmar el cambio. Podés reintentar o probar iniciar sesión con tu contraseña nueva.';
   return 'No pudimos iniciar sesión. Revisá la conexión y volvé a intentar.';
 }
-export const adminNavigation = (_role: 'ADMIN' | 'OWNER') => [
+export const adminNavigation = () => [
   { label: 'Inicio', href: '/admin', enabled: true },
   { label: 'Productos', href: '/admin/productos', enabled: true },
   { label: 'Pedidos', href: '/admin/pedidos', enabled: true },

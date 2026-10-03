@@ -12,7 +12,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   if (!session) return <main className="container loading-state" id="main-content" role="status">Actualizando el acceso…</main>;
   return <div className="admin-shell">
     <aside className="admin-sidebar" aria-label="Panel de administración"><Link href="/admin" className="brand"><BrandLogo /></Link><p className="eyebrow">Administración</p>
-      <nav aria-label="Navegación administrativa">{adminNavigation(session.admin.role).map((item) => item.enabled ? <Link key={item.label} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={active(item.href) ? "admin-nav-item active" : "admin-nav-item"}>{item.label}</Link> : <span key={item.label} className="admin-nav-item" aria-disabled="true">{item.label}<small>Próximamente</small></span>)}</nav>
+      <nav aria-label="Navegación administrativa">{adminNavigation().map((item) => item.enabled ? <Link key={item.label} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={active(item.href) ? "admin-nav-item active" : "admin-nav-item"}>{item.label}</Link> : <span key={item.label} className="admin-nav-item" aria-disabled="true">{item.label}<small>Próximamente</small></span>)}</nav>
       <Link href="/" className="text-link">Volver a la tienda ↗</Link>
     </aside>
     <div className="admin-body"><header className="admin-topbar"><span>{session.admin.role === 'OWNER' ? 'Propietario · acceso completo' : 'Administrador'}</span><strong>{session.admin.name}</strong><button type="button" className="text-button admin-logout" disabled={loggingOut} onClick={() => void manager.logout()}>{loggingOut ? 'Cerrando…' : 'Cerrar sesión'}</button></header>

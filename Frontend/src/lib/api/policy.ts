@@ -8,7 +8,6 @@ const routes: Record<string, Partial<Record<ApiMethod, ApiScope>>> = {
   'admin/orders': { GET: 'admin' },
   'admin/payments': { POST: 'admin' },
   'admin/content': { GET: 'admin', PATCH: 'admin' },
-  'admin/settings': { GET: 'admin', PATCH: 'admin' },
   'admin/admins': { GET: 'admin', POST: 'admin' },
   'admin/products': { GET: 'admin', POST: 'admin' },
   'admin/categories': { GET: 'admin', POST: 'admin' },

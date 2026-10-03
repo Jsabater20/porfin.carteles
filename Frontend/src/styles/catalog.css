@@ -59,6 +59,8 @@
 .component-list li { margin-block: .8rem; }
 .preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
 .home-section { padding-bottom: 4rem; }
+.home-promo { margin-bottom: 4rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.home-promo p:last-child { margin-bottom: 0; font-size: 1.05rem; }
 .heading-row { display: flex; justify-content: space-between; gap: 1.5rem; align-items: baseline; flex-wrap: wrap; }
 .category-tag { padding: 1rem 1.4rem; background: var(--surface); font-size: .95rem; }
 .how-faq-link { display: inline-block; margin-top: 1.5rem; }
