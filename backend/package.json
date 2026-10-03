@@ -4,9 +4,7 @@
   "private": true,
   "description": "API de Por fin! con NestJS, Prisma y PostgreSQL",
   "scripts": {
-    "prestart": "node scripts/ensure-local-postgres.cjs",
     "start": "nest start --watch",
-    "prestart:dev": "node scripts/ensure-local-postgres.cjs",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "build": "prisma generate && nest build && tsc -p tsconfig.tools.json",
