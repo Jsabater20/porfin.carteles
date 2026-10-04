@@ -1,5 +1,6 @@
 ﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { integrationApp } from './support/integration';
 import { hashPassword } from '../src/common/utils/credentials';
 
@@ -31,6 +32,11 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
       { key: 'tres-imagenes', name: 'Tres imágenes', pricingMode: 'FIXED', priceCents: 5400000, photoCount: 3, attributes: { formato: 'circular' } },
     ] });
     assert.equal(result2.status, 201); sign = result2.body; assert.equal(sign.category, 'CARTEL');
+    for (const [position, shape] of ['RECTANGULAR', 'CIRCULAR'].entries()) {
+      const publicId = `test/catalog-shape/${shape.toLowerCase()}/${randomUUID()}`;
+      const upload = await ctx.prisma.mediaUpload.create({ data: { productId: sign.id, administratorId: 'catalog-test', cloudName: 'test', publicId, expiresAt: new Date(), cleanupAfter: new Date(), confirmedAt: new Date() } });
+      await ctx.prisma.productImage.create({ data: { productId: sign.id, uploadId: upload.id, assetId: randomUUID(), publicId, url: `https://res.cloudinary.com/test/image/upload/${shape.toLowerCase()}.jpg`, format: 'jpg', bytes: 100, width: 800, height: 600, altText: shape, shape: shape as 'RECTANGULAR' | 'CIRCULAR', position, cover: position === 0 } });
+    }
   });
   await t.test('PATCH conserva IDs, relaciones e información histórica', async () => {
     const order = await ctx.prisma.order.create({ data: { reference: 'CLASSIFICATION-HISTORY', customerName: 'Cliente de prueba', customerPhone: '', requestedDate: new Date('2026-12-01'), scheduledDate: new Date('2026-12-01'), deliveryMethod: 'pickup', knownSubtotalCents: 0, items: { create: { productId: sign.id, productName: 'Nombre histórico', variantSnapshot: { id: sign.variants[0].id }, customizationSnapshot: {}, pricingMode: 'QUOTE', quantity: 1 } } }, include: { items: true } });
@@ -65,9 +71,11 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
     const rectangular = (await call('/products?category=CARTEL&type=PREDEFINED&shape=RECTANGULAR')).body;
     assert.equal(rectangular.total, 1); assert.equal(rectangular.items[0].basePrice.fromCents, 4800000); assert.equal(rectangular.items[0].defaultVariantId, sign.variants[0].id);
+    assert.equal(rectangular.items[0].coverImage.shape, 'RECTANGULAR'); assert.equal(rectangular.items[0].displayShape, 'RECTANGULAR');
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&shape=CIRCULAR')).body.total, 0);
     const circularPhotos = (await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=CIRCULAR')).body;
     assert.equal(circularPhotos.total, 1); assert.equal(circularPhotos.items[0].basePrice.fromCents, 5400000); assert.equal(circularPhotos.items[0].defaultVariantId, sign.variants[1].id);
+    assert.equal(circularPhotos.items[0].coverImage.shape, 'CIRCULAR'); assert.equal(circularPhotos.items[0].displayShape, 'CIRCULAR');
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=RECTANGULAR')).body.total, 0);
     assert.equal((await call('/products?type=CUSTOM')).body.total, 2);
     assert.equal((await call('/products?categoryId=' + family.id)).body.total, 1);

@@ -84,8 +84,8 @@ test('Etapa 5: catálogo público y precios con PostgreSQL real', { timeout: 120
     assert.equal(body.images[0].altText, 'Cartel'); assert.equal(body.images[0].cover, true);
     assert.equal(body.variants.length, 2);
     assert.deepEqual(body.variants.map((item: any) => item.key), ['base', 'grande']);
-    assert.equal(body.fields[0].maxLength, 80);
-    assert.equal(body.fields[1].options[1].additionalCents, 500);
+    assert.equal(body.fields.length, 1); assert.equal(body.fields[0].key, 'idea'); assert.equal(body.fields[0].maxLength, 2000);
+    assert.equal(body.images[0].shape, null);
     const privateKeys = new Set(['uploadId', 'assetId', 'publicId', 'administratorId', 'referenceProductId', 'passwordHash', 'status', 'active', 'createdAt', 'updatedAt']);
     const visit = (value: unknown) => {
       if (!value || typeof value !== 'object') return;

@@ -9,13 +9,13 @@ import { PRODUCT_IDEA_FIELD } from '../../common/product-idea';
 // Proyección explícita: no publicar IDs de cargas, assets, referencias a
 // borradores de combos ni futuros campos privados agregados al modelo.
 const taxonomy = { id: true, name: true, slug: true } satisfies Prisma.CategorySelect;
-const image = { id: true, url: true, altText: true, position: true, cover: true, width: true, height: true } satisfies Prisma.ProductImageSelect;
+const image = { id: true, url: true, altText: true, position: true, cover: true, width: true, height: true, shape: true } satisfies Prisma.ProductImageSelect;
 const visible = { status: 'PUBLISHED', variants: { some: { active: true } } } satisfies Prisma.ProductWhereInput;
 const card = {
   id: true, name: true, slug: true, type: true, category: true, leadTime: true,
   categories: { orderBy: { categoryId: 'asc' }, select: { category: { select: { ...taxonomy, isOccasion: true } } } },
   careers: { orderBy: { careerId: 'asc' }, select: { career: { select: taxonomy } } },
-  images: { orderBy: { position: 'asc' }, take: 1, select: image },
+  images: { orderBy: { position: 'asc' }, select: image },
   variants: { where: { active: true }, orderBy: { position: 'asc' }, select: { id: true, pricingMode: true, priceCents: true, photoCount: true, attributes: true } },
 } satisfies Prisma.ProductSelect;
 const detail = {
@@ -31,6 +31,18 @@ export class PublicCatalogService {
 
   private variantShape(shape?: CatalogShape): Prisma.ProductVariantWhereInput {
     return shape ? { active: true, attributes: { path: ['formato'], equals: shape.toLowerCase() } } : { active: true };
+  }
+
+  private visualShape(shape: CatalogShape): Prisma.ProductWhereInput {
+    const referenceSlugs = shape === CatalogShape.CIRCULAR
+      ? ['cartel-personalizado', 'cartel-baby-shower']
+      : ['cartel-personalizado'];
+    return {
+      OR: [
+        { images: { some: { shape } } },
+        { slug: { in: referenceSlugs }, images: { none: {} }, variants: { some: this.variantShape(shape) } },
+      ],
+    };
   }
 
   private typeFilter(type: CatalogDisplayType, shape?: CatalogShape): Prisma.ProductWhereInput {
@@ -60,11 +72,13 @@ export class PublicCatalogService {
       return { AND: and };
     }
     if (query.category) and.push({ category: query.category });
+    else if (query.shape) and.push({ category: 'CARTEL' });
     // Parent filters determine which children have an effect.
-    if (query.category !== 'CARTEL') return { AND: and };
+    if (query.category && query.category !== 'CARTEL') return { AND: and };
     const type = query.type === CatalogDisplayType.COMBO ? undefined : query.type;
     if (type) and.push(this.typeFilter(type, query.shape));
     else if (query.shape) and.push({ variants: { some: this.variantShape(query.shape) } });
+    if (query.shape) and.push(this.visualShape(query.shape));
     if (type === CatalogDisplayType.GENERIC || type === CatalogDisplayType.PREDEFINED || type === CatalogDisplayType.PREDEFINED_THREE_IMAGES) {
       if (query.occasion) {
         and.push({ categories: { some: { categoryId: query.occasion, category: { isOccasion: true } } } });
@@ -86,12 +100,16 @@ export class PublicCatalogService {
       if (query?.type === CatalogDisplayType.PREDEFINED) return variant.photoCount !== 3;
       return true;
     });
+    const coverImage = query?.shape
+      ? product.images.find(item => item.shape === query.shape) ?? null
+      : product.images.find(item => item.cover) ?? product.images[0] ?? null;
     return {
       id: product.id, name: product.name, slug: product.slug, type: product.type, category: product.category, leadTime: product.leadTime,
       occasions: product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type)
         ? product.categories.filter(item => item.category.isOccasion).map(({ category: { isOccasion, ...item } }) => item) : [],
       categories: product.categories.map(({ category: { isOccasion, ...item } }) => item), careers: product.careers.map(item => item.career),
-      coverImage: product.images[0] ?? null, defaultVariantId: variants[0]?.id ?? null, basePrice: this.pricing.summarize(variants),
+      coverImage, defaultVariantId: variants[0]?.id ?? null, displayShape: query?.shape ?? coverImage?.shape ?? null,
+      basePrice: this.pricing.summarize(variants),
     };
   }
 
@@ -131,6 +149,7 @@ export class PublicCatalogService {
         return { items: [], total: 0, page: query.page, limit: query.limit };
       }
       product = { AND: [visible, { category: 'CARTEL' }, type ? this.typeFilter(type, query.shape) : { type: { in: ['GENERIC', 'PREDEFINED'] }, ...(query.shape ? { variants: { some: this.variantShape(query.shape) } } : {}) },
+        ...(query.shape ? [this.visualShape(query.shape)] : []),
         ...(kind === 'career' && query.occasion ? [{ categories: { some: { categoryId: query.occasion, category: { isOccasion: true } } } }] : []),
       ] };
     }

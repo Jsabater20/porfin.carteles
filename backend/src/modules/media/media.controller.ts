@@ -3,7 +3,7 @@ import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger
 import { AdminRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/auth.decorators';
 import { AuthenticatedRequest } from '../auth/auth.types';
-import { CompleteUploadDto, ImageOrderDto, ImageTextDto, UploadSignatureDto } from './dto/media.dto';
+import { CompleteUploadDto, ImageMetadataDto, ImageOrderDto, UploadSignatureDto } from './dto/media.dto';
 import { MediaService } from './media.service';
 
 @ApiTags('Imágenes del catálogo')
@@ -34,7 +34,7 @@ export class MediaController {
   reorder(@Param('productId') productId: string, @Body() dto: ImageOrderDto, @Req() req: AuthenticatedRequest) { return this.media.reorder(productId, dto, req.adminSession.id); }
 
   @Patch('products/:productId/images/:id')
-  update(@Param('productId') productId: string, @Param('id') id: string, @Body() dto: ImageTextDto, @Req() req: AuthenticatedRequest) { return this.media.updateText(productId, id, dto.altText, req.adminSession.id); }
+  update(@Param('productId') productId: string, @Param('id') id: string, @Body() dto: ImageMetadataDto, @Req() req: AuthenticatedRequest) { return this.media.updateMetadata(productId, id, dto, req.adminSession.id); }
 
   @Delete('products/:productId/images/:id') @HttpCode(204)
   @ApiOperation({ summary: 'Quitar de la galería y programar borrado del archivo en Cloudinary' })

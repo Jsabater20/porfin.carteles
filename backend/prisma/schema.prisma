@@ -212,11 +212,18 @@ model ProductImage {
   width      Int
   height     Int
   altText    String      @default("")
+  shape      CatalogShape?
   position   Int
   cover      Boolean     @default(false)
   createdAt  DateTime    @default(now())
 
   @@index([productId, position])
+}
+
+enum CatalogShape {
+  RECTANGULAR
+  CIRCULAR
+  XXL
 }
 
 model ProductCategory {

@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsString, IsUUID, Length, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CatalogShape } from '@prisma/client';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsEnum, IsString, IsUUID, Length, MaxLength, ValidateIf } from 'class-validator';
 import { MEDIA_MAX_IMAGES } from '../media.constants';
 
 export class UploadSignatureDto {
@@ -9,10 +10,14 @@ export class UploadSignatureDto {
 export class CompleteUploadDto {
   @ApiProperty({ format: 'uuid' }) @IsUUID() uploadId!: string;
   @ApiProperty({ default: '', maxLength: 240 }) @IsString() @MaxLength(240) altText = '';
+  @ApiPropertyOptional({ enum: CatalogShape, nullable: true })
+  @ValidateIf((_object, value) => value !== undefined && value !== null) @IsEnum(CatalogShape) shape?: CatalogShape | null;
 }
 
-export class ImageTextDto {
+export class ImageMetadataDto {
   @ApiProperty({ maxLength: 240 }) @IsString() @MaxLength(240) altText!: string;
+  @ApiPropertyOptional({ enum: CatalogShape, nullable: true })
+  @ValidateIf((_object, value) => value !== undefined && value !== null) @IsEnum(CatalogShape) shape?: CatalogShape | null;
 }
 
 export class ImageOrderDto {

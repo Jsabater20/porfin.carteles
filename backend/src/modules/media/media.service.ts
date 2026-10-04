@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { ADMIN_LOCK } from '../auth/auth.types';
 import { CloudinaryAsset, CloudinaryService } from './cloudinary.service';
-import { CompleteUploadDto, ImageOrderDto, UploadSignatureDto } from './dto/media.dto';
+import { CompleteUploadDto, ImageMetadataDto, ImageOrderDto, UploadSignatureDto } from './dto/media.dto';
 import { MEDIA_CLEANUP_DELAY_MS, MEDIA_FORMATS, MEDIA_INTENT_TTL_MS, MEDIA_MAX_BYTES, MEDIA_MAX_IMAGES, MEDIA_MAX_PIXELS } from './media.constants';
 
 @Injectable()
@@ -89,7 +89,7 @@ export class MediaService {
       const productId = current.productId!;
       const count = await tx.productImage.count({ where: { productId } });
       if (count >= MEDIA_MAX_IMAGES) throw new ConflictException('La galería está completa.');
-      const image = await tx.productImage.create({ data: { productId, uploadId: current.id, publicId: current.publicId, assetId: asset.asset_id, url: asset.secure_url, format: asset.format, bytes: asset.bytes, width: asset.width, height: asset.height, altText: dto.altText.trim(), position: count, cover: count === 0 } });
+      const image = await tx.productImage.create({ data: { productId, uploadId: current.id, publicId: current.publicId, assetId: asset.asset_id, url: asset.secure_url, format: asset.format, bytes: asset.bytes, width: asset.width, height: asset.height, altText: dto.altText.trim(), shape: dto.shape ?? null, position: count, cover: count === 0 } });
       await tx.mediaUpload.update({ where: { id: current.id }, data: { confirmedAt: new Date() } });
       return image;
     });
@@ -114,10 +114,10 @@ export class MediaService {
     return image;
   }
 
-  updateText(productId: string, id: string, altText: string, sessionId: string) {
+  updateMetadata(productId: string, id: string, dto: ImageMetadataDto, sessionId: string) {
     return this.write(sessionId, async tx => {
       await this.image(tx, productId, id);
-      return tx.productImage.update({ where: { id }, data: { altText: altText.trim() } });
+      return tx.productImage.update({ where: { id }, data: { altText: dto.altText.trim(), ...(dto.shape !== undefined ? { shape: dto.shape } : {}) } });
     });
   }
 

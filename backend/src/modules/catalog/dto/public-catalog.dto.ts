@@ -1,12 +1,12 @@
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsString, Length, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
-import { PersonalizationType, PricingMode, ProductKind, ProductType } from '@prisma/client';
+import { CatalogShape, PersonalizationType, PricingMode, ProductKind, ProductType } from '@prisma/client';
 import { CatalogDisplayType } from '../../../common/catalog-classification';
 
 const optional = (_object: unknown, value: unknown) => value !== undefined;
 export enum PublicCatalogSort { NEWEST = 'newest', NAME_ASC = 'name-asc', NAME_DESC = 'name-desc' }
-export enum CatalogShape { RECTANGULAR = 'RECTANGULAR', CIRCULAR = 'CIRCULAR', XXL = 'XXL' }
+export { CatalogShape };
 
 export class PublicPageQuery {
   @ApiPropertyOptional({ default: 1, minimum: 1, maximum: 100000 })
@@ -57,6 +57,7 @@ export class PublicImageDto {
   @ApiProperty() cover!: boolean;
   @ApiProperty() width!: number;
   @ApiProperty() height!: number;
+  @ApiProperty({ enum: CatalogShape, nullable: true }) shape!: CatalogShape | null;
 }
 export class BasePriceDto {
   @ApiProperty({ enum: ['ARS'] }) currency!: 'ARS';
@@ -110,6 +111,7 @@ export class PublicProductCardDto {
   @ApiProperty({ type: [PublicTaxonomyDto] }) careers!: PublicTaxonomyDto[];
   @ApiProperty({ type: PublicImageDto, nullable: true }) coverImage!: PublicImageDto | null;
   @ApiProperty({ type: String, nullable: true, description: 'Variante que coincide con los filtros aplicados.' }) defaultVariantId!: string | null;
+  @ApiProperty({ enum: CatalogShape, nullable: true, description: 'Forma visual usada para la portada del resultado.' }) displayShape!: CatalogShape | null;
   @ApiProperty({ type: BasePriceDto }) basePrice!: BasePriceDto;
 }
 export class PublicProductDetailDto extends PublicProductCardDto {

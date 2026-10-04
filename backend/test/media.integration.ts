@@ -52,7 +52,7 @@ test('Etapa 4: imágenes con PostgreSQL real y proveedor simulado', { timeout: 1
     const asset = { asset_id: randomUUID(), public_id: signed.params.public_id, resource_type: 'image', type: 'upload', format: 'jpg', bytes: 15000, width: 800, height: 600, secure_url: 'https://res.cloudinary.com/test-cloud/image/upload/v1/' + signed.params.public_id + '.jpg', ...overrides };
     assets.set(signed.params.public_id, asset); return asset;
   };
-  const complete = (signed: any) => call('/admin/media/complete', 'POST', { uploadId: signed.uploadId, altText: ' Cartel de prueba ' });
+  const complete = (signed: any) => call('/admin/media/complete', 'POST', { uploadId: signed.uploadId, altText: ' Cartel de prueba ', shape: 'RECTANGULAR' });
   const due = (id: string) => ctx.prisma.mediaUpload.update({ where: { id }, data: { expiresAt: new Date(0), cleanupAfter: new Date(0) } });
 
   await t.test('Sesión, CSRF, origen y DTOs protegen la autorización', async () => {
@@ -80,7 +80,7 @@ test('Etapa 4: imágenes con PostgreSQL real y proveedor simulado', { timeout: 1
     assert.deepEqual(results.map(result => result.status), [200, 200]);
     assert.equal(results[0].body.id, results[1].body.id);
     first = results[0].body;
-    assert.equal(first.cover, true); assert.equal(first.altText, 'Cartel de prueba');
+    assert.equal(first.cover, true); assert.equal(first.altText, 'Cartel de prueba'); assert.equal(first.shape, 'RECTANGULAR');
     assert.equal(await ctx.prisma.productImage.count({ where: { productId } }), 1);
     const signed = await authorize(); simulateUpload(signed);
     const completed = await complete(signed); assert.equal(completed.status, 200); second = completed.body;
@@ -97,8 +97,9 @@ test('Etapa 4: imágenes con PostgreSQL real y proveedor simulado', { timeout: 1
     const ordered = await call(gallery + '/order', 'PATCH', { imageIds: [second.id, first.id] });
     assert.equal(ordered.status, 200);
     assert.deepEqual(ordered.body.map((image: any) => [image.id, image.position, image.cover]), [[second.id, 0, true], [first.id, 1, false]]);
-    const text = await call(gallery + '/' + first.id, 'PATCH', { altText: 'Nuevo texto' });
-    assert.equal(text.body.altText, 'Nuevo texto');
+    const text = await call(gallery + '/' + first.id, 'PATCH', { altText: 'Nuevo texto', shape: 'CIRCULAR' });
+    assert.equal(text.body.altText, 'Nuevo texto'); assert.equal(text.body.shape, 'CIRCULAR');
+    assert.equal((await call(gallery + '/' + first.id, 'PATCH', { altText: 'Texto', shape: 'OVALADO' })).status, 400);
     assert.equal((await call(gallery + '/' + first.id, 'PATCH', { url: 'https://externo.example' })).status, 400);
     await assert.rejects(ctx.prisma.productImage.update({ where: { id: first.id }, data: { cover: true } }));
     assert.equal((await call(gallery + '/' + second.id, 'DELETE', {})).status, 204);

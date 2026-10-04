@@ -34,6 +34,7 @@ function validateSource() {
   for (const item of source.items) {
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.slug)) throw new Error(`Slug inválido: ${item.slug}`);
     if (!['GENERIC', 'PREDEFINED'].includes(item.type)) throw new Error(`Tipo inválido: ${item.slug}`);
+    if (!['RECTANGULAR', 'CIRCULAR', 'XXL'].includes(item.shape)) throw new Error(`Forma visual inválida: ${item.slug}`);
     if ((item.type === 'PREDEFINED') !== Boolean(item.career)) throw new Error(`Carrera incompatible: ${item.slug}`);
     if (slugs.has(item.slug) || fileIds.has(item.driveFileId)) throw new Error(`Entrada duplicada: ${item.slug}`);
     slugs.add(item.slug);
@@ -144,6 +145,7 @@ async function attachImage(item, productId, administratorId) {
       width: asset.width,
       height: asset.height,
       altText: item.name,
+      shape: item.shape,
       position: 0,
       cover: true,
     } });

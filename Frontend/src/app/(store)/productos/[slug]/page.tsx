@@ -9,6 +9,7 @@ import { getProduct } from '@/features/catalog/queries';
 import { isProductSlug, productTypes } from '@/features/catalog/filters';
 import { Gallery } from '@/features/catalog/gallery';
 import { ProductCustomizer } from '@/features/personalization/product-customizer';
+import type { CatalogShape } from '@/lib/contracts/catalog';
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ editar?: string | string[]; variante?: string | string[] }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -34,14 +35,17 @@ export default async function ProductPage({ params, searchParams }: Props) {
     if (!(error instanceof ApiError)) throw error;
     return <div className="container"><EmptyState title="No pudimos cargar este producto" action={<RetryButton />}><p>Intentá nuevamente en unos minutos.</p></EmptyState></div>;
   }
+  const initialVariantId = typeof query.variante === 'string' ? query.variante : undefined;
+  const format = product.variants.find(item => item.id === initialVariantId)?.attributes.formato?.toUpperCase();
+  const preferredShape = format && ['RECTANGULAR', 'CIRCULAR', 'XXL'].includes(format) ? format as CatalogShape : null;
   return <div className="container product-page">
     <nav className="breadcrumbs" aria-label="Ubicación"><Link href="/">Inicio</Link><span aria-hidden="true">/</span><Link href="/catalogo">Catálogo</Link><span aria-hidden="true">/</span><span aria-current="page">{product.name}</span></nav>
     <div className="product-detail-grid">
-      <Gallery key={product.id} images={product.images} name={product.name} slug={product.slug} />
+      <Gallery key={product.id + (preferredShape ?? '')} images={product.images} name={product.name} slug={product.slug} preferredShape={preferredShape} />
       <div className="product-summary">
         <p className="eyebrow">{productTypes[product.type]}</p><h1>{product.name}</h1>
         {product.description && <p className="muted preserve-lines">{product.description}</p>}
-        <ProductCustomizer key={product.id + (editLineId ?? '') + (typeof query.variante === 'string' ? query.variante : '')} product={product} editLineId={editLineId} initialVariantId={typeof query.variante === 'string' ? query.variante : undefined} />
+        <ProductCustomizer key={product.id + (editLineId ?? '') + (initialVariantId ?? '')} product={product} editLineId={editLineId} initialVariantId={initialVariantId} />
         <div className="tag-list">{product.categories.map((category) => <Link key={category.id} className="tag" href={`/catalogo?categoryId=${encodeURIComponent(category.id)}`}>{category.name}</Link>)}
           {product.careers.map((career) => <Link key={career.id} className="tag" href={`/catalogo?careerId=${encodeURIComponent(career.id)}`}>{career.name}</Link>)}</div>
       </div>

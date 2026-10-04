@@ -9,7 +9,7 @@ export function ProductCard({ product, catalogClassification = false }: { produc
   return (
     <article className="product-card">
       <Link href={href} className="product-card-link">
-        <ProductImage image={product.coverImage} name={product.name} referenceSlug={product.slug} />
+        <ProductImage image={product.coverImage} name={product.name} referenceSlug={product.slug} referenceShape={product.displayShape} />
         <div className="product-card-copy">
           <span className="eyebrow">{(catalogClassification && product.category === 'PROP') || product.categories.some(category => category.slug === 'props') ? 'Props · carteles chicos' : productTypes[product.type]}</span>
           <h3>{product.name}</h3>
