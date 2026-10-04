@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
 import { integrationApp } from './support/integration';
 import { hashPassword, tokenHash } from '../src/common/utils/credentials';
 import { OrderService } from '../src/modules/orders/order.service';
@@ -17,7 +18,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
   const guest = identity(await req('/guest-session', 'POST', {})), other = identity(await req('/guest-session', 'POST', {}));
   const administrator = await ctx.prisma.administrator.create({ data: { name: 'Owner', email: 'audit@example.com', passwordHash: await hashPassword('Clave-pruebas-123!'), role: 'OWNER' } });
   const admin = identity(await req('/auth/login', 'POST', { email: administrator.email, password: 'Clave-pruebas-123!' }));
-  await ctx.prisma.storeSettings.create({ data: { id: 1, whatsappNumber: '5491199999999', deliveryMethods: ['PICKUP', 'SHIPPING'] } });
+  await ctx.prisma.storeSettings.create({ data: { id: 1, whatsappNumber: '5491199999999', contactEmail: 'porfincarteles@gmail.com', deliveryMethods: ['PICKUP', 'SHIPPING'] } });
   const product = await ctx.prisma.product.create({ data: { name: 'Cartel', slug: 'cartel-pedido', description: 'Prueba', type: 'PREDEFINED', status: 'PUBLISHED', variants: { create: { key: 'base', name: 'Tres fotos', pricingMode: 'FIXED', priceCents: 10000, photoCount: 3, attributes: { size: 'A3' }, position: 0 } }, fields: { create: { key: 'nombre', label: 'Nombre', type: 'SHORT_TEXT', required: true, position: 0 } } }, include: { variants: true } });
   const variant = product.variants[0];
   const line = { lineId: 'cartel', productId: product.id, variantId: variant.id, quantity: 2, answers: [{ fieldKey: 'idea', value: 'Un cartel para Ana' }] };
@@ -25,7 +26,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     const result = await req('/orders/preview', 'POST', { items, deliveryMethod: 'SHIPPING' }, guest, randomUUID()); assert.equal(result.status, 200, JSON.stringify(result.body)); return result.body;
   };
   const saved = await preview();
-  const payload = { previewId: saved.id, customerFirstName: 'Ana', customerLastName: 'Pérez', customerEmail: 'ana@example.com', customerBirthDate: '1995-02-28', customerPhone: '+5491123456789', requestedDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), deliveryMethod: 'SHIPPING', deliveryAddress: 'Calle 123' };
+  const payload = { previewId: saved.id, customerFirstName: 'Ana', customerLastName: 'Pérez', customerEmail: 'ana@example.com', customerBirthDate: '1995-02-28', customerPhone: '3425556789', requestedDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), deliveryMethod: 'SHIPPING' };
   const create = (body: unknown = payload, key = randomUUID(), owner = guest) => req('/orders', 'POST', body, owner, key);
   let order: any, quote: any;
   const adminReq = (route: string, method = 'GET', body?: unknown, key?: string) => req(route, method, body, admin, key);
@@ -36,7 +37,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
 
   await t.test('Valida datos, entrega, permisos y pertenencia antes de crear', async () => {
     assert.equal((await create(payload, randomUUID(), other)).status, 404);
-    for (const patch of [{ customerFirstName: '   ' }, { customerLastName: '' }, { customerEmail: '' }, { customerEmail: 'invalido' }, { customerBirthDate: '2099-01-01' }, { customerBirthDate: '1995-02-30' }, { customerBirthDate: null }, { customerPhone: '------' }, { notes: '\u0000' }, { requestedDate: '2026-02-30' }, { requestedDate: '2000-01-01' }, { requestedDate: '2099-01-01T10:00:00Z' }, { deliveryMethod: 'PICKUP' }, { deliveryAddress: '' }, { unitPriceCents: 1 }]) assert.equal((await create({ ...payload, ...patch })).status, 400, JSON.stringify(patch));
+    for (const patch of [{ customerFirstName: '   ' }, { customerLastName: '' }, { customerEmail: '' }, { customerEmail: 'invalido' }, { customerBirthDate: '2099-01-01' }, { customerBirthDate: '1995-02-30' }, { customerBirthDate: null }, { customerPhone: '------' }, { customerPhone: undefined }, { notes: '\u0000' }, { requestedDate: '2026-02-30' }, { requestedDate: '2000-01-01' }, { requestedDate: '2099-01-01T10:00:00Z' }, { deliveryMethod: 'PICKUP' }, { unitPriceCents: 1 }]) assert.equal((await create({ ...payload, ...patch })).status, 400, JSON.stringify(patch));
     assert.equal((await create(payload, randomUUID(), { ...guest, csrf: '' })).status, 403);
     assert.equal((await req('/orders', 'POST', payload, undefined, randomUUID())).status, 401);
     assert.equal(await ctx.prisma.order.count(), 0);
@@ -56,9 +57,14 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     order = results[0].body;
     assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
-    for (const text of ['Hola Porfin Carteles!', 'Mail: ana@example.com', 'Nombre: Ana', 'Apellido: Pérez', 'size: A3', '6', 'Calle 123', 'emprendedora', 'seña del 50%']) assert.ok(order.whatsapp.message.includes(text), text);
+    for (const text of ['Hola Porfin Carteles!', 'Modalidad de entrega: Envío por correo', 'Nombre: Ana', 'Apellido: Pérez', 'Teléfono: 3425556789', 'size: A3', '6', 'emprendedora', 'seña del 50%']) assert.ok(order.whatsapp.message.includes(text), text);
+    assert.doesNotMatch(order.whatsapp.message, /Mail:|Fecha de nacimiento:/);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
     assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
+    const notices = (await readdir(ctx.outbox)).filter(name => name.startsWith('order-'));
+    assert.equal(notices.length, 1);
+    const notice = JSON.parse(await readFile(`${ctx.outbox}/${notices[0]}`, 'utf8'));
+    assert.equal(notice.to, 'porfincarteles@gmail.com'); assert.match(notice.text, /CAR-|Ana Pérez|Teléfono: 3425556789|2 × Cartel/); assert.doesNotMatch(notice.text, /Fecha de nacimiento/);
     assert.equal((await create({ ...payload, customerFirstName: 'Otro' }, key)).status, 409);
     assert.equal((await create({ ...payload, customerEmail: 'otro@example.com' }, key)).status, 409);
     assert.equal((await create({ ...payload, customerBirthDate: '1995-03-01' }, key)).status, 409);
@@ -127,9 +133,10 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     await ctx.prisma.storeSettings.update({ where: { id: 1 }, data: { whatsappNumber: null } });
     await ctx.prisma.productVariant.update({ where: { id: variant.id }, data: { priceCents: 1000000000 } });
     const big = await preview([{ ...line, quantity: 100 }]);
-    const created = await create({ ...payload, previewId: big.id, customerPhone: undefined, customerBirthDate: undefined }); assert.equal(created.status, 200, JSON.stringify(created.body));
+    assert.equal((await create({ ...payload, previewId: big.id, customerPhone: undefined, customerBirthDate: undefined })).status, 400);
+    const created = await create({ ...payload, previewId: big.id }); assert.equal(created.status, 200, JSON.stringify(created.body));
     assert.equal(created.body.knownSubtotalCents, 100000000000); assert.equal(created.body.items[0].subtotalCents, 100000000000); assert.equal(created.body.whatsapp.url, null);
-    assert.equal(created.body.customerBirthDate, null); assert.equal(created.body.customerPhone, ''); assert.doesNotMatch(created.body.whatsapp.message, /Fecha de nacimiento:|Teléfono:/);
+    assert.equal(created.body.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(created.body.customerPhone, payload.customerPhone); assert.doesNotMatch(created.body.whatsapp.message, /Mail:|Fecha de nacimiento:/);
     order = created.body;
     const bigQuote = await createQuote(1000000000, 10000); assert.equal(bigQuote.status, 201); assert.equal(bigQuote.body.totalCents, 10000000000000);
     for (const status of ['CONFIRMED', 'IN_PRODUCTION', 'READY', 'DELIVERED']) assert.equal((await transition(status)).status, 200);

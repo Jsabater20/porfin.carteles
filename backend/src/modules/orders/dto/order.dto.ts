@@ -14,8 +14,8 @@ export class CreateOrderDto {
   @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Length(1, 60) customerFirstName!: string;
   @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Length(1, 60) customerLastName!: string;
   @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsEmail() @Length(3, 254) customerEmail!: string;
-  @ApiPropertyOptional({ format: 'date' }) @ValidateIf((_o, value) => value !== undefined) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) customerBirthDate?: string;
-  @ApiPropertyOptional() @ValidateIf((_o, value) => value !== undefined) @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Matches(/^\+?[0-9()\-\s]{6,30}$/) customerPhone?: string;
+  @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) customerBirthDate!: string;
+  @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @IsNotEmpty() @Matches(/^\+?[0-9()\-\s]{6,30}$/) customerPhone!: string;
   @ApiProperty({ format: 'date' }) @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) requestedDate!: string;
   @ApiProperty({ enum: DeliveryMethod }) @IsEnum(DeliveryMethod) deliveryMethod!: DeliveryMethod;
   @ApiPropertyOptional() @ValidateIf((_o, value) => value !== undefined) @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(0, 400) deliveryAddress?: string;

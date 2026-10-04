@@ -35,7 +35,7 @@ try {
   ws = new WebSocket(tabs.find((tab) => tab.type === 'page').webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let seq = 0;
-  const pending = new Map(), exceptions = [], whatsappAttempts = [];
+  const pending = new Map(), exceptions = [];
   const send = (method, params = {}) => new Promise((resolve, reject) => {
     const id = ++seq, timer = setTimeout(() => { pending.delete(id); reject(new Error('Timeout ' + method)); }, 20000);
     pending.set(id, { resolve, reject, timer }); ws.send(JSON.stringify({ id, method, params }));
@@ -46,7 +46,6 @@ try {
       const item = pending.get(message.id); clearTimeout(item.timer); pending.delete(message.id);
       if (message.error) item.reject(new Error(JSON.stringify(message.error))); else item.resolve(message.result);
     }
-    if (message.method === 'Fetch.requestPaused') { whatsappAttempts.push(message.params.request.url); void send('Fetch.failRequest', { requestId: message.params.requestId, errorReason: 'Aborted' }); }
     if (message.method === 'Page.javascriptDialogOpening') void send('Page.handleJavaScriptDialog', { accept: true });
     if (message.method === 'Runtime.exceptionThrown') exceptions.push(message.params.exceptionDetails.text);
   };
@@ -70,32 +69,29 @@ try {
   const cart = () => evaluate('JSON.parse(localStorage.getItem("porfin.cart.v1"))');
   const submitProduct = async () => { await click('.customizer button[type="submit"]'); await waitFor('!!document.querySelector(".success-notice")'); };
   await send('Page.enable'); await send('Runtime.enable');
-  await send('Fetch.enable', { patterns: [{ urlPattern: 'https://wa.me/*', requestStage: 'Request' }] });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
 
   const futureDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   const fillCustomer = async (name = 'Ana') => {
-    await fill('#order-customerFirstName', name); await fill('#order-customerLastName', 'Pérez'); await fill('#order-customerEmail', 'ana@example.com'); await fill('#order-customerPhone', '+54 9 11 2345 6789');
+    await fill('#order-customerFirstName', name); await fill('#order-customerLastName', 'Pérez'); await fill('#order-customerPhone', '342 555-6789'); await fill('#order-customerEmail', 'ana@example.com'); await fill('#order-customerBirthDate', '1995-02-28');
     await fill('#order-requestedDate', futureDate);
-    if (await evaluate('!!document.querySelector("#order-deliveryAddress")')) await fill('#order-deliveryAddress', 'Calle 123, Córdoba');
     await fill('#order-notes', 'Entregar por la tarde');
   };
-  const validate = async () => { await click('.cart-summary > button'); await waitFor('!!document.querySelector(".order-consent")'); };
-  const accept = async () => { await click('.order-consent input'); await waitFor('!document.querySelector(".order-submit").disabled'); };
+  const waitForOrder = async () => { await waitFor('document.body.innerText.includes("Subtotal conocido") && !document.querySelector(".order-submit").disabled'); };
   await auditedNavigate('/pedido', '.order-page');
   await waitFor('document.body.innerText.includes("Primero armá tu carrito")');
   await auditedNavigate('/productos/producto-0', '.customizer');
-  await fill('#personalization-name', 'Celebración'); await submitProduct();
+  await fill('#personalization-idea', 'Celebración'); await submitProduct();
   await auditedNavigate('/pedido', '.order-form');
   assert.equal(await evaluate('document.querySelector(".order-submit").disabled'), true);
-  await fill('#order-delivery', 'SHIPPING'); await validate(); await accept();
+  await fill('#order-delivery', 'SHIPPING'); await waitForOrder();
   await click('.order-submit');
   await waitFor('!!document.querySelector("#error-customerFirstName")');
   assert.equal(await evaluate('document.activeElement.id'), 'order-customerFirstName');
-  await fillCustomer(); await fill('#order-deliveryAddress', '');
-  await click('.order-submit'); await waitFor('!!document.querySelector("#error-deliveryAddress")');
+  await fillCustomer(); await fill('#order-customerPhone', ''); await fill('#order-customerBirthDate', '');
+  await click('.order-submit'); await waitFor('!!document.querySelector("#error-customerPhone") && !!document.querySelector("#error-customerBirthDate")');
   assert.equal(api.state.orders.size, 0);
-  await fill('#order-deliveryAddress', 'Calle 123, Córdoba');
+  await fill('#order-customerPhone', '342 555-6789'); await fill('#order-customerBirthDate', '1995-02-28');
   for (const width of [1440, 390, 320]) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: 1100, deviceScaleFactor: 1, mobile: width < 500 });
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Desborde checkout ' + width);
@@ -106,7 +102,7 @@ try {
   await waitFor('document.body.innerText.includes("No recibimos una confirmación")');
   assert.equal(api.state.orders.size, 1); assert.ok(await cart());
   const pendingOrder = await evaluate('sessionStorage.getItem("porfin.order-attempt.v1")');
-  assert.doesNotMatch(pendingOrder, /Ana|5491123456789|Calle|tarde/);
+  assert.doesNotMatch(pendingOrder, /Ana|3425556789|tarde/);
   await evaluate('const changedCart=JSON.parse(localStorage.getItem("porfin.cart.v1"));changedCart.lines[0].quantity=3;localStorage.setItem("porfin.cart.v1",JSON.stringify(changedCart));true');
   // Simula recarga tras una respuesta perdida: conserva el preview original incluso vencido.
   for (const entry of api.state.previews.values()) entry.result.expiresAt = new Date(Date.now() - 1000).toISOString();
@@ -117,11 +113,11 @@ try {
   await fillCustomer('Otro nombre'); await click('.order-submit');
   await waitFor('document.body.innerText.includes("exactamente los datos originales")');
   assert.equal(api.state.orderCalls.length, 1);
+  await evaluate('window.__whatsappOpen={opened:0,closed:0,url:""};window.open=()=>{window.__whatsappOpen.opened++;return {opener:null,location:{replace:(url)=>window.__whatsappOpen.url=url},close:()=>window.__whatsappOpen.closed++}};true');
   await fillCustomer(); await click('.order-submit');
   await waitFor('!!document.querySelector(".order-receipt")');
   await waitFor('!location.search.includes("whatsapp")');
-  for (let attempt = 0; attempt < 50 && !whatsappAttempts.length; attempt++) await delay(100);
-  assert.equal(whatsappAttempts.length, 1, 'Abre WhatsApp al completar el formulario una sola vez');
+  assert.deepEqual(await evaluate('window.__whatsappOpen'), { opened: 1, closed: 0, url: api.state.orders.values().next().value.whatsapp.url });
   const firstPath = await evaluate('location.pathname');
   assert.equal(api.state.orders.size, 1); assert.equal(api.state.orderCalls[0].key, api.state.orderCalls[1].key);
   assert.equal((await cart()).lines[0].quantity, 3, 'Conserva el carrito editado mientras el pedido estaba pendiente');
@@ -131,7 +127,7 @@ try {
   await waitFor('!!document.querySelector(".order-actions [role=status]")');
   await auditedNavigate(firstPath, '.order-receipt');
   assert.equal(api.state.orderCalls.length, 2);
-  assert.equal(whatsappAttempts.length, 1, 'Revisitar el recibo no vuelve a redirigir');
+  assert.equal(await evaluate('typeof window.__whatsappOpen'), 'undefined', 'Revisitar el recibo no vuelve a abrir WhatsApp');
   console.log('OK validaciones, envío, respuesta perdida, recarga, misma clave, recibo privado y copia de WhatsApp');
 
   await auditedNavigate('/pedido', '.order-page');
@@ -143,18 +139,16 @@ try {
   await click('[aria-label="Confirmar vaciado"] .button');
   await waitFor('document.body.innerText.includes("Tu carrito está vacío")');
   await auditedNavigate('/productos/producto-1', '.customizer');
-  await fill('#personalization-name', 'Cotización'); await submitProduct();
+  await fill('#personalization-idea', 'Cotización'); await submitProduct();
   await auditedNavigate('/pedido', '.order-form');
-  await fill('#order-delivery', 'PICKUP'); await validate(); await fillCustomer(); await accept();
+  await fill('#order-delivery', 'PICKUP'); await waitForOrder(); await fillCustomer();
   assert.equal(await evaluate('!!document.querySelector("#order-deliveryAddress")'), false);
   api.state.orderReject = { status: 409, message: 'El catálogo cambió. Volvé a validar el carrito.' };
   await click('.order-submit'); await waitFor('document.body.innerText.includes("El resumen venció o cambió")');
-  await waitFor('!document.querySelector(".order-consent") && !!document.querySelector(".cart-summary > button")');
+  await waitForOrder();
   assert.equal(api.state.orders.size, 1); assert.ok(await cart());
-  await validate(); await accept();
   api.state.orderReject = { status: 410, message: 'La validación venció.' };
-  await click('.order-submit'); await waitFor('!document.querySelector(".order-consent") && !!document.querySelector(".cart-summary > button")');
-  await validate(); await accept();
+  await click('.order-submit'); await waitFor('document.body.innerText.includes("El resumen venció o cambió")'); await waitForOrder();
   api.state.orderNoWhatsapp = true;
   await click('.order-submit'); await waitFor('!!document.querySelector(".order-receipt")');
   assert.equal(api.state.orders.size, 2);

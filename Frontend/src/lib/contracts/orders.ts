@@ -1,7 +1,7 @@
 import type { PreviewLine } from './preview';
 
 export interface CreateOrderInput {
-  previewId: string; customerFirstName: string; customerLastName: string; customerEmail: string; customerBirthDate?: string; customerPhone?: string; requestedDate: string;
+  previewId: string; customerFirstName: string; customerLastName: string; customerEmail: string; customerBirthDate: string; customerPhone: string; requestedDate: string;
   deliveryMethod: 'PICKUP' | 'SHIPPING'; deliveryAddress?: string; notes?: string;
 }
 export interface GuestOrder {

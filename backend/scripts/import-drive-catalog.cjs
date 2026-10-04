@@ -10,10 +10,10 @@ const apply = process.argv.includes('--apply');
 const allowedFormats = new Set(['jpg', 'jpeg', 'png', 'webp']);
 const maximumBytes = 5 * 1024 * 1024;
 const catalogVariants = [
-  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', pricingMode: 'FIXED', priceCents: 4_800_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 0, active: true, position: 0 },
-  { key: 'circular', name: 'Circular · 70 cm de diámetro', pricingMode: 'FIXED', priceCents: 5_100_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 0, active: true, position: 1 },
-  { key: 'rectangular-3-imagenes', name: 'Rectangular · 60 × 100 cm · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_100_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 3, active: true, position: 2 },
-  { key: 'circular-3-imagenes', name: 'Circular · 70 cm de diámetro · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_400_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 3, active: true, position: 3 },
+  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', pricingMode: 'FIXED', priceCents: 5_200_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 0, active: true, position: 0 },
+  { key: 'circular', name: 'Circular · 70 cm de diámetro', pricingMode: 'FIXED', priceCents: 5_500_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 0, active: true, position: 1 },
+  { key: 'rectangular-3-imagenes', name: 'Rectangular · 60 × 100 cm · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_500_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 3, active: true, position: 2 },
+  { key: 'circular-3-imagenes', name: 'Circular · 70 cm de diámetro · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_900_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 3, active: true, position: 3 },
 ];
 
 function cloudOptions() {

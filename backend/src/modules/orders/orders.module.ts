@@ -6,10 +6,11 @@ import { OrdersController } from './orders.controller';
 import { OrderService } from './order.service';
 import { PreviewController } from './preview.controller';
 import { PreviewService } from './preview.service';
+import { OrderNotificationMailer } from './order-notification-mailer.service';
 
 @Module({
   imports: [GuestSessionsModule, PricingModule],
   controllers: [PreviewController, OrdersController, AdminOrdersController],
-  providers: [PreviewService, OrderService],
+  providers: [PreviewService, OrderService, OrderNotificationMailer],
 })
 export class OrdersModule {}

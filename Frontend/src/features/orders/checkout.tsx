@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useCart } from '@/features/cart/provider';
 import { previewInput } from '@/features/cart/model';
 import { formatMoney } from '@/lib/format/money';
 import type { PublicSettings } from '@/lib/contracts/settings';
-import { argentinaDate, emptyCustomer, validateCustomer, type CustomerFields } from './validation';
+import { argentinaDate, emptyCustomer, validateCustomer, whatsappLink, type CustomerFields } from './validation';
 import { fingerprint } from './manager';
 import { DepositNotice } from '@/components/deposit-notice';
 
@@ -17,15 +17,17 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
   const form = useRef<HTMLFormElement>(null);
   const [fields, setFields] = useState<CustomerFields>(emptyCustomer);
   const [errors, setErrors] = useState<Partial<Record<keyof CustomerFields, string>>>({});
-  const [acceptedPreview, setAcceptedPreview] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const pending = orderState.pending;
   const busy = orderState.status === 'submitting';
   const result = preview.status === 'ready' ? preview.preview : null;
-  const methods = settings?.deliveryMethods.length ? settings.deliveryMethods : ['PICKUP', 'SHIPPING'];
+  const methods = useMemo(() => settings?.deliveryMethods.length ? settings.deliveryMethods : ['PICKUP', 'SHIPPING'], [settings?.deliveryMethods]);
   const delivery = pending?.deliveryMethod ?? state.deliveryMethod;
   const canRegister = Boolean(result && delivery !== 'UNDECIDED' && methods.includes(delivery) && settings && Date.parse(result.expiresAt) > Date.now());
   useEffect(() => { if (orderState.status === 'review') previews.invalidate(); }, [orderState.status, previews]);
+  useEffect(() => {
+    if (!pending && state.ready && state.lines.length && settings && delivery !== 'UNDECIDED' && methods.includes(delivery) && ['idle', 'expired'].includes(preview.status)) void previews.validate();
+  }, [delivery, methods, pending, preview.status, previews, settings, state.lines.length, state.ready]);
   useEffect(() => {
     if (!pending) return;
     const guard = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -41,30 +43,38 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
     event.preventDefault();
     setFormMessage('');
     if (busy || orderState.retryBlocked || orderState.status === 'blocked') return;
-    if (!pending && (!canRegister || !result || acceptedPreview !== result.id)) {
-      setFormMessage('Elegí la entrega, validá el carrito y confirmá que revisaste el resumen.'); return;
+    if (!pending && (!canRegister || !result)) {
+      setFormMessage(preview.status === 'loading' ? 'Esperá mientras preparamos la información de tu pedido.' : 'No pudimos preparar la información del pedido. Volvé al carrito y revisá tu selección.'); return;
     }
     if (delivery === 'UNDECIDED') return;
     const validation = validateCustomer(fields, pending?.previewId ?? result!.id, delivery,
       pending ? argentinaDate(new Date(pending.createdAt)) : argentinaDate());
     setErrors(validation.errors);
     if (Object.keys(validation.errors).length) { requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return; }
+    const whatsappWindow = window.open('about:blank', '_blank');
+    if (whatsappWindow) whatsappWindow.opener = null;
     // El hash permite recuperar un reintento tras recargar sin guardar datos de contacto.
     const snapshot = store.getSnapshot();
     const cartHash = await fingerprint(previewInput(snapshot));
     if (!pending && (store.getSnapshot().revision !== snapshot.revision || previews.getSnapshot().preview?.id !== validation.input.previewId || Date.parse(result!.expiresAt) <= Date.now())) {
+      whatsappWindow?.close();
       setFormMessage('El carrito cambió o venció el resumen. Volvé a revisarlo antes de registrar.'); return;
     }
-    await orders.submit(validation.input, cartHash);
+    const registeredOrder = await orders.submit(validation.input, cartHash);
     const registered = orders.getSnapshot();
-    if (registered.status === 'success' && registered.orderId && window.location.pathname === '/pedido') router.replace('/pedido/' + registered.orderId + '?whatsapp=1');
+    if (registeredOrder) {
+      const link = whatsappLink(registeredOrder.whatsapp.url);
+      if (link && whatsappWindow) whatsappWindow.location.replace(link);
+      else whatsappWindow?.close();
+    } else whatsappWindow?.close();
+    if (registered.status === 'success' && registered.orderId && window.location.pathname === '/pedido') router.replace('/pedido/' + registered.orderId);
   }
   if (!state.ready || !orderState.ready) return <div className="container loading-state" role="status">Preparando tu solicitud…</div>;
   if (orderState.status === 'success' && orderState.orderId) return <div className="container order-page"><h1>Tu solicitud quedó registrada</h1><p>Podés consultar el resumen y continuar a WhatsApp.</p><Link className="button" href={'/pedido/' + orderState.orderId}>Ver solicitud registrada</Link><button className="text-button" onClick={() => orders.newRequest()}>Preparar otra solicitud</button></div>;
   if (!state.lines.length && !pending && orderState.status !== 'blocked') return <div className="container order-page"><h1>Primero armá tu carrito</h1><p>Elegí y personalizá tus productos para preparar una solicitud.</p><Link className="button" href="/catalogo">Explorar el catálogo</Link></div>;
   const input = (key: keyof CustomerFields, label: string, type = 'text', hint?: string) => <div className="custom-field">
     <label htmlFor={'order-' + key}>{label}</label>
-    {key === 'notes' || key === 'deliveryAddress' ? <textarea id={'order-' + key} rows={key === 'notes' ? 3 : 2} value={fields[key]} onChange={(e) => changeField(key, e.target.value)} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? 'error-' + key : hint ? 'hint-' + key : undefined} autoComplete={key === 'deliveryAddress' ? 'street-address' : 'off'} />
+    {key === 'notes' ? <textarea id={'order-' + key} rows={3} value={fields[key]} onChange={(e) => changeField(key, e.target.value)} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? 'error-' + key : hint ? 'hint-' + key : undefined} autoComplete="off" />
       : <input id={'order-' + key} type={type} value={fields[key]} onChange={(e) => changeField(key, e.target.value)} max={key === 'customerBirthDate' ? argentinaDate() : undefined} min={key === 'requestedDate' ? (pending ? argentinaDate(new Date(pending.createdAt)) : argentinaDate()) : undefined} autoComplete={key === 'customerFirstName' ? 'given-name' : key === 'customerLastName' ? 'family-name' : key === 'customerEmail' ? 'email' : key === 'customerBirthDate' ? 'bday' : key === 'customerPhone' ? 'tel' : 'off'} aria-invalid={Boolean(errors[key])} aria-describedby={errors[key] ? 'error-' + key : hint ? 'hint-' + key : undefined} />}
     {hint && <small className="muted" id={'hint-' + key}>{hint}</small>}
     {errors[key] && <p className="field-error" id={'error-' + key}>{errors[key]}</p>}
@@ -75,41 +85,43 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
     {orderState.status === 'blocked' ? <Link className="button" href="/contacto">Contactar a la tienda</Link> : <div className="cart-layout">
       <form ref={form} onSubmit={submit} noValidate className="order-form">
         <fieldset disabled={busy} className="order-fields"><legend>Datos de contacto y entrega</legend>
-          {!pending ? <div className="custom-field"><label htmlFor="order-delivery">Modalidad de entrega *</label><select id="order-delivery" value={delivery} onChange={(e) => { store.delivery(e.target.value as 'PICKUP' | 'SHIPPING'); setAcceptedPreview(''); }}>
-            <option value="UNDECIDED">Elegí una modalidad</option>{methods.map((method) => <option key={method} value={method}>{method === 'PICKUP' ? 'Retiro' : 'Envío'}</option>)}
+          {!pending ? <div className="custom-field"><label htmlFor="order-delivery">Modalidad de entrega *</label><select id="order-delivery" value={delivery} onChange={(e) => store.delivery(e.target.value as 'UNDECIDED' | 'PICKUP' | 'SHIPPING')}>
+            <option value="UNDECIDED">Elegí una modalidad</option>{methods.map((method) => <option key={method} value={method}>{method === 'PICKUP' ? 'A coordinar (Santa Fe Capital)' : 'Envío por correo'}</option>)}
           </select>{delivery !== 'UNDECIDED' && !methods.includes(delivery) && <p className="field-error">Esta modalidad ya no está disponible. Elegí otra.</p>}</div>
-            : <p>Entrega de la solicitud original: <strong>{delivery === 'PICKUP' ? 'Retiro' : 'Envío'}</strong>.</p>}
+            : <p>Entrega de la solicitud original: <strong>{delivery === 'PICKUP' ? 'A coordinar (Santa Fe Capital)' : 'Envío por correo'}</strong>.</p>}
+          {delivery === 'PICKUP' && <p className="muted form-note">Podés coordinar retiro, Uber u otra opción dentro de Santa Fe Capital. Si elegís Uber, el costo queda a tu cargo al solicitarlo.</p>}
+          {delivery === 'SHIPPING' && <p className="muted form-note">El envío se realiza por correo y sus datos se coordinan con la emprendedora por WhatsApp.</p>}
           {delivery === 'PICKUP' && settings?.pickupAddress && <p className="notice">{settings.pickupAddress}</p>}
           {settings?.deliveryNotes && <p className="muted preserve-lines">{settings.deliveryNotes}</p>}
           {input('customerFirstName', 'Nombre *')}
           {input('customerLastName', 'Apellido *')}
-          {input('customerBirthDate', 'Fecha de nacimiento (opcional)', 'date')}
+          {input('customerPhone', 'Teléfono *', 'tel', 'Podés escribirlo con espacios o guiones.')}
           {input('customerEmail', 'Mail *', 'email')}
-          {input('customerPhone', 'Teléfono con código de país (opcional)', 'tel', 'Por ejemplo: +54 9 11 2345 6789.')}
+          {input('customerBirthDate', 'Fecha de nacimiento *', 'date')}
           {input('requestedDate', '¿Para cuándo lo necesitarías? *', 'date', 'La fecha queda pendiente hasta que la emprendedora la confirme por WhatsApp.')}
-          {delivery === 'SHIPPING' && input('deliveryAddress', 'Dirección de envío *', 'text', 'Incluí calle, número, localidad y provincia.')}
           {input('notes', 'Observaciones (opcional)', 'text', 'Hasta 1000 caracteres. Las fotos se envían por WhatsApp.')}
         </fieldset>
-        {!pending && result && <label className="order-consent"><input type="checkbox" checked={acceptedPreview === result.id} onChange={(e) => setAcceptedPreview(e.target.checked ? result.id : '')} disabled={busy} />Revisé los productos, la entrega y los importes conocidos. Entiendo que el pedido, el total final y la fecha necesitan la confirmación de la emprendedora por WhatsApp, y que para confirmar y comenzar el diseño se abona una seña del 50%.</label>}
         {formMessage && <p role="alert" className="field-error">{formMessage}</p>}
         {orderState.storageWarning && <p className="notice">Este navegador no permite guardar el registro de reintento. Mantené la página abierta hasta recibir la confirmación.</p>}
-        <button className="button order-submit" type="submit" disabled={busy || orderState.retryBlocked || !pending && (!canRegister || acceptedPreview !== result?.id)}>{busy ? 'Registrando…' : pending ? 'Reintentar la misma solicitud' : 'Continuar a WhatsApp'}</button>
+        <button className="button order-submit" type="submit" disabled={busy || orderState.retryBlocked || !pending && !canRegister}>{busy ? 'Registrando…' : pending ? 'Reintentar la misma solicitud' : 'Hacer pedido y abrir WhatsApp'}</button>
         {busy && <p role="status">Guardando tu solicitud…</p>}
-        <p className="muted form-note">Los datos de contacto y dirección no se guardan en el navegador. Se envían a la tienda al registrar la solicitud.</p>
+        <p className="muted form-note">Los datos de contacto no se guardan en el navegador. El mail y la fecha de nacimiento quedan registrados para la administración, pero no se incluyen en el mensaje de WhatsApp.</p>
       </form>
       <aside className="cart-summary" aria-label="Revisión de la solicitud">
-        <h2>{pending ? 'Recuperar solicitud' : 'Revisá tu carrito'}</h2>
+        <h2>{pending ? 'Recuperar solicitud' : 'Tu pedido'}</h2>
         {pending ? <><p>Usaremos la misma solicitud original, aunque su resumen haya vencido. Un reintento recupera el pedido si ya se registró.</p><p className="muted">Si recargaste, completá los mismos datos que enviaste antes. Los cambios actuales del carrito no se incluyen en este reintento.</p><Link className="text-link" href="/contacto">Necesito ayuda de la tienda</Link></> : <>
           {!settings && <p role="alert" className="notice">No pudimos consultar las modalidades de entrega. <button type="button" className="text-button" onClick={() => router.refresh()}>Volver a consultar</button></p>}
-          <button type="button" className="button" disabled={!settings || delivery === 'UNDECIDED' || !methods.includes(delivery) || preview.status === 'loading' || preview.retryBlocked} onClick={() => void previews.validate(true)}>{preview.status === 'loading' ? 'Validando…' : result ? 'Actualizar resumen' : 'Validar carrito'}</button>
+          {preview.status === 'loading' && <p role="status">Preparando la información de tu pedido…</p>}
+          {preview.status === 'error' && !preview.retryBlocked && <button type="button" className="text-button" onClick={() => void previews.validate()}>Reintentar carga del pedido</button>}
           {preview.message && <p role="alert" className="notice">{preview.message}</p>}
+          {!result && <div className="validated-summary">{state.lines.map((line) => <div className="order-review-item" key={line.lineId}><h3>{line.quantity} × {line.display.name}</h3><p>{line.display.variantName} · {line.display.unitEstimateCents === null ? 'A cotizar' : formatMoney(line.display.unitEstimateCents * line.quantity)}</p></div>)}</div>}
           {result && <div className="validated-summary">
             {preview.priceChanges.length > 0 && <p className="notice">Hay cambios de precio. Revisá los importes actualizados antes de continuar.</p>}
             {result.items.map((item) => <div className="order-review-item" key={item.lineId}><h3>{item.quantity} × {item.productName}</h3><p>{item.variantName} · {item.subtotalCents === null ? 'A cotizar' : formatMoney(item.subtotalCents)}</p>
               <dl className="cart-answers">{item.answers.map((answer) => <div key={answer.fieldKey}><dt>{item.components.find((c) => c.key === answer.componentKey)?.name ? item.components.find((c) => c.key === answer.componentKey)!.name + ': ' : ''}{answer.label}</dt><dd>{answer.displayValue}</dd></div>)}</dl>
               {item.photoCountTotal > 0 && <p className="muted form-note">{item.photoCountTotal} fotos por WhatsApp.</p>}
             </div>)}
-            <dl><div><dt>Subtotal conocido</dt><dd>{formatMoney(result.summary.knownSubtotalCents)}</dd></div><div><dt>A cotizar</dt><dd>{result.summary.pendingQuoteQuantity} unidades</dd></div><div><dt>Entrega</dt><dd>{delivery === 'PICKUP' ? 'Retiro' : 'Envío a confirmar'}</dd></div><div><dt>Total final</dt><dd>A confirmar</dd></div></dl>
+            <dl><div><dt>Subtotal conocido</dt><dd>{formatMoney(result.summary.knownSubtotalCents)}</dd></div><div><dt>A cotizar</dt><dd>{result.summary.pendingQuoteQuantity} unidades</dd></div><div><dt>Entrega</dt><dd>{delivery === 'PICKUP' ? 'A coordinar' : 'Envío por correo a confirmar'}</dd></div><div><dt>Total final</dt><dd>A confirmar</dd></div></dl>
           </div>}
           <Link className="text-link" href="/carrito">Editar productos y opciones</Link>
         </>}

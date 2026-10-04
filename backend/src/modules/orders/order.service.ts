@@ -10,6 +10,7 @@ import { ADMIN_LOCK } from '../auth/auth.types';
 import { CreateManualOrderDto, CreateOrderDto, CreateOrderQuoteDto } from './dto/order.dto';
 import { DeliveryMethod, PreviewDto, PreviewResponseDto } from './dto/preview.dto';
 import { PreviewService } from './preview.service';
+import { OrderNotificationMailer } from './order-notification-mailer.service';
 
 const SCOPE = 'ORDER_CREATE';
 const CATEGORY_LABELS = { CARTEL: 'Cartel', PROP: 'Prop', COMBO: 'Combo' } as const;
@@ -19,14 +20,14 @@ type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: true } }>;
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService, private readonly previews: PreviewService) {}
+  constructor(private readonly prisma: PrismaService, private readonly previews: PreviewService, private readonly notifications: OrderNotificationMailer) {}
 
   async create(dto: CreateOrderDto, guestSessionId: string, idempotencyKey: string) {
     const key = idempotencyKey.toLowerCase();
     const requestHash = tokenHash(JSON.stringify({ previewId: dto.previewId, customerFirstName: dto.customerFirstName, customerLastName: dto.customerLastName, customerEmail: dto.customerEmail, customerBirthDate: dto.customerBirthDate ?? null, customerPhone: dto.customerPhone ?? null, requestedDate: dto.requestedDate, deliveryMethod: dto.deliveryMethod, deliveryAddress: dto.deliveryAddress ?? null, notes: dto.notes ?? null }));
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        return await this.prisma.$transaction(async tx => {
+        const result = await this.prisma.$transaction(async tx => {
           // Comparte el bloqueo con las escrituras de catálogo y configuración.
           await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ADMIN_LOCK})`;
           const guest = await tx.guestSession.update({ where: { id: guestSessionId }, data: { lastSeenAt: new Date() } });
@@ -34,7 +35,7 @@ export class OrderService {
           const existing = await tx.orderRequest.findUnique({ where: { guestSessionId_scope_key: { guestSessionId, scope: SCOPE, key } }, include: { order: { include: { items: true } } } });
           if (existing) {
             if (existing.requestHash !== requestHash) throw new ConflictException('La clave de idempotencia ya se usó con otro pedido.');
-            return this.serialize(existing.order, key);
+            return { response: this.serialize(existing.order, key), recipient: null, notify: false };
           }
           const preview = await tx.orderPreview.findFirst({ where: { id: dto.previewId, guestSessionId }, select: { input: true, result: true, expiresAt: true } });
           if (!preview) throw new NotFoundException('Validación no encontrada.');
@@ -42,11 +43,10 @@ export class OrderService {
           const input = preview.input as unknown as PreviewDto;
           const result = preview.result as unknown as PreviewResponseDto;
           if (dto.deliveryMethod === DeliveryMethod.UNDECIDED || dto.deliveryMethod !== input.deliveryMethod) throw new BadRequestException('Elegí la entrega y volvé a validar el carrito.');
-          if (dto.deliveryMethod === DeliveryMethod.SHIPPING && !dto.deliveryAddress) throw new BadRequestException('Ingresá la dirección de envío.');
-          const phone = (dto.customerPhone ?? '').replace(/[^0-9]/g, '');
-          if (dto.customerPhone !== undefined && !/^[1-9][0-9]{7,14}$/.test(phone)) throw new BadRequestException('Ingresá un teléfono internacional válido.');
+          const phone = dto.customerPhone.replace(/[^0-9]/g, '');
+          if (!/^[1-9][0-9]{7,14}$/.test(phone)) throw new BadRequestException('Ingresá un teléfono válido.');
           const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-          if (dto.customerBirthDate && dto.customerBirthDate > today) throw new BadRequestException('La fecha de nacimiento no puede estar en el futuro.');
+          if (dto.customerBirthDate > today) throw new BadRequestException('La fecha de nacimiento no puede estar en el futuro.');
           if (dto.requestedDate < today) throw new BadRequestException('La fecha solicitada no puede estar en el pasado.');
           const currentItems = [];
           try {
@@ -79,15 +79,13 @@ export class OrderService {
               ...(item.photoCountTotal ? ['  Fotos para enviar por este chat: ' + item.photoCountTotal] : []),
             ]),
             '',
+            'Modalidad de entrega: ' + (dto.deliveryMethod === DeliveryMethod.PICKUP ? 'A coordinar (retiro, Uber u otra opción en Santa Fe Capital)' : 'Envío por correo'),
             'Nombre: ' + dto.customerFirstName,
             'Apellido: ' + dto.customerLastName,
-            'Mail: ' + dto.customerEmail,
-            ...(dto.customerBirthDate ? ['Fecha de nacimiento: ' + displayDate(dto.customerBirthDate)] : []),
-            ...(phone ? ['Teléfono: ' + phone] : []),
+            'Teléfono: ' + phone,
             'Lo necesitaría para: ' + displayDate(dto.requestedDate),
-            'Entrega: ' + (dto.deliveryMethod === DeliveryMethod.PICKUP ? 'Retiro' : 'Envío a confirmar'),
-            ...(dto.deliveryMethod === DeliveryMethod.SHIPPING ? ['Dirección: ' + dto.deliveryAddress] : []),
             ...(dto.notes ? ['Observaciones: ' + dto.notes] : []),
+            ...(dto.deliveryMethod === DeliveryMethod.PICKUP ? ['Si se coordina un Uber, el costo queda a cargo del cliente al solicitarlo.'] : []),
             'Subtotal conocido: ' + amount(result.summary.knownSubtotalCents) + '. Pendientes de cotización: ' + result.summary.pendingQuoteLines + '.',
             '',
             'Entiendo que el pedido, la disponibilidad, la fecha y el precio final quedan pendientes de confirmación por la emprendedora en este chat.',
@@ -96,7 +94,7 @@ export class OrderService {
           const order = await tx.order.create({ data: {
             guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,
             customerFirstName: dto.customerFirstName, customerLastName: dto.customerLastName, customerEmail: dto.customerEmail,
-            customerBirthDate: dto.customerBirthDate ? new Date(dto.customerBirthDate) : null,
+            customerBirthDate: new Date(dto.customerBirthDate),
             requestedDate: new Date(dto.requestedDate), scheduledDate: new Date(dto.requestedDate), deliveryMethod: dto.deliveryMethod,
             deliveryAddress: dto.deliveryMethod === DeliveryMethod.SHIPPING ? dto.deliveryAddress : null, notes: dto.notes ?? null,
             knownSubtotalCents: result.summary.knownSubtotalCents, pendingQuoteCount: result.summary.pendingQuoteLines,
@@ -112,8 +110,12 @@ export class OrderService {
             events: { create: { type: 'CREATED', details: { previewId: dto.previewId, source: 'preview' } } },
           }, include: { items: true } });
           await tx.orderRequest.create({ data: { guestSessionId, scope: SCOPE, key, requestHash, orderId: order.id } });
-          return this.serialize(order, key);
+          return { response: this.serialize(order, key), recipient: settings?.contactEmail, notify: true };
         }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 15000, maxWait: 5000 });
+        if (result.notify && result.recipient) {
+          try { await this.notifications.send(result.recipient, result.response); } catch { /* El pedido ya está guardado; el correo no debe impedir responder al cliente. */ }
+        }
+        return result.response;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           if (error.code === 'P2025') throw new UnauthorizedException('La sesión de invitado ya no está activa.');

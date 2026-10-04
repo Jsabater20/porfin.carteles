@@ -9,7 +9,7 @@ import { ApiError } from '../src/lib/api/errors';
 import { routePolicy } from '../src/lib/api/policy';
 import { forwardToBackend } from '../src/lib/api/gateway';
 
-const input: CreateOrderInput = { previewId: randomUUID(), customerFirstName: 'Ana', customerLastName: 'Pérez', customerEmail: 'ana@example.com', customerBirthDate: '1995-02-28', customerPhone: '5491123456789', requestedDate: '2030-12-01', deliveryMethod: 'SHIPPING', deliveryAddress: 'Calle 123', notes: 'Una observación' };
+const input: CreateOrderInput = { previewId: randomUUID(), customerFirstName: 'Ana', customerLastName: 'Pérez', customerEmail: 'ana@example.com', customerBirthDate: '1995-02-28', customerPhone: '3425556789', requestedDate: '2030-12-01', deliveryMethod: 'SHIPPING', notes: 'Una observación' };
 const order = { id: 'c' + 'a'.repeat(24) } as GuestOrder;
 const cartHash = 'a'.repeat(64);
 function memory() {
@@ -19,20 +19,18 @@ function memory() {
 const request = (callback: (options: Parameters<PreviewTransport>[1]) => Promise<unknown>): PreviewTransport =>
   async <T>(path: string, options: Parameters<PreviewTransport>[1]) => (path === 'guest-session' ? { csrfToken: 'test-csrf' } : await callback(options)) as T;
 
-test('datos del pedido: normalización, teléfono internacional, fecha real y dirección solo para envío', () => {
-  const fields = { customerFirstName: '  Ana ', customerLastName: ' Pe\u0301rez ', customerEmail: ' ana@example.com ', customerBirthDate: '1995-02-28', customerPhone: '+54 (9) 11-2345 6789', requestedDate: '2030-02-28', deliveryAddress: ' Calle 123 ', notes: '   ' };
+test('datos del pedido: normalización, teléfono local y fechas obligatorias', () => {
+  const fields = { customerFirstName: '  Ana ', customerLastName: ' Pe\u0301rez ', customerEmail: ' ana@example.com ', customerBirthDate: '1995-02-28', customerPhone: '342 555-6789', requestedDate: '2030-02-28', notes: '   ' };
   const result = validateCustomer(fields, input.previewId, 'SHIPPING', '2030-01-01');
   assert.deepEqual(result.errors, {});
   assert.equal(result.input.customerLastName, 'Pérez');
-  assert.equal(result.input.customerPhone, '5491123456789');
-  assert.equal(result.input.deliveryAddress, 'Calle 123');
+  assert.equal(result.input.customerPhone, '3425556789');
   assert.equal('notes' in result.input, false);
-  assert.equal('deliveryAddress' in validateCustomer(fields, input.previewId, 'PICKUP', '2030-01-01').input, false);
   for (const date of ['2030-02-29', '2029-12-31', 'invalid']) assert.ok(validateCustomer({ ...fields, requestedDate: date }, input.previewId, 'PICKUP', '2030-01-01').errors.requestedDate);
   for (const phone of ['12345', '0001234567', '+54abc1123456789']) assert.ok(validateCustomer({ ...fields, customerPhone: phone }, input.previewId, 'PICKUP', '2030-01-01').errors.customerPhone);
-  assert.ok(validateCustomer({ ...fields, deliveryAddress: '' }, input.previewId, 'SHIPPING', '2030-01-01').errors.deliveryAddress);
   assert.ok(validateCustomer({ ...fields, notes: 'x'.repeat(1001) }, input.previewId, 'PICKUP', '2030-01-01').errors.notes);
-  assert.deepEqual(validateCustomer({ ...fields, customerBirthDate: '', customerPhone: '' }, input.previewId, 'PICKUP', '2030-01-01').errors, {});
+  const required = validateCustomer({ ...fields, customerBirthDate: '', customerPhone: '' }, input.previewId, 'PICKUP', '2030-01-01').errors;
+  assert.ok(required.customerBirthDate); assert.ok(required.customerPhone);
   for (const birth of ['2031-01-01', '1995-02-30', 'invalid']) assert.ok(validateCustomer({ ...fields, customerBirthDate: birth }, input.previewId, 'PICKUP', '2030-01-01').errors.customerBirthDate);
   for (const email of ['', 'sin-arroba', 'a@b']) assert.ok(validateCustomer({ ...fields, customerEmail: email }, input.previewId, 'PICKUP', '2030-01-01').errors.customerEmail);
   assert.equal(argentinaDate(new Date('2030-01-01T01:30:00Z')), '2029-12-31');
@@ -52,7 +50,7 @@ test('doble clic y pérdida de respuesta conservan una sola clave y solo limpian
   await Promise.all([manager.submit(input, cartHash), manager.submit(input, cartHash)]);
   assert.equal(keys.length, 1); assert.equal(cleared, 0);
   const persisted = storage.getItem(ATTEMPT_KEY)!;
-  assert.doesNotMatch(persisted, /Ana|5491123456789|Calle|observación|csrf/);
+  assert.doesNotMatch(persisted, /Ana|3425556789|observación|csrf/);
   await manager.submit(input, cartHash);
   assert.equal(keys[0], keys[1]); assert.equal(cleared, 1); assert.equal(manager.getSnapshot().orderId, order.id);
   await manager.submit(input, cartHash); assert.equal(keys.length, 2);

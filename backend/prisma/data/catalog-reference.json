@@ -39,7 +39,7 @@
           "key": "rectangular",
           "name": "Rectangular · 60 × 100 cm",
           "pricingMode": "FIXED",
-          "priceCents": 4800000,
+          "priceCents": 5200000,
           "attributes": {
             "formato": "rectangular",
             "medidas": "60 × 100 cm"
@@ -51,7 +51,7 @@
           "key": "circular",
           "name": "Circular · 70 cm de diámetro",
           "pricingMode": "FIXED",
-          "priceCents": 5100000,
+          "priceCents": 5500000,
           "attributes": {
             "formato": "circular",
             "medidas": "70 cm de diámetro"
@@ -63,7 +63,7 @@
           "key": "rectangular-3-imagenes",
           "name": "Rectangular · 60 × 100 cm · con 3 imágenes",
           "pricingMode": "FIXED",
-          "priceCents": 5100000,
+          "priceCents": 5500000,
           "attributes": {
             "formato": "rectangular",
             "medidas": "60 × 100 cm"
@@ -75,7 +75,7 @@
           "key": "circular-3-imagenes",
           "name": "Circular · 70 cm de diámetro · con 3 imágenes",
           "pricingMode": "FIXED",
-          "priceCents": 5400000,
+          "priceCents": 5900000,
           "attributes": {
             "formato": "circular",
             "medidas": "70 cm de diámetro"
@@ -133,7 +133,7 @@
           "key": "rectangular",
           "name": "Rectangular · 60 × 100 cm",
           "pricingMode": "FIXED",
-          "priceCents": 4800000,
+          "priceCents": 5200000,
           "attributes": {
             "formato": "rectangular",
             "medidas": "60 × 100 cm"
@@ -145,7 +145,7 @@
           "key": "circular",
           "name": "Circular · 70 cm de diámetro",
           "pricingMode": "FIXED",
-          "priceCents": 5100000,
+          "priceCents": 5500000,
           "attributes": {
             "formato": "circular",
             "medidas": "70 cm de diámetro"
@@ -157,7 +157,7 @@
           "key": "predeterminado-rectangular",
           "name": "Por carrera · Rectangular · 60 × 100 cm · con 3 imágenes",
           "pricingMode": "FIXED",
-          "priceCents": 5100000,
+          "priceCents": 5500000,
           "attributes": {
             "base": "predeterminado",
             "formato": "rectangular",
@@ -170,7 +170,7 @@
           "key": "predeterminado-circular",
           "name": "Por carrera · Circular · 70 cm de diámetro · con 3 imágenes",
           "pricingMode": "FIXED",
-          "priceCents": 5400000,
+          "priceCents": 5900000,
           "attributes": {
             "base": "predeterminado",
             "formato": "circular",
@@ -245,7 +245,7 @@
           "key": "circular-50",
           "name": "Circular · 50 cm de diámetro",
           "pricingMode": "FIXED",
-          "priceCents": 5100000,
+          "priceCents": 5500000,
           "attributes": {
             "formato": "circular",
             "medidas": "50 cm de diámetro"
@@ -257,7 +257,7 @@
           "key": "circular-3-imagenes",
           "name": "Circular · 50 cm de diámetro · con 3 imágenes",
           "pricingMode": "FIXED",
-          "priceCents": 5400000,
+          "priceCents": 5900000,
           "attributes": {
             "formato": "circular",
             "medidas": "50 cm de diámetro"
@@ -322,8 +322,8 @@
         {
           "key": "rectangular",
           "name": "Rectangular · 60 × 100 cm",
-          "pricingMode": "QUOTE",
-          "priceCents": null,
+          "pricingMode": "FIXED",
+          "priceCents": 6480000,
           "attributes": {
             "formato": "rectangular",
             "medidas": "60 × 100 cm"
@@ -334,8 +334,8 @@
         {
           "key": "circular",
           "name": "Circular · 70 cm de diámetro",
-          "pricingMode": "QUOTE",
-          "priceCents": null,
+          "pricingMode": "FIXED",
+          "priceCents": 6880000,
           "attributes": {
             "formato": "circular",
             "medidas": "70 cm de diámetro"
@@ -346,8 +346,8 @@
         {
           "key": "xxl",
           "name": "XXL alargado · 50 × 100 cm",
-          "pricingMode": "QUOTE",
-          "priceCents": null,
+          "pricingMode": "FIXED",
+          "priceCents": 6880000,
           "attributes": {
             "formato": "xxl",
             "medidas": "50 × 100 cm"

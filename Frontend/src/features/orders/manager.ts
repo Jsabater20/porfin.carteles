@@ -43,13 +43,13 @@ export function createOrderManager(request: PreviewTransport, onSuccess: (cartFi
     catch { update({ storageWarning: true }); }
   }
   async function submit(input: CreateOrderInput, cartFingerprint: string) {
-    if (busy || !state.ready || state.status === 'success' || state.status === 'blocked' || state.retryBlocked) return;
+    if (busy || !state.ready || state.status === 'success' || state.status === 'blocked' || state.retryBlocked) return null;
     busy = true;
     try {
       const digest = await fingerprint(input);
       let pending = state.pending;
       if (pending && pending.fingerprint !== digest) {
-        update({ message: 'Hay una solicitud sin respuesta confirmada. Reingresá exactamente los datos originales para recuperarla; no se creará otro pedido.' }); return;
+        update({ message: 'Hay una solicitud sin respuesta confirmada. Reingresá exactamente los datos originales para recuperarla; no se creará otro pedido.' }); return null;
       }
       if (!pending) {
         pending = { kind: 'pending', key: uuid(), previewId: input.previewId, deliveryMethod: input.deliveryMethod, fingerprint: digest, cartFingerprint, createdAt: new Date().toISOString() };
@@ -64,6 +64,7 @@ export function createOrderManager(request: PreviewTransport, onSuccess: (cartFi
       // Nunca se borra un carrito que cambió mientras se registraba el pedido.
       await onSuccess(pending.cartFingerprint);
       update({ status: 'success', orderId: order.id, pending: null, message: '' });
+      return order;
     } catch (error) {
       const status = error instanceof ApiError ? error.status : 0;
       const message = error instanceof ApiError ? error.message : '';
@@ -79,6 +80,7 @@ export function createOrderManager(request: PreviewTransport, onSuccess: (cartFi
           : 'No recibimos una confirmación. Reintentá con los mismos datos para recuperar el resultado sin duplicar el pedido.' });
         if (seconds) timer = setTimeout(() => update({ retryBlocked: false }), seconds * 1000);
       }
+      return null;
     } finally { busy = false; }
   }
   return {

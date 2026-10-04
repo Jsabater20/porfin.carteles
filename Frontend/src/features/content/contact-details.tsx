@@ -9,9 +9,9 @@ export function ContactDetails({ settings }: { settings: PublicSettings | null }
   return <section className="contact-details" aria-label="Datos de contacto y entrega">
     {links.length > 0 && <div className="actions">{links.map((link) => <a key={link.label} className="button button-secondary" href={link.href} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>)}</div>}
     {settings.contactEmail && <p>Correo: <a className="text-link" href={`mailto:${encodeURIComponent(settings.contactEmail)}`}>{settings.contactEmail}</a></p>}
-    {settings.pickupAddress && <div><h2>Retiro</h2><p className="preserve-lines">{settings.pickupAddress}</p></div>}
+    {settings.pickupAddress && <div><h2>Coordinación en Santa Fe Capital</h2><p className="preserve-lines">{settings.pickupAddress}</p></div>}
     {settings.businessHours && <div><h2>Horarios</h2><p className="preserve-lines">{settings.businessHours}</p></div>}
-    {settings.deliveryMethods.length > 0 && <p>Modalidades: {settings.deliveryMethods.map((method) => method === 'PICKUP' ? 'retiro' : 'envío').join(' y ')}.</p>}
+    {settings.deliveryMethods.length > 0 && <p>Modalidades: {settings.deliveryMethods.map((method) => method === 'PICKUP' ? 'a coordinar en Santa Fe Capital' : 'envío por correo').join(' y ')}.</p>}
     {settings.deliveryNotes && <p className="preserve-lines">{settings.deliveryNotes}</p>}
     {!links.length && !settings.contactEmail && !settings.pickupAddress && !settings.businessHours && !settings.deliveryMethods.length && !settings.deliveryNotes && <p className="muted">Los datos de contacto y entrega estarán disponibles pronto.</p>}
   </section>;

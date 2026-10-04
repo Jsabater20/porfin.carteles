@@ -9,21 +9,28 @@ const targetSlugs = [...new Set([
   'cartel-generico',
   'cartel-predeterminado',
   'cartel-baby-shower',
+  'cartel-personalizado',
   ...driveCatalog.items.map((item) => item.slug),
 ])];
 
 const standard = [
-  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', formato: 'rectangular', medidas: '60 × 100 cm', photoCount: 0, priceCents: 4_800_000 },
-  { key: 'circular', name: 'Circular · 70 cm de diámetro', formato: 'circular', medidas: '70 cm de diámetro', photoCount: 0, priceCents: 5_100_000 },
-  { key: 'rectangular-3-imagenes', name: 'Rectangular · 60 × 100 cm · con 3 imágenes', formato: 'rectangular', medidas: '60 × 100 cm', photoCount: 3, priceCents: 5_100_000 },
-  { key: 'circular-3-imagenes', name: 'Circular · 70 cm de diámetro · con 3 imágenes', formato: 'circular', medidas: '70 cm de diámetro', photoCount: 3, priceCents: 5_400_000 },
+  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', formato: 'rectangular', medidas: '60 × 100 cm', photoCount: 0, priceCents: 5_200_000 },
+  { key: 'circular', name: 'Circular · 70 cm de diámetro', formato: 'circular', medidas: '70 cm de diámetro', photoCount: 0, priceCents: 5_500_000 },
+  { key: 'rectangular-3-imagenes', name: 'Rectangular · 60 × 100 cm · con 3 imágenes', formato: 'rectangular', medidas: '60 × 100 cm', photoCount: 3, priceCents: 5_500_000 },
+  { key: 'circular-3-imagenes', name: 'Circular · 70 cm de diámetro · con 3 imágenes', formato: 'circular', medidas: '70 cm de diámetro', photoCount: 3, priceCents: 5_900_000 },
 ];
 const babyShower = [
-  { key: 'circular', name: 'Circular · 50 cm de diámetro', formato: 'circular', medidas: '50 cm de diámetro', photoCount: 0, priceCents: 5_100_000 },
-  { key: 'circular-3-imagenes', name: 'Circular · 50 cm de diámetro · con 3 imágenes', formato: 'circular', medidas: '50 cm de diámetro', photoCount: 3, priceCents: 5_400_000 },
+  { key: 'circular', name: 'Circular · 50 cm de diámetro', formato: 'circular', medidas: '50 cm de diámetro', photoCount: 0, priceCents: 5_500_000 },
+  { key: 'circular-3-imagenes', name: 'Circular · 50 cm de diámetro · con 3 imágenes', formato: 'circular', medidas: '50 cm de diámetro', photoCount: 3, priceCents: 5_900_000 },
+];
+const custom = [
+  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', formato: 'rectangular', medidas: '60 × 100 cm', photoCount: 0, priceCents: 6_480_000 },
+  { key: 'circular', name: 'Circular · 70 cm de diámetro', formato: 'circular', medidas: '70 cm de diámetro', photoCount: 0, priceCents: 6_880_000 },
+  { key: 'xxl', name: 'XXL alargado · 50 × 100 cm', formato: 'xxl', medidas: '50 × 100 cm', photoCount: 0, priceCents: 6_880_000 },
 ];
 
 function specifications(slug) {
+  if (slug === 'cartel-personalizado') return custom;
   return slug === 'cartel-baby-shower' ? babyShower : standard;
 }
 
@@ -68,14 +75,16 @@ async function updateProduct(product) {
     }
   }
   await prisma.productVariant.updateMany({ where: { productId: product.id, id: { notIn: [...used] } }, data: { active: false } });
-  if (driveCatalog.items.some((item) => item.slug === product.slug)) {
+  if (product.slug === 'cartel-personalizado') {
+    await prisma.product.update({ where: { id: product.id }, data: { measurements: 'Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro. XXL alargado: 50 × 100 cm.' } });
+  } else if (driveCatalog.items.some((item) => item.slug === product.slug)) {
     await prisma.product.update({ where: { id: product.id }, data: { measurements: 'Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro.' } });
   }
 }
 
 async function run() {
   const products = await prisma.product.findMany({
-    where: { slug: { in: targetSlugs }, category: 'CARTEL', type: { in: ['GENERIC', 'PREDEFINED'] } },
+    where: { slug: { in: targetSlugs }, category: 'CARTEL', type: { in: ['GENERIC', 'PREDEFINED', 'CUSTOM'] } },
     select: { id: true, slug: true, variants: { orderBy: { position: 'asc' } } },
     orderBy: { slug: 'asc' },
   });

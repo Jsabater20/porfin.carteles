@@ -64,8 +64,10 @@ export function CartPage() {
       <h2>Revisá tu selección</h2>
       <DepositNotice />
       <div className="custom-field"><label htmlFor="cart-delivery">Modalidad de entrega</label><select id="cart-delivery" value={state.deliveryMethod} onChange={(event) => store.delivery(event.target.value as DeliveryMethod)}>
-        <option value="UNDECIDED">A coordinar</option><option value="PICKUP">Retiro</option><option value="SHIPPING">Envío</option>
+        <option value="UNDECIDED">Elegí una modalidad</option><option value="PICKUP">A coordinar (Santa Fe Capital)</option><option value="SHIPPING">Envío por correo</option>
       </select></div>
+      {state.deliveryMethod === 'PICKUP' && <p className="muted form-note">Incluye retiro, Uber u otra opción a coordinar dentro de Santa Fe Capital. El costo de Uber queda a cargo del cliente al solicitarlo.</p>}
+      {state.deliveryMethod === 'SHIPPING' && <p className="muted form-note">El envío se realiza por correo y su costo se confirma con la emprendedora.</p>}
       <p className="muted form-note">Validamos opciones, disponibilidad y precios actuales antes de preparar tu solicitud.</p>
       <button type="button" className="button" disabled={preview.status === 'loading' || preview.retryBlocked} onClick={() => void previews.validate(preview.status === 'ready')}>
         {preview.status === 'loading' ? 'Validando…' : preview.status === 'ready' ? 'Actualizar precios' : preview.status === 'error' ? 'Reintentar validación' : 'Validar carrito'}
@@ -78,7 +80,7 @@ export function CartPage() {
         {preview.priceChanges.length > 0 && <div className="notice"><strong>Hay cambios de precio.</strong><p>Revisá los importes actualizados de:</p><ul>{preview.priceChanges.map((lineId) => <li key={lineId}>{result.items.find((item) => item.lineId === lineId)?.productName}</li>)}</ul></div>}
         <dl><div><dt>Subtotal conocido</dt><dd>{formatMoney(result.summary.knownSubtotalCents)}</dd></div>
           {result.summary.pendingQuoteLines > 0 && <div><dt>Pendientes de cotización</dt><dd>{result.summary.pendingQuoteQuantity} {result.summary.pendingQuoteQuantity === 1 ? 'unidad' : 'unidades'}</dd></div>}
-          <div><dt>{result.summary.shipping.method === 'PICKUP' ? 'Entrega' : 'Envío'}</dt><dd>{result.summary.shipping.status === 'NOT_REQUIRED' ? 'Retiro · sin envío' : 'A confirmar'}</dd></div>
+          <div><dt>Entrega</dt><dd>{result.summary.shipping.status === 'NOT_REQUIRED' ? 'A coordinar en Santa Fe Capital' : 'Envío por correo · a confirmar'}</dd></div>
           <div><dt>Total final</dt><dd>A confirmar</dd></div></dl>
         <p className="muted form-note">Válido hasta las {new Date(result.expiresAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}. No reserva disponibilidad ni confirma el pedido o el pago.</p>
         <Link className="button checkout-link" href="/pedido">Continuar con la solicitud</Link>
