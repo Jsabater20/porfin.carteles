@@ -13,7 +13,7 @@ import { ProductCard } from '@/features/catalog/product-card';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchValues> }): Promise<Metadata> {
   const filters = parseStoreFilters(await searchParams);
-  const filtered = Boolean(filters.q || filters.category || filters.type || filters.occasion || filters.career || filters.legacy);
+  const filtered = Boolean(filters.q || filters.category || filters.type || filters.shape || filters.occasion || filters.career || filters.legacy);
   return publicMetadata('Catálogo', 'Explorá carteles, props y combos por categoría, ocasión y carrera.', storeHref(filters), !filtered);
 }
 
@@ -53,7 +53,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const products = productsResult.value;
   const pages = Math.max(1, Math.ceil(products.total / products.limit));
   if (filters.page > pages) redirect(storeHref({ ...filters, page: pages }));
-  const filtering = Boolean(filters.q || filters.category || filters.type || filters.occasion || filters.career || filters.legacy);
+  const filtering = Boolean(filters.q || filters.category || filters.type || filters.shape || filters.occasion || filters.career || filters.legacy);
   return <div className="container catalog-page">
     <header className="page-heading"><p className="eyebrow">Carteles · Props · Combos</p><h1>Carteles, props y combos</h1><p className="muted">Elegí la propuesta para tu celebración. Personalizamos cada detalle con vos.</p></header>
     {filters.legacy && <p className="notice">Estás viendo la selección de un enlace anterior. Al aplicar filtros se actualizará a las nuevas categorías. <Link href="/catalogo">Ver todo el catálogo</Link></p>}

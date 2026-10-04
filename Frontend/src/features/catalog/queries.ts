@@ -28,6 +28,7 @@ export async function getCatalogProducts(filters: import('./store-filters').Stor
 }
 export async function getCatalogTaxonomy(kind: 'occasions' | 'careers', filters: import('./store-filters').StoreFilters): Promise<Taxonomy[]> {
   const params = new URLSearchParams({ category: 'CARTEL', type: filters.type, limit: '50' });
+  if (filters.shape) params.set('shape', filters.shape);
   if (kind === 'careers' && filters.occasion) params.set('occasion', filters.occasion);
   const items: Taxonomy[] = [];
   for (let page = 1; ; page++) {

@@ -6,7 +6,7 @@ export interface ProductCard {
   category?: 'CARTEL' | 'PROP' | 'COMBO' | null;
   occasions?: Taxonomy[];
   id: string; name: string; slug: string; type: ProductType; leadTime: string;
-  categories: Taxonomy[]; careers: Taxonomy[]; coverImage: CatalogImage | null; basePrice: BasePrice;
+  categories: Taxonomy[]; careers: Taxonomy[]; coverImage: CatalogImage | null; defaultVariantId?: string | null; basePrice: BasePrice;
 }
 export interface Variant { id: string; key: string; name: string; pricingMode: 'FIXED' | 'QUOTE'; priceCents: number | null; attributes: Record<string, string>; photoCount: number }
 export interface PersonalizationField {

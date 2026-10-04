@@ -9,6 +9,12 @@ const prisma = new PrismaClient();
 const apply = process.argv.includes('--apply');
 const allowedFormats = new Set(['jpg', 'jpeg', 'png', 'webp']);
 const maximumBytes = 5 * 1024 * 1024;
+const catalogVariants = [
+  { key: 'rectangular', name: 'Rectangular · 60 × 100 cm', pricingMode: 'FIXED', priceCents: 4_800_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 0, active: true, position: 0 },
+  { key: 'circular', name: 'Circular · 70 cm de diámetro', pricingMode: 'FIXED', priceCents: 5_100_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 0, active: true, position: 1 },
+  { key: 'rectangular-3-imagenes', name: 'Rectangular · 60 × 100 cm · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_100_000, attributes: { formato: 'rectangular', medidas: '60 × 100 cm' }, photoCount: 3, active: true, position: 2 },
+  { key: 'circular-3-imagenes', name: 'Circular · 70 cm de diámetro · con 3 imágenes', pricingMode: 'FIXED', priceCents: 5_400_000, attributes: { formato: 'circular', medidas: '70 cm de diámetro' }, photoCount: 3, active: true, position: 3 },
+];
 
 function cloudOptions() {
   const required = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
@@ -90,22 +96,13 @@ async function ensureProduct(item, familyId, occasionId, careerIds) {
     category: 'CARTEL',
     type: item.type,
     status: 'PUBLISHED',
-    measurements: 'Formato y medidas a coordinar.',
+    measurements: 'Rectangular: 60 × 100 cm. Circular: 70 cm de diámetro.',
     materials: '',
     includes: 'Un cartel personalizado a partir del diseño elegido.',
     leadTime: '',
     categories: { create: [{ categoryId: familyId }, { categoryId: occasionId }] },
     careers: careerId ? { create: [{ careerId }] } : undefined,
-    variants: { create: [{
-      key: 'a-coordinar',
-      name: 'Formato y medidas a coordinar',
-      pricingMode: 'QUOTE',
-      priceCents: null,
-      attributes: {},
-      photoCount: 0,
-      active: true,
-      position: 0,
-    }] },
+    variants: { create: catalogVariants },
   }, select: { id: true } });
   return { id: created.id, created: true };
 }

@@ -6,6 +6,7 @@ import { CatalogDisplayType } from '../../../common/catalog-classification';
 
 const optional = (_object: unknown, value: unknown) => value !== undefined;
 export enum PublicCatalogSort { NEWEST = 'newest', NAME_ASC = 'name-asc', NAME_DESC = 'name-desc' }
+export enum CatalogShape { RECTANGULAR = 'RECTANGULAR', CIRCULAR = 'CIRCULAR', XXL = 'XXL' }
 
 export class PublicPageQuery {
   @ApiPropertyOptional({ default: 1, minimum: 1, maximum: 100000 })
@@ -25,6 +26,8 @@ export class PublicCatalogQuery extends PublicPageQuery {
   @ValidateIf(optional) @Transform(({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value)
   @IsString() @MaxLength(120) q?: string;
   @ApiPropertyOptional({ enum: CatalogDisplayType }) @ValidateIf(optional) @IsEnum(CatalogDisplayType) type?: CatalogDisplayType;
+  @ApiPropertyOptional({ enum: CatalogShape, description: 'Forma disponible en una variante activa del producto.' })
+  @ValidateIf(optional) @IsEnum(CatalogShape) shape?: CatalogShape;
   @ApiPropertyOptional({ deprecated: true, description: 'Filtro anterior por ID de categoría; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) categoryId?: string;
   @ApiPropertyOptional({ deprecated: true, description: 'Alias anterior de career; se conserva durante la transición.' }) @ValidateIf(optional) @IsString() @Length(1, 100) careerId?: string;
   @ApiPropertyOptional({ enum: PublicCatalogSort, default: PublicCatalogSort.NEWEST }) @IsEnum(PublicCatalogSort) sort = PublicCatalogSort.NEWEST;
@@ -32,6 +35,7 @@ export class PublicCatalogQuery extends PublicPageQuery {
 export class PublicTaxonomyQuery extends PublicPageQuery {
   @ApiPropertyOptional({ enum: ProductKind }) @ValidateIf(optional) @IsEnum(ProductKind) category?: ProductKind;
   @ApiPropertyOptional({ enum: CatalogDisplayType }) @ValidateIf(optional) @IsEnum(CatalogDisplayType) type?: CatalogDisplayType;
+  @ApiPropertyOptional({ enum: CatalogShape }) @ValidateIf(optional) @IsEnum(CatalogShape) shape?: CatalogShape;
   @ApiPropertyOptional({ description: 'ID de la ocasión seleccionada.' })
   @ValidateIf(optional) @IsString() @Length(1, 100) occasion?: string;
 }
@@ -105,6 +109,7 @@ export class PublicProductCardDto {
   @ApiProperty({ type: [PublicTaxonomyDto] }) categories!: PublicTaxonomyDto[];
   @ApiProperty({ type: [PublicTaxonomyDto] }) careers!: PublicTaxonomyDto[];
   @ApiProperty({ type: PublicImageDto, nullable: true }) coverImage!: PublicImageDto | null;
+  @ApiProperty({ type: String, nullable: true, description: 'Variante que coincide con los filtros aplicados.' }) defaultVariantId!: string | null;
   @ApiProperty({ type: BasePriceDto }) basePrice!: BasePriceDto;
 }
 export class PublicProductDetailDto extends PublicProductCardDto {

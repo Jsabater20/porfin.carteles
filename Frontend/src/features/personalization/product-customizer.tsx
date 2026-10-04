@@ -9,6 +9,7 @@ import { useCart } from '@/features/cart/provider';
 import type { CartLine } from '@/features/cart/model';
 import { estimateUnit, validateAnswers } from './validate';
 import { categoryLabels, displayTypeLabels, getDisplayType } from '@/features/catalog/classification';
+import { DepositNotice } from '@/components/deposit-notice';
 
 const IDEA_FIELD: PersonalizationField = {
   key: 'idea', label: 'Contanos tu idea', type: 'LONG_TEXT', required: true, position: 0, componentKey: null,
@@ -80,6 +81,7 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   const changed = () => { setAdded(false); setMessage(''); };
   return <form ref={formRef} onSubmit={submit} noValidate className="customizer" onChange={changed}>
     <h2>{editing ? 'Editar tu idea' : 'Armá tu producto'}</h2>
+    <DepositNotice />
     <div className="custom-field"><label htmlFor="product-variant">Opción *</label>
       <select id="product-variant" value={variantId} onChange={(event) => setVariantId(event.target.value)} aria-invalid={Boolean(variantError)} aria-describedby={variantError ? 'variant-error' : undefined}>
         {!variant && <option value="">La opción anterior ya no está disponible</option>}

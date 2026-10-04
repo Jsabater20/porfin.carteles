@@ -56,7 +56,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     order = results[0].body;
     assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
-    for (const text of ['Hola Porfin Carteles!', 'Mail: ana@example.com', 'Nombre: Ana', 'Apellido: Pérez', 'size: A3', '6', 'Calle 123', 'emprendedora']) assert.ok(order.whatsapp.message.includes(text), text);
+    for (const text of ['Hola Porfin Carteles!', 'Mail: ana@example.com', 'Nombre: Ana', 'Apellido: Pérez', 'size: A3', '6', 'Calle 123', 'emprendedora', 'seña del 50%']) assert.ok(order.whatsapp.message.includes(text), text);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
     assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
     assert.equal((await create({ ...payload, customerFirstName: 'Otro' }, key)).status, 409);

@@ -27,8 +27,8 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal(result.status, 201, JSON.stringify(result.body)); prop = result.body;
     assert.equal(prop.category, 'PROP'); assert.equal(family.isOccasion, false); assert.equal(occasion.isOccasion, true);
     const result2 = await call('/admin/products', 'POST', { ...base, slug: 'predeterminado', type: 'PREDEFINED', categoryIds: [cartelFamily.id, occasion.id], careerIds: [career.id], variants: [
-      { key: 'base', name: 'Base', pricingMode: 'QUOTE', priceCents: null, photoCount: 0 },
-      { key: 'tres-imagenes', name: 'Tres imágenes', pricingMode: 'QUOTE', priceCents: null, photoCount: 3 },
+      { key: 'base', name: 'Base', pricingMode: 'FIXED', priceCents: 4800000, photoCount: 0, attributes: { formato: 'rectangular' } },
+      { key: 'tres-imagenes', name: 'Tres imágenes', pricingMode: 'FIXED', priceCents: 5400000, photoCount: 3, attributes: { formato: 'circular' } },
     ] });
     assert.equal(result2.status, 201); sign = result2.body; assert.equal(sign.category, 'CARTEL');
   });
@@ -63,6 +63,12 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal((await call('/products?category=CARTEL&type=GENERIC&occasion=' + occasion.id + '&career=missing')).body.total, 1);
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
+    const rectangular = (await call('/products?category=CARTEL&type=PREDEFINED&shape=RECTANGULAR')).body;
+    assert.equal(rectangular.total, 1); assert.equal(rectangular.items[0].basePrice.fromCents, 4800000); assert.equal(rectangular.items[0].defaultVariantId, sign.variants[0].id);
+    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&shape=CIRCULAR')).body.total, 0);
+    const circularPhotos = (await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=CIRCULAR')).body;
+    assert.equal(circularPhotos.total, 1); assert.equal(circularPhotos.items[0].basePrice.fromCents, 5400000); assert.equal(circularPhotos.items[0].defaultVariantId, sign.variants[1].id);
+    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=RECTANGULAR')).body.total, 0);
     assert.equal((await call('/products?type=CUSTOM')).body.total, 2);
     assert.equal((await call('/products?categoryId=' + family.id)).body.total, 1);
     assert.equal((await call('/products?type=PREDEFINED&careerId=' + career.id)).body.items[0].id, sign.id);
@@ -81,5 +87,6 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
     assert.equal((await call('/careers?category=CARTEL&type=PREDEFINED')).body.total, 0);
     assert.equal((await call('/products/predeterminado')).status, 404);
     assert.equal((await call('/products?category=INVALID')).status, 400);
+    assert.equal((await call('/products?category=CARTEL&shape=INVALID')).status, 400);
   });
 });

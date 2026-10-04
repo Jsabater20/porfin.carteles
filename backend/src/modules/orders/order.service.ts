@@ -91,6 +91,7 @@ export class OrderService {
             'Subtotal conocido: ' + amount(result.summary.knownSubtotalCents) + '. Pendientes de cotización: ' + result.summary.pendingQuoteLines + '.',
             '',
             'Entiendo que el pedido, la disponibilidad, la fecha y el precio final quedan pendientes de confirmación por la emprendedora en este chat.',
+            'Para confirmar el pedido y comenzar con el diseño, se abona una seña del 50% del total.',
           ].join('\n');
           const order = await tx.order.create({ data: {
             guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,

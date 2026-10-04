@@ -29,7 +29,6 @@ async function run() {
     const { categories, sourcePage, components, ...properties } = product;
     const dto = plainToInstance(ProductDto, { ...properties, categoryIds: categories, components: components.map(({ referenceSlug, ...component }) => component) });
     if (validateSync(dto, { whitelist: true, forbidNonWhitelisted: true }).length) throw new Error('Datos inválidos: ' + product.slug);
-    if (product.variants.some(v => v.pricingMode !== 'QUOTE' || v.priceCents !== null)) throw new Error('El documento no contiene precios.');
     for (const component of components) if (component.referenceSlug && !source.products.some(p => p.slug === component.referenceSlug && p.type !== 'COMBO')) throw new Error('Referencia de combo inválida.');
   }
   const existing = await prisma.product.findMany({ where: { slug: { in: source.products.map(p => p.slug) } }, select: { slug: true } });

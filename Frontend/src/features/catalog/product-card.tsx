@@ -5,9 +5,10 @@ import { CatalogPrice } from './price';
 import { ProductImage } from './product-image';
 
 export function ProductCard({ product, catalogClassification = false }: { product: Product; catalogClassification?: boolean }) {
+  const href = `/productos/${product.slug}${product.defaultVariantId ? `?variante=${encodeURIComponent(product.defaultVariantId)}` : ''}`;
   return (
     <article className="product-card">
-      <Link href={`/productos/${product.slug}`} className="product-card-link">
+      <Link href={href} className="product-card-link">
         <ProductImage image={product.coverImage} name={product.name} referenceSlug={product.slug} />
         <div className="product-card-copy">
           <span className="eyebrow">{(catalogClassification && product.category === 'PROP') || product.categories.some(category => category.slug === 'props') ? 'Props · carteles chicos' : productTypes[product.type]}</span>

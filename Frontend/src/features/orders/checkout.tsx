@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/format/money';
 import type { PublicSettings } from '@/lib/contracts/settings';
 import { argentinaDate, emptyCustomer, validateCustomer, type CustomerFields } from './validation';
 import { fingerprint } from './manager';
+import { DepositNotice } from '@/components/deposit-notice';
 
 export function Checkout({ settings }: { settings: PublicSettings | null }) {
   const { state, store, preview, previews, orders, orderState } = useCart();
@@ -69,7 +70,7 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
     {errors[key] && <p className="field-error" id={'error-' + key}>{errors[key]}</p>}
   </div>;
   return <div className="container order-page">
-    <header className="page-heading"><p className="eyebrow">Un paso más para tu celebración</p><h1>Prepará tu solicitud</h1><p className="muted">Completá tus datos antes de ir a WhatsApp. Hacer este proceso no confirma el pedido: la emprendedora debe confirmar disponibilidad, fecha y presupuesto por ese chat.</p></header>
+    <header className="page-heading"><p className="eyebrow">Un paso más para tu celebración</p><h1>Prepará tu solicitud</h1><p className="muted">Completá tus datos antes de ir a WhatsApp. Hacer este proceso no confirma el pedido: la emprendedora debe confirmar disponibilidad, fecha y presupuesto por ese chat.</p><DepositNotice /></header>
     {orderState.message && <p className="notice" role="alert">{orderState.message}</p>}
     {orderState.status === 'blocked' ? <Link className="button" href="/contacto">Contactar a la tienda</Link> : <div className="cart-layout">
       <form ref={form} onSubmit={submit} noValidate className="order-form">
@@ -89,7 +90,7 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
           {delivery === 'SHIPPING' && input('deliveryAddress', 'Dirección de envío *', 'text', 'Incluí calle, número, localidad y provincia.')}
           {input('notes', 'Observaciones (opcional)', 'text', 'Hasta 1000 caracteres. Las fotos se envían por WhatsApp.')}
         </fieldset>
-        {!pending && result && <label className="order-consent"><input type="checkbox" checked={acceptedPreview === result.id} onChange={(e) => setAcceptedPreview(e.target.checked ? result.id : '')} disabled={busy} />Revisé los productos, la entrega y los importes conocidos. Entiendo que el pedido, el total final y la fecha necesitan la confirmación de la emprendedora por WhatsApp.</label>}
+        {!pending && result && <label className="order-consent"><input type="checkbox" checked={acceptedPreview === result.id} onChange={(e) => setAcceptedPreview(e.target.checked ? result.id : '')} disabled={busy} />Revisé los productos, la entrega y los importes conocidos. Entiendo que el pedido, el total final y la fecha necesitan la confirmación de la emprendedora por WhatsApp, y que para confirmar y comenzar el diseño se abona una seña del 50%.</label>}
         {formMessage && <p role="alert" className="field-error">{formMessage}</p>}
         {orderState.storageWarning && <p className="notice">Este navegador no permite guardar el registro de reintento. Mantené la página abierta hasta recibir la confirmación.</p>}
         <button className="button order-submit" type="submit" disabled={busy || orderState.retryBlocked || !pending && (!canRegister || acceptedPreview !== result?.id)}>{busy ? 'Registrando…' : pending ? 'Reintentar la misma solicitud' : 'Continuar a WhatsApp'}</button>

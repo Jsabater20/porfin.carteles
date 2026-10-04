@@ -8,6 +8,7 @@ import type { DeliveryMethod } from '@/lib/contracts/preview';
 import type { CartLine } from './model';
 import { useCart } from './provider';
 import { categoryLabels, displayTypeLabels } from '@/features/catalog/classification';
+import { DepositNotice } from '@/components/deposit-notice';
 
 function CartRow({ line, index }: { line: CartLine; index: number }) {
   const { store, preview } = useCart();
@@ -61,6 +62,7 @@ export function CartPage() {
       {confirmClear && <div className="notice" role="group" aria-label="Confirmar vaciado"><p>¿Querés quitar todos los productos del carrito?</p><div className="actions"><button className="button button-secondary" type="button" onClick={() => { store.clear(); setConfirmClear(false); }}>Sí, vaciar</button><button type="button" className="text-button" onClick={() => setConfirmClear(false)}>Conservar carrito</button></div></div>}
     </section><aside className="cart-summary" aria-label="Resumen del carrito">
       <h2>Revisá tu selección</h2>
+      <DepositNotice />
       <div className="custom-field"><label htmlFor="cart-delivery">Modalidad de entrega</label><select id="cart-delivery" value={state.deliveryMethod} onChange={(event) => store.delivery(event.target.value as DeliveryMethod)}>
         <option value="UNDECIDED">A coordinar</option><option value="PICKUP">Retiro</option><option value="SHIPPING">Envío</option>
       </select></div>
