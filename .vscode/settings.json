@@ -1,0 +1,17 @@
+{
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, .gitignore, .vercelignore, .env.local"
+  },
+  "files.exclude": {
+    ".agents": true,
+    ".codex": true,
+    ".github": true,
+    ".neon": true,
+    ".vercel": true,
+    ".vscode": true,
+    "skills-lock.json": true,
+    "neon.ts": true
+  }
+}

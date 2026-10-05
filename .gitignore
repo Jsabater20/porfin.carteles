@@ -7,6 +7,7 @@ dist/
 coverage/
 .npm-cache/
 *.tsbuildinfo
+/Frontend/next-env.d.ts
 .env.*
 !.env.example
 

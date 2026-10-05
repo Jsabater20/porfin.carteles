@@ -77,6 +77,7 @@ export function buildProduct(draft: ProductDraft, id?: string) {
     const path = 'variants.' + i, cents = v.pricingMode === 'QUOTE' ? null : moneyToCents(v.price);
     if (v.pricingMode === 'FIXED' && cents === null) error(path + '.price', 'Ingresá un precio en pesos, con hasta dos decimales (máximo 10.000.000).');
     if (!['FIXED', 'QUOTE'].includes(v.pricingMode)) error(path + '.price', 'Elegí precio fijo o a cotizar.');
+    if (draft.category === 'CARTEL' && !['rectangular', 'circular', 'xxl'].includes(v.attributes.find(attribute => attribute.key === 'formato')?.value ?? '')) error(path + '.shape', 'Elegí la forma del cartel para que aparezca en el filtro correcto.');
     if (v.attributes.length > 20 || new Set(v.attributes.map((a) => a.key)).size !== v.attributes.length || v.attributes.some((a) => !/^[a-zA-Z0-9_-]{1,80}$/.test(a.key) || a.value.length > 200)) error(path + '.attributes', 'Hasta 20 atributos únicos; claves sin espacios ni acentos y valores de hasta 200 caracteres.');
     return { key: v.key, name: text(path + '.name', v.name, 120, true), pricingMode: v.pricingMode, priceCents: cents, photoCount: number(path + '.photos', v.photos, 0, 10), active: v.active, attributes: Object.fromEntries(v.attributes.map((a) => [a.key, a.value])) };
   });

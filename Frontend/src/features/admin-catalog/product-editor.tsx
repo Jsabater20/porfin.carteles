@@ -21,6 +21,7 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState(''), [busy, setBusy] = useState(false), [success, setSuccess] = useState('');
   const lock = useRef(false), alert = useRef<HTMLDivElement>(null);
+  const extraDetails = useRef<HTMLDetailsElement>(null);
   const dirty = JSON.stringify(draft) !== savedDraft;
   useEffect(() => {
     if (!dirty) return;
@@ -29,6 +30,9 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
     window.addEventListener('beforeunload', unload); document.addEventListener('click', leave, true);
     return () => { window.removeEventListener('beforeunload', unload); document.removeEventListener('click', leave, true); };
   }, [dirty]);
+  useEffect(() => {
+    if (errors.slug && extraDetails.current) extraDetails.current.open = true;
+  }, [errors]);
   const run = async (action: () => Promise<void>) => {
     if (lock.current || loggingOut) return; lock.current = true; setBusy(true); setMessage(''); setSuccess('');
     try { await action(); } catch (error) { setMessage(error instanceof ApiError ? error.message : 'No pudimos confirmar el cambio. Consultá el catálogo antes de repetirlo.'); requestAnimationFrame(() => alert.current?.focus()); }
@@ -63,7 +67,7 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
     else setAvailableCareers(current => current.some(entry => entry.id === item.id) ? current : [...current, item].sort((a, b) => a.name.localeCompare(b.name, 'es')));
     setDraft(current => ({ ...current, [key]: (current[key] ?? []).includes(item.id) ? current[key] : [...(current[key] ?? []), item.id] }));
   }
-  const field = (key: 'name' | 'slug' | 'description' | 'measurements' | 'includes', label: string, multiline = false) => <Field id={'product-' + key} label={label} value={draft[key]} onChange={(value) => setDraft({ ...draft, [key]: value })} error={errors[key]} multiline={multiline} />;
+  const field = (key: 'name' | 'slug' | 'description' | 'measurements' | 'includes', label: string, multiline = false) => <Field id={'product-' + key} label={label} value={draft[key]} onChange={(value) => setDraft(current => ({ ...current, [key]: value, ...(key === 'name' && !product && current.slug === slugify(current.name).slice(0, 150).replace(/-$/, '') ? { slug: slugify(value).slice(0, 150).replace(/-$/, '') } : {}) }))} error={errors[key]} multiline={multiline} />;
   if (product?.consolidatedInto?.length) return <section className="editor-section"><h1>{product.name}</h1><p>Este producto está archivado. Sus variantes se administran en los siguientes productos:</p><ul>{product.consolidatedInto.map(item => <li key={item.id}><Link href={'/admin/productos/' + item.id}>{item.name}</Link></li>)}</ul><Link href="/admin/productos">Volver al listado</Link></section>;
   return <div className="product-editor">
     <header className="editor-heading"><div><p className="eyebrow">Catálogo</p><h1>{product ? 'Editar producto' : 'Nuevo producto'}</h1></div><Link className="text-link" href="/admin/productos">Volver al listado</Link></header>
@@ -71,19 +75,20 @@ export function ProductEditor({ product, categories, careers }: { product?: Admi
     {success && <p className="notice success-notice" role="status">{success}</p>}
     <form method="post" onSubmit={submit} noValidate>
       <fieldset className="editor-fields" disabled={busy || loggingOut || !ready}>
-        <Section title="Información del producto">
-          <div className="editor-grid">{field('name', 'Nombre *')}{field('slug', 'Dirección del producto (slug) *')}</div>
-          <button type="button" className="text-button" onClick={() => setDraft({ ...draft, slug: slugify(draft.name).slice(0, 150).replace(/-$/, '') })}>Generar dirección desde el nombre</button>
+        <Section title={product ? 'Información del producto' : 'Contá qué vas a vender'}>
+          {field('name', 'Nombre del producto *')}
+          {product && <div className="editor-grid">{field('slug', 'Dirección del producto (slug) *')}</div>}
+          {product && <button type="button" className="text-button" onClick={() => setDraft({ ...draft, slug: slugify(draft.name).slice(0, 150).replace(/-$/, '') })}>Generar dirección desde el nombre</button>}
           {field('description', 'Descripción *', true)}
           <div className="editor-grid"><div className="custom-field"><label htmlFor="product-category">Categoría</label><select id="product-category" value={draft.category} onChange={e => classify(e.target.value as NonNullable<typeof draft.category>)}>{Object.entries(KINDS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>
             {draft.category === 'CARTEL' && <div className="custom-field"><label htmlFor="product-type">Tipo de cartel</label><select id="product-type" value={draft.type} onChange={e => classify('CARTEL', e.target.value as typeof draft.type)}>{Object.entries(SIGN_TYPES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>}
             {product ? <div className="custom-field"><label htmlFor="product-status">Visibilidad</label><select id="product-status" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as typeof draft.status })}>{Object.entries(STATUSES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div> : <p className="notice">El producto se creará oculto. Después podrás agregar imágenes y publicarlo.</p>}
           </div>
-          <div className="editor-grid">{field('measurements', 'Medidas')}{field('includes', 'Qué incluye', true)}</div>
+          {product ? <div className="editor-grid">{field('measurements', 'Medidas')}{field('includes', 'Qué incluye', true)}</div> : <details className="editor-optional" ref={extraDetails}><summary>Más información (opcional)</summary><div className="editor-grid">{field('measurements', 'Medidas')}{field('includes', 'Qué incluye', true)}</div>{field('slug', 'Dirección web del producto *')}<p className="form-note">Se crea sola a partir del nombre. Cambiala sólo si necesitás una dirección distinta.</p></details>}
         </Section>
-        {(supportsOccasions(draft) || supportsCareers(draft)) && <Section title="Ocasiones y carreras"><p className="muted">Marcá las opciones que correspondan. Si no existe una, podés agregarla acá mismo.</p><div className="editor-grid">{(['occasionIds', 'careerIds'] as const).filter(key => key === 'occasionIds' ? supportsOccasions(draft) : supportsCareers(draft)).map(key => <fieldset className="taxonomy-choices" key={key}><legend>{key === 'occasionIds' ? 'Ocasiones (opcional)' : 'Carreras (opcional)'}</legend>{(key === 'occasionIds' ? availableCategories.filter(isOccasion) : availableCareers).map(item => <label key={item.id}><input type="checkbox" checked={(draft[key] ?? []).includes(item.id)} onChange={e => setDraft({ ...draft, [key]: e.target.checked ? [...(draft[key] ?? []), item.id] : (draft[key] ?? []).filter(id => id !== item.id) })} />{item.name}</label>)}<InlineTaxonomyCreator kind={key === 'occasionIds' ? 'categories' : 'careers'} disabled={busy || loggingOut} onCreated={item => addTaxonomy(key, item)} />{errors[key] && <p className="field-error">{errors[key]}</p>}</fieldset>)}</div></Section>}
-        <CollectionsEditor draft={draft} setDraft={setDraft} errors={errors} productId={product?.id} />
-        <div className="editor-save"><button type="submit" className="button">{busy ? 'Guardando…' : product ? 'Guardar cambios' : 'Crear producto oculto'}</button><span className="muted">{dirty ? 'Hay cambios sin guardar.' : 'Sin cambios pendientes.'}</span></div>
+        {(supportsOccasions(draft) || supportsCareers(draft)) && <Section title={product ? 'Ocasiones y carreras' : 'Ayudá a encontrarlo'}>{!product && <p className="muted">Si es un cartel predeterminado, elegí la carrera para que puedan encontrarlo en el catálogo.</p>}<div className="editor-grid">{(['occasionIds', 'careerIds'] as const).filter(key => key === 'occasionIds' ? supportsOccasions(draft) : supportsCareers(draft)).map(key => <fieldset className="taxonomy-choices" key={key}><legend>{key === 'occasionIds' ? 'Ocasiones (opcional)' : 'Carreras (opcional)'}</legend>{(key === 'occasionIds' ? availableCategories.filter(isOccasion) : availableCareers).map(item => <label key={item.id}><input type="checkbox" checked={(draft[key] ?? []).includes(item.id)} onChange={e => setDraft({ ...draft, [key]: e.target.checked ? [...(draft[key] ?? []), item.id] : (draft[key] ?? []).filter(id => id !== item.id) })} />{item.name}</label>)}<details className="editor-optional"><summary>Agregar {key === 'occasionIds' ? 'otra ocasión' : 'otra carrera'}</summary><InlineTaxonomyCreator kind={key === 'occasionIds' ? 'categories' : 'careers'} disabled={busy || loggingOut} onCreated={item => addTaxonomy(key, item)} /></details>{errors[key] && <p className="field-error">{errors[key]}</p>}</fieldset>)}</div></Section>}
+        <CollectionsEditor draft={draft} setDraft={setDraft} errors={errors} productId={product?.id} isNew={!product} />
+        <div className="editor-save"><button type="submit" className="button">{busy ? 'Guardando…' : product ? 'Guardar cambios' : 'Crear producto'}</button><span className="muted">{product ? dirty ? 'Hay cambios sin guardar.' : 'Sin cambios pendientes.' : 'Se guardará oculto. Después podés agregar imágenes y publicarlo.'}</span></div>
       </fieldset>
     </form>
     {product && <section className="editor-section actions">

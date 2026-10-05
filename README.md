@@ -7,6 +7,49 @@ Tienda online de carteles, props y combos personalizados. El repositorio contien
 
 Producción: [porfin-carteles.vercel.app](https://porfin-carteles.vercel.app/).
 
+## Dónde encontrar cada cosa
+
+```text
+porfin.carteles/
+├── Frontend/                 Tienda pública y panel administrativo
+│   ├── src/app/              Páginas y rutas de Next.js
+│   ├── src/components/       Componentes compartidos
+│   ├── src/features/         Catálogo, carrito, pedidos y administración
+│   ├── src/lib/              API, contratos, formatos y SEO
+│   ├── src/styles/           Estilos organizados por área
+│   ├── public/               Recursos que se publican con la web
+│   ├── assets/brand/         Fuente gráfica original, fuera de la web pública
+│   ├── scripts/              Verificaciones y arranque de producción
+│   └── test/                 Pruebas del frontend
+├── backend/                  API NestJS
+│   ├── src/modules/          Módulos funcionales de la API
+│   ├── src/common/           Guards, filtros y utilidades compartidas
+│   ├── src/config/           Configuración y validación del entorno
+│   ├── src/database/         Acceso compartido a Prisma
+│   ├── prisma/               Esquema, migraciones, seed e inventarios
+│   ├── scripts/              Operaciones administrativas e importaciones
+│   └── test/                 Pruebas del backend
+├── .github/workflows/        Verificaciones automáticas
+├── neon.ts                   Configuración de Neon
+└── package.json              Comandos generales del proyecto
+```
+
+Las carpetas generadas como `.next`, `.test-build`, `dist`, `dist-tools` y `.local`, además de `Frontend/next-env.d.ts`, no forman parte del código fuente. Se recrean al compilar o ejecutar pruebas y están excluidas de Git.
+
+### Archivos de herramientas que se conservan
+
+| Ruta | Función |
+| --- | --- |
+| `.github/workflows/` | Ejecuta las verificaciones automáticas de frontend y backend en GitHub. |
+| `.codex/config.toml` | Conecta Codex con el proyecto de Neon mediante MCP. |
+| `.agents/` y `skills-lock.json` | Conservan las instrucciones versionadas para trabajar con Neon. |
+| `.vercel/project.json` | Mantiene la vinculación local con el proyecto correcto de Vercel. |
+| `neon.ts` y `.neon` | Configuran y vinculan Neon CLI con el proyecto y su rama. |
+| `Frontend/AGENTS.md` | Reglas que Next.js genera para herramientas de desarrollo. |
+| `Frontend/next.config.ts` | Configuración de imágenes, seguridad y compilación de Next.js. |
+
+Estas rutas deben permanecer en sus ubicaciones convencionales para que cada herramienta pueda encontrarlas. La configuración de `.vscode/settings.json` las oculta del explorador y anida los archivos generales bajo `package.json`, dejando `Frontend` y `backend` como las carpetas principales visibles. Para volver a mostrarlas, abrí `.vscode/settings.json` con `Ctrl+P` y cambiá temporalmente los valores de `files.exclude` a `false`.
+
 ## Requisitos
 
 - Node.js 22.14 o superior.

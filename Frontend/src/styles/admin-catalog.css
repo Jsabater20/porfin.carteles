@@ -17,6 +17,12 @@
 .inline-taxonomy-create p { margin:.35rem 0 0; font-size:.78rem; }
 .collection-row { min-width:0; border:1px solid var(--line); background:var(--canvas); padding:1rem; border-radius:var(--radius-small); margin-block:1rem; }
 .collection-row legend { font-weight:bold; padding-inline:.3rem; }
+.editor-optional { margin-top:1rem; padding-top:.8rem; border-top:1px solid var(--line); }
+.editor-optional > summary { width:fit-content; cursor:pointer; color:var(--accent); font-weight:700; }
+.editor-optional[open] > summary { margin-bottom:1rem; }
+.editor-optional > summary:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+.simple-price { padding:1.2rem; }
+.simple-price .editor-grid { align-items:start; }
 .editor-save { display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin-block:1.5rem; }
 .actions { display:flex; align-items:center; flex-wrap:wrap; gap:.8rem; }
 .row-tools { border-top:1px solid var(--line); padding-top:.7rem; margin-top:.7rem; }

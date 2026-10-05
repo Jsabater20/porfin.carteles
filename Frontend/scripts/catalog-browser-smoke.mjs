@@ -132,15 +132,15 @@ try {
   await auditedNavigate('/admin/productos/nuevo','#product-name');
   await click('.editor-save button');await waitFor('!!document.querySelector("#product-name-error")');
   await waitFor('document.activeElement.id==="product-name"');
-  await fill('#product-name','Cartel de recibida');await clickText('Generar dirección desde el nombre');await fill('#product-description','Cartel para celebrar');
-  await click('.taxonomy-choices input');await fill('#price-0','15000,25');
-  await click('.add-variant');await fill('#variant-name-1','A medida');await fill('#pricing-1','QUOTE');
-  await click('.add-field');await fill('#field-label-0','Tu nombre');await fill('#field-max-0','120');
-  await click('.add-field');await fill('#field-label-1','Color');await fill('#field-type-1','SELECT');await click('.add-option');await fill('#option-label-1-0','Dorado');await fill('#option-price-1-0','500,50');
+  await fill('#product-name','Cartel de recibida');await fill('#product-description','Cartel para celebrar');
+  assert.equal(await evaluate('document.querySelector("#product-slug").value'),'cartel-de-recibida');
+  await click('.taxonomy-choices input');await fill('#shape-0','rectangular');await fill('#price-0','15000,25');
+  await click('.add-variant');await fill('#shape-1','circular');await fill('#variant-name-1','A medida');await fill('#pricing-1','QUOTE');
   await click('.editor-save button');
   await waitFor('location.pathname.startsWith("/admin/productos/c") && !!document.querySelector("#product-status")');
-  const product=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'cartel-de-recibida'},include:{variants:true,fields:{include:{options:true}}}});
-  assert.equal(product.status,'HIDDEN');assert.equal(product.variants[0].priceCents,1500025);assert.equal(product.variants[1].priceCents,null);assert.equal(product.fields[1].options[0].additionalCents,50050);
+  const product=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'cartel-de-recibida'},include:{variants:true}});
+  assert.equal(product.status,'HIDDEN');assert.equal(product.variants[0].priceCents,1500025);assert.equal(product.variants[1].priceCents,null);
+  assert.equal(product.variants[0].attributes.formato,'rectangular');assert.equal(product.variants[1].attributes.formato,'circular');
   const editPath='/admin/productos/'+product.id;
   await fill('#product-status','PUBLISHED');await click('.editor-save button');await saved();
   assert.equal((await ctx.prisma.productVariant.findMany({where:{productId:product.id}})).find(v=>v.key==='base').id,product.variants[0].id);
@@ -166,19 +166,17 @@ try {
   assert.equal(await evaluate('document.querySelector(".taxonomy-choices")'),null);
   await fill('#product-category','PROP');
   assert.equal(await evaluate('document.querySelector("#product-type")'),null);
-  await fill('#product-name','Prop sin ocasión');await clickText('Generar dirección desde el nombre');await fill('#product-description','Un prop');await fill('#price-0','1000');
+  await fill('#product-name','Prop sin ocasión');await fill('#product-description','Un prop');await fill('#price-0','1000');
   await click('.editor-save button');await waitFor('location.pathname.startsWith("/admin/productos/c") && !!document.querySelector("#product-status")');
   const prop=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'prop-sin-ocasion'},include:{categories:true}});
   assert.equal(prop.category,'PROP');assert.equal(prop.type,'CUSTOM');assert.equal(prop.categories.length,0);
-  // Combo con referencia y personalización de su componente.
-  await auditedNavigate('/admin/productos/nuevo','#product-name');await fill('#product-name','Combo fiesta');await clickText('Generar dirección desde el nombre');await fill('#product-description','Cartel y accesorios');await fill('#product-category','COMBO');assert.equal(await evaluate('document.querySelector("#product-type")'),null);assert.equal(await evaluate('document.querySelector(".taxonomy-choices")'),null);await fill('#price-0','20000');
+  // Combo con referencia a otro producto.
+  await auditedNavigate('/admin/productos/nuevo','#product-name');await fill('#product-name','Combo fiesta');await fill('#product-description','Cartel y accesorios');await fill('#product-category','COMBO');assert.equal(await evaluate('document.querySelector("#product-type")'),null);assert.equal(await evaluate('document.querySelector(".taxonomy-choices")'),null);await fill('#price-0','20000');
   await click('.add-component');await fill('#component-name-0','Cartel principal');await fill('#component-quantity-0','2');await fill('.reference-search','Cartel');
   await waitFor('!!document.querySelector(".reference-picker li button")');await click('.reference-picker li button');
-  await click('.add-field');await fill('#field-label-0','Número');await fill('#field-type-0','NUMBER');await fill('#field-min-0','0');await fill('#field-max-0','99');
-  const componentKey=await evaluate('document.querySelector("#field-component-0").options[1].value');await fill('#field-component-0',componentKey);
   await click('.editor-save button');await waitFor('location.pathname.startsWith("/admin/productos/c") && !!document.querySelector("#product-status")');
-  const combo=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'combo-fiesta'},include:{components:true,fields:true}});assert.equal(combo.components[0].referenceProductId,product.id);assert.equal(combo.fields[0].componentKey,combo.components[0].key);
-  console.log('OK altas, variantes, personalización, cotización, publicación, IDs estables, conflictos y combo referenciado');
+  const combo=await ctx.prisma.product.findUniqueOrThrow({where:{slug:'combo-fiesta'},include:{components:true}});assert.equal(combo.components[0].referenceProductId,product.id);
+  console.log('OK altas, variantes, forma, cotización, publicación, IDs estables, conflictos y combo referenciado');
   await auditedNavigate('/admin/productos?status=HIDDEN&type=COMBO','.admin-product-list');assert.match(await evaluate('document.querySelector(".admin-product-list").innerText'),/Combo fiesta/);assert.doesNotMatch(await evaluate('document.querySelector(".admin-product-list").innerText'),/Cartel de recibida/);
   await auditedNavigate(editPath,'#product-name');
   for(const width of [1440,390,320]){

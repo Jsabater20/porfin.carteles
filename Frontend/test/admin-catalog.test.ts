@@ -5,7 +5,12 @@ import { uploadDestination,uploadImage,validateImage,MAX_IMAGE_BYTES } from '../
 import { routePolicy,selectCookies } from '../src/lib/api/policy';
 import type { AdminProduct, UploadAuthorization } from '../src/lib/contracts/admin-catalog';
 const id='c123456789012345678901234';
-function valid() { const d=draftProduct();d.name='Cartel';d.slug='cartel';d.description='Cartel personalizado';d.categoryIds=[id];d.variants[0].price='15000,25';return d; }
+function valid() { const d=draftProduct();d.name='Cartel';d.slug='cartel';d.description='Cartel personalizado';d.categoryIds=[id];d.variants[0].price='15000,25';d.variants[0].attributes=[{key:'formato',value:'rectangular'}];return d; }
+test('la forma del cartel alimenta el filtro y es necesaria en cada opción',()=>{
+ const d=valid();assert.equal(buildProduct(d).input.variants[0].attributes.formato,'rectangular');
+ d.variants[0].attributes=[];assert.ok(buildProduct(d).errors['variants.0.shape']);
+ d.variants[0].attributes=[{key:'formato',value:'xxl'}];assert.equal(buildProduct(d).errors['variants.0.shape'],undefined);
+});
 test('precios ARS exactos y cotizaciones sin precio inventado',()=>{
  assert.equal(moneyToCents('15000,25'),1500025);assert.equal(moneyToCents('0.29'),29);assert.equal(moneyToCents('0'),0);
  for(const bad of ['1.000,50','-1','1e3','1.005','10000000.01',''])assert.equal(moneyToCents(bad),null,bad);
