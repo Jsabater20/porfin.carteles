@@ -130,6 +130,7 @@ try {
   assert.ok(await evaluate('document.body.textContent.includes("Celebraciones con tu toque")'));
   assert.ok(await evaluate('document.title.includes("Por fin Carteles") && !document.title.includes("Por fin!")'));
   assert.ok(await evaluate('document.querySelector(".brand-logo-image").complete && document.querySelector(".brand-logo-image").naturalWidth > 0'));
+  assert.ok(await evaluate('!!document.querySelector("link[rel~=icon][href*=icon]")'));
   assert.equal(await evaluate('[...document.querySelectorAll(".store-nav a")].filter(link=>link.textContent.trim()==="Home").length'),1);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-options button").length'),3);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-shapes button").length'),3);
