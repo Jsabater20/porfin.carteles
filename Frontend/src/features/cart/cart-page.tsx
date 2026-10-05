@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatMoney } from '@/lib/format/money';
 import type { DeliveryMethod } from '@/lib/contracts/preview';
@@ -49,6 +49,9 @@ function CartRow({ line, index }: { line: CartLine; index: number }) {
 export function CartPage() {
   const { state, store, preview, previews } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => {
+    if (state.ready && state.lines.length && state.deliveryMethod !== 'UNDECIDED' && ['idle', 'expired'].includes(preview.status) && !preview.retryBlocked) void previews.validate();
+  }, [preview.retryBlocked, preview.status, previews, state.deliveryMethod, state.lines.length, state.ready, state.revision]);
   if (!state.ready) return <div className="container loading-state" role="status">Recuperando tu carrito…</div>;
   if (!state.lines.length) return <div className="container"><EmptyState title="Tu carrito está vacío" action={<Link className="button" href="/catalogo">Explorar el catálogo</Link>}><p>Elegí un cartel o combo y completá sus opciones para empezar.</p>{state.notice && <p role="status">{state.notice}</p>}</EmptyState></div>;
   const result = preview.status === 'ready' ? preview.preview : null;
@@ -68,13 +71,11 @@ export function CartPage() {
       </select></div>
       {state.deliveryMethod === 'PICKUP' && <p className="muted form-note">Incluye retiro, Uber u otra opción a coordinar dentro de Santa Fe Capital. El costo de Uber queda a cargo del cliente al solicitarlo.</p>}
       {state.deliveryMethod === 'SHIPPING' && <p className="muted form-note">El envío se realiza por correo y su costo se confirma con la emprendedora.</p>}
-      <p className="muted form-note">Validamos opciones, disponibilidad y precios actuales antes de preparar tu solicitud.</p>
-      <button type="button" className="button" disabled={preview.status === 'loading' || preview.retryBlocked} onClick={() => void previews.validate(preview.status === 'ready')}>
-        {preview.status === 'loading' ? 'Validando…' : preview.status === 'ready' ? 'Actualizar precios' : preview.status === 'error' ? 'Reintentar validación' : 'Validar carrito'}
-      </button>
+      <p className="muted form-note">Las opciones, la disponibilidad y los precios se actualizan automáticamente cuando modificás el carrito.</p>
+      {preview.status === 'error' && !preview.retryBlocked && <button type="button" className="text-button" onClick={() => void previews.validate()}>Reintentar carga del resumen</button>}
       {preview.status === 'loading' && <p role="status">Consultando el catálogo actual…</p>}
       {preview.message && <p role="alert" className="notice">{preview.message}</p>}
-      {!result && preview.status === 'idle' && <p className="muted form-note" role="status">El carrito necesita validación. Cualquier cambio requiere un nuevo resumen.</p>}
+      {!result && preview.status === 'idle' && state.deliveryMethod === 'UNDECIDED' && <p className="muted form-note" role="status">Elegí una modalidad de entrega para preparar el resumen.</p>}
       {result && <div className="validated-summary" aria-live="polite">
         <p className="summary-status">Resumen validado</p>
         {preview.priceChanges.length > 0 && <div className="notice"><strong>Hay cambios de precio.</strong><p>Revisá los importes actualizados de:</p><ul>{preview.priceChanges.map((lineId) => <li key={lineId}>{result.items.find((item) => item.lineId === lineId)?.productName}</li>)}</ul></div>}
