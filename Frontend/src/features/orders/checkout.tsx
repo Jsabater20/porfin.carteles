@@ -54,8 +54,8 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
       pending ? argentinaDate(new Date(pending.createdAt)) : argentinaDate());
     setErrors(validation.errors);
     if (Object.keys(validation.errors).length) { requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return; }
-    const whatsappWindow = window.open('about:blank', '_blank');
-    if (whatsappWindow) whatsappWindow.opener = null;
+    // Se abre durante el clic, antes de esperar la API, para que el navegador no lo bloquee como popup tardío.
+    const whatsappWindow = window.open('/pedido/whatsapp', 'porfin-whatsapp');
     // El hash permite recuperar un reintento tras recargar sin guardar datos de contacto.
     const snapshot = store.getSnapshot();
     const cartHash = await fingerprint(previewInput(snapshot));
@@ -66,8 +66,17 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
     const registeredOrder = await orders.submit(validation.input, cartHash);
     if (registeredOrder) {
       const link = whatsappLink(registeredOrder.whatsapp.url);
-      if (link && whatsappWindow) whatsappWindow.location.replace(link);
-      else whatsappWindow?.close();
+      if (link && whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.replace(link);
+        try { whatsappWindow.opener = null; } catch {}
+      } else {
+        whatsappWindow?.close();
+        if (link) {
+          const fallback = window.open(link, '_blank');
+          if (fallback) fallback.opener = null;
+          else setFormMessage('El navegador bloqueó la pestaña de WhatsApp. Abrila desde el resumen del pedido.');
+        }
+      }
       router.replace('/pedido/' + registeredOrder.id);
     } else whatsappWindow?.close();
   }

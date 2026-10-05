@@ -7,6 +7,7 @@ import { ORDER_LABELS, ORDER_NEXT } from './model';
 import { useOperation } from './use-operation';
 import { argentinaDate } from '@/features/orders/validation';
 import { OrderCalendarTools } from './order-calendar-tools';
+import { Confirm } from '@/features/admin-catalog/controls';
 
 const WEEKDAYS=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 const iso=(date:Date)=>date.toISOString().slice(0,10);
@@ -31,6 +32,7 @@ export function OrdersCalendar({initialItems,holidays,from,to,monthLabel,previou
  const openManual=(date:string)=>{setManual(current=>({...current,scheduledDate:date}));setManualOpen(true);setSelectedId(null);requestAnimationFrame(()=>document.querySelector('.manual-order-form')?.scrollIntoView({behavior:'smooth',block:'start'}));};
  const reschedule=()=>op.run(async()=>{if(!selected||!scheduledDate)throw new Error('Elegí una fecha de entrega.');await op.manager.request('admin/orders/'+selected.id+'/schedule',{method:'PATCH',body:{scheduledDate}});setItems(current=>current.map(item=>item.id===selected.id?{...item,scheduledDate}:item).filter(item=>item.scheduledDate.slice(0,10)>=from&&item.scheduledDate.slice(0,10)<=to));op.setMessage('Fecha de entrega actualizada.');router.refresh();});
  const changeStatus=()=>op.run(async()=>{if(!selected||!nextStatus)throw new Error('Elegí el nuevo estado.');if(nextStatus==='CANCELLED'&&!reason.trim())throw new Error('Indicá el motivo de cancelación.');await op.manager.request('admin/orders/'+selected.id+'/status',{method:'PATCH',body:{status:nextStatus,reason:reason.trim()}});setItems(current=>current.map(item=>item.id===selected.id?{...item,status:nextStatus}:item));setNextStatus('');setReason('');op.setMessage('Estado actualizado.');router.refresh();});
+ const removeSelected=()=>op.run(async()=>{if(!selected)return;await op.manager.request('admin/orders/'+selected.id,{method:'DELETE',body:{reference:selected.reference}});setItems(current=>current.filter(item=>item.id!==selected.id));setSelectedIds(current=>{const next=new Set(current);next.delete(selected.id);return next;});setSelectedId(null);op.setMessage('Pedido eliminado definitivamente.');router.refresh();});
  const createManual=()=>op.run(async()=>{
    if(!manual.customerName.trim()||!manual.description.trim()||!manual.scheduledDate)throw new Error('Completá cliente, pedido y fecha de entrega.');
    const created=await op.manager.request<OrderListItem>('admin/orders/manual',{method:'POST',body:{...manual,customerName:manual.customerName.trim(),description:manual.description.trim(),...(manual.customerEmail?.trim()?{customerEmail:manual.customerEmail.trim()}:{customerEmail:undefined}),...(manual.customerPhone?.trim()?{customerPhone:manual.customerPhone.trim()}:{customerPhone:undefined}),...(manual.notes?.trim()?{notes:manual.notes.trim()}:{notes:undefined})}});
@@ -53,7 +55,7 @@ export function OrdersCalendar({initialItems,holidays,from,to,monthLabel,previou
    </div></div>
    {selected&&<aside className="calendar-order-editor" aria-label={'Editar '+selected.customerName}><div><p className="eyebrow">{selected.reference}</p><h2>{selected.customerName}</h2><p><span className="order-status-badge" data-status={selected.status}>{ORDER_LABELS[selected.status]}</span> · {selected.source==='MANUAL'?'Pedido cargado manualmente':'Pedido de la página'}</p></div><button className="text-button" onClick={()=>setSelectedId(null)}>Cerrar</button>
      <div className="calendar-editor-grid"><div><label>Fecha de entrega<input type="date" value={scheduledDate} onChange={event=>setScheduledDate(event.target.value)}/></label><button className="button button-secondary" disabled={op.disabled||scheduledDate===selected.scheduledDate.slice(0,10)} onClick={()=>void reschedule()}>Cambiar fecha</button></div><div><label>Nuevo estado<select value={nextStatus} onChange={event=>setNextStatus(event.target.value as OrderStatus|'')}><option value="">Elegir estado</option>{ORDER_NEXT[selected.status].map(status=><option value={status} key={status}>{ORDER_LABELS[status]}</option>)}</select></label>{nextStatus==='CANCELLED'&&<label>Motivo<input maxLength={500} value={reason} onChange={event=>setReason(event.target.value)}/></label>}<button className="button button-secondary" disabled={op.disabled||!nextStatus} onClick={()=>void changeStatus()}>Guardar estado</button></div></div>
-     <Link className="text-link" href={'/admin/pedidos/'+selected.id}>Abrir pedido completo</Link>
+     <div className="actions"><Link className="text-link" href={'/admin/pedidos/'+selected.id}>Abrir pedido completo</Link><Confirm label="Eliminar pedido" disabled={op.disabled} question={'¿Eliminar definitivamente '+selected.reference+'? También se eliminarán su historial, presupuestos y pagos registrados.'} onConfirm={removeSelected}/></div>
    </aside>}
  </>;
 }

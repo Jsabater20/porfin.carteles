@@ -1,10 +1,10 @@
-import { BadRequestException, Get, Query, Body, Controller, Param, Patch, Post, Req } from '@nestjs/common';
+import { BadRequestException, Delete, Get, Query, Body, Controller, Param, Patch, Post, Req } from '@nestjs/common';
 import { ApiCookieAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminRole, OrderStatus } from '@prisma/client';
 import { Roles } from '../../common/decorators/auth.decorators';
 import { AuthenticatedRequest } from '../auth/auth.types';
 import { OrderService } from './order.service';
-import { CreateManualOrderDto, CreateOrderQuoteDto, OrderCalendarQueryDto, UpdateOrderScheduleDto, UpdateOrderStatusDto, UpdateQuoteStatusDto } from './dto/order.dto';
+import { CreateManualOrderDto, CreateOrderQuoteDto, DeleteOrderDto, OrderCalendarQueryDto, UpdateOrderScheduleDto, UpdateOrderStatusDto, UpdateQuoteStatusDto } from './dto/order.dto';
 
 @ApiTags('Pedidos administrativos')
 @ApiCookieAuth('session')
@@ -29,6 +29,11 @@ export class AdminOrdersController {
   }
   @Get(':id')
   get(@Param('id') id: string) { return this.orders.adminGet(id); }
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar definitivamente un pedido y sus registros relacionados' })
+  remove(@Param('id') id: string, @Body() dto: DeleteOrderDto, @Req() request: AuthenticatedRequest) {
+    return this.orders.remove(id, dto.reference, request.adminSession.id);
+  }
   @Patch(':id/quotes/:quoteId/status')
   quoteStatus(@Param('id') id: string, @Param('quoteId') quoteId: string, @Body() dto: UpdateQuoteStatusDto, @Req() request: AuthenticatedRequest) {
     return this.orders.updateQuoteStatus(id, quoteId, dto.status, request.adminSession.id);

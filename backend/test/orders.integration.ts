@@ -58,14 +58,19 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     order = results[0].body;
     assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
-    for (const text of ['Nombre y apellido: Ana Pérez', 'Información del pedido:', '2 × Cartel (Tres fotos):', 'size: A3', 'Fotos para enviar por este chat: 6', 'Fecha para cuando lo necesita:', 'Modalidad de entrega: Envío por correo', 'Observaciones: Entregar por la tarde', 'Precio de productos con importe definido:', 'Seña: 50% del importe final']) assert.ok(order.whatsapp.message.includes(text), text);
-    assert.doesNotMatch(order.whatsapp.message, /Hola Porfin|CAR-|Mail:|Fecha de nacimiento:|Teléfono:/i);
+    for (const text of ['Hola Porfin Carteles! Quisiera consultar este pedido:', order.reference, '2 × Cartel (Tres fotos):', 'size: A3', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío (correo)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total.']) assert.ok(order.whatsapp.message.includes(text), text);
+    assert.equal(order.whatsapp.message.match(/Hola Porfin Carteles!/g)?.length, 1);
+    assert.doesNotMatch(order.whatsapp.message, /Mail:|Fecha de nacimiento:|Teléfono:|Ocasión:|Carrera:|Pendientes de cotización:|Fotos para enviar/);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
     assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
     const notices = (await readdir(ctx.outbox)).filter(name => name.startsWith('order-'));
     assert.equal(notices.length, 1);
     const notice = JSON.parse(await readFile(`${ctx.outbox}/${notices[0]}`, 'utf8'));
     assert.equal(notice.to, 'porfincarteles@gmail.com'); assert.match(notice.text, /CAR-|Ana Pérez|Teléfono: 3425556789|2 × Cartel/); assert.doesNotMatch(notice.text, /Fecha de nacimiento/);
+    await ctx.prisma.order.update({ where: { id: order.id }, data: { whatsappMessage: 'mensaje viejo mensaje viejo', whatsappUrl: 'https://wa.me/5491199999999?text=mensaje%20viejo%20mensaje%20viejo' } });
+    const repaired = (await create(submittedPayload, key)).body;
+    assert.equal(repaired.whatsapp.message.match(/Hola Porfin Carteles!/g)?.length, 1);
+    assert.equal(new URL(repaired.whatsapp.url).searchParams.get('text'), repaired.whatsapp.message);
     assert.equal((await create({ ...submittedPayload, customerFirstName: 'Otro' }, key)).status, 409);
     assert.equal((await create({ ...submittedPayload, customerEmail: 'otro@example.com' }, key)).status, 409);
     assert.equal((await create({ ...submittedPayload, customerBirthDate: '1995-03-01' }, key)).status, 409);
@@ -100,6 +105,9 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     assert.equal(calendar.status, 200); assert.deepEqual(calendar.body.items.map((item: any) => item.id).sort(), [order.id, manual.body.id].sort());
     assert.equal((await adminReq('/admin/orders/calendar?from=2026-12-31&to=2026-01-01')).status, 400);
     const details = await adminReq('/admin/orders/' + order.id); assert.equal(details.body.events.at(-1).type, 'DELIVERY_DATE_CHANGED');
+    assert.equal((await adminReq('/admin/orders/' + manual.body.id, 'DELETE', { reference: 'MAN-REFERENCIA-INCORRECTA' })).status, 409);
+    assert.equal((await adminReq('/admin/orders/' + manual.body.id, 'DELETE', { reference: manual.body.reference })).status, 200);
+    assert.equal((await adminReq('/admin/orders/' + manual.body.id)).status, 404);
   });
   await t.test('Presupuestos inmutables, versiones concurrentes y aceptación de la última revisión', async () => {
     const results = await Promise.all([createQuote(32500), createQuote(35000)]);

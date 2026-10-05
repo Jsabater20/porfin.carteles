@@ -92,6 +92,12 @@ export class SyncGoogleCalendarDto {
   orderIds!: string[];
 }
 
+export class DeleteOrderDto {
+  @ApiProperty({ description: 'Referencia visible del pedido que se eliminará' })
+  @Transform(trimText) @IsString() @Length(8, 50) @Matches(/^(?:CAR|MAN)-[A-Z0-9-]+$/)
+  reference!: string;
+}
+
 
 export class CreateOrderQuoteItemDto {
   @ApiProperty() @Transform(({ value }) => typeof value === 'string' ? value.trim().normalize('NFC') : value) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(1, 160) productName!: string;

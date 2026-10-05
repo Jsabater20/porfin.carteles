@@ -37,7 +37,7 @@ const routes: Record<string, Partial<Record<ApiMethod, ApiScope>>> = {
 };
 
 export function routePolicy(path: string, method: string): ApiScope | undefined {
-  if (/^admin\/orders\/c[a-z0-9]{24}$/.test(path) && method === 'GET') return 'admin';
+  if (/^admin\/orders\/c[a-z0-9]{24}$/.test(path) && ['GET', 'DELETE'].includes(method)) return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/status$/.test(path) && method === 'PATCH') return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/schedule$/.test(path) && method === 'PATCH') return 'admin';
   if (/^admin\/orders\/c[a-z0-9]{24}\/quotes$/.test(path) && method === 'POST') return 'admin';
