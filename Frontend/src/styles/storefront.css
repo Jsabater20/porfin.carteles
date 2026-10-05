@@ -93,6 +93,22 @@
 }
 .site-shell .brand-hero { border-bottom: 7px solid #f1c1cc; }
 .site-shell .brand-hero h1 { max-width: 15ch; font-size: clamp(2.65rem, 4.6vw, 4.6rem); }
+.site-shell .home-showcase-section { padding-top: clamp(3.5rem, 7vw, 6rem); }
+.site-shell .home-showcase-section > .section-heading { max-width: 720px; margin-inline: auto; text-align: center; }
+.site-shell .home-showcase {
+  color-scheme: dark;
+  --surface: #263b55;
+  --ink: #fff8f8;
+  --muted: #e2d4db;
+  --accent: #f1c1cc;
+  --accent-soft: rgba(241, 193, 204, .12);
+  --line: rgba(241, 193, 204, .25);
+  --on-accent: #1d2d44;
+  padding: 1.25rem;
+  border-radius: 32px;
+  background: #1d2d44;
+  box-shadow: 0 24px 60px rgba(35, 51, 75, .18);
+}
 .site-shell .showcase-window { background: #263b55; }
 .site-shell .showcase-options button[aria-pressed='true'] { font-weight: 700; }
 .site-shell .button {
@@ -180,8 +196,12 @@
 .site-shell .home-section { padding-block: 2rem 4rem; }
 .site-shell .home-section .section-heading h2 { color: var(--ink); }
 .site-shell .home-promo { padding: clamp(1.5rem, 3vw, 2.5rem); background: linear-gradient(120deg, #f7e6ea, #fff); }
-.site-shell .category-tag { background: #fff; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
-.site-shell .category-tag:hover { background: #fff1f3; transform: translateY(-2px); }
+.site-shell .category-tag,
+.site-shell .career-tag { background: #fff; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
+.site-shell .category-tag:hover,
+.site-shell .career-tag:hover { background: #fff1f3; transform: translateY(-2px); }
+.site-shell .home-careers { padding-top: clamp(2.5rem, 5vw, 4rem); }
+.site-shell .home-careers .section-heading { max-width: 720px; }
 .site-shell .how-section h2 { color: var(--accent); }
 .site-shell .steps li { background: rgba(255, 255, 255, .035); border-radius: 18px; }
 .site-shell .breadcrumbs { color: var(--muted); }
@@ -230,7 +250,6 @@
 
 @media (max-width: 800px) {
   .site-shell .product-information { grid-template-columns: 1fr; }
-  .site-shell .hero-grid { gap: 2.5rem; }
 }
 @media (max-width: 520px) {
   .site-shell .header-inner { justify-content: space-between; }
@@ -243,6 +262,8 @@
   .site-shell .order-form,
   .site-shell .cart-summary { padding: 1.25rem; }
   .site-shell .home-section { padding-block: 1rem 3rem; }
+  .site-shell .home-showcase-section { padding-top: 3rem; }
+  .site-shell .home-showcase { padding: .75rem; border-radius: 24px; }
   .site-shell .store-footer { padding-block: 2.5rem; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -130,22 +130,25 @@ try {
   assert.ok(await evaluate('document.body.textContent.includes("Celebraciones con tu toque")'));
   assert.equal(await evaluate('[...document.querySelectorAll(".store-nav a")].filter(link=>link.textContent.trim()==="Home").length'),1);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-options button").length'),3);
+  assert.equal(await evaluate('document.querySelectorAll(".showcase-shapes button").length'),3);
+  await click('.showcase-shapes button:nth-child(2)');
+  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
+  assert.match(await evaluate('document.querySelector(".showcase-copy .text-link").href'),/shape=CIRCULAR/);
   await click('.showcase-options button:nth-child(2)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Props"');
+  await click('.showcase-options button:nth-child(1)');
+  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
   assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),3);
-  assert.equal(await evaluate('document.querySelectorAll(".home-category-list .category-tag").length'),10);
-  await click('.home-category-actions button');
-  await waitFor('document.querySelectorAll(".home-category-list .category-tag").length===52');
-  await click('.home-category-actions button');
-  await waitFor('document.querySelectorAll(".home-category-list .category-tag").length===10');
+  assert.equal(await evaluate('document.querySelectorAll(".home-career-list .career-tag").length'),1);
+  assert.equal(await evaluate('document.querySelector(".career-tag").textContent.includes("Medicina")'),true);
   for (const width of [1440,390,320]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<500});
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Desborde del Home a '+width);
     if (width !== 320) { const shot = await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true}); await writeFile(root+'.test-build/home-'+width+'.png',Buffer.from(shot.data,'base64')); }
   }
-  await click('.category-tag');
-  await waitFor('location.pathname==="/catalogo" && location.search.includes("categoryId=cat-0")'); await settled();
-  assert.ok(await evaluate('document.body.textContent.includes("enlace anterior")'));
+  await click('.career-tag');
+  await waitFor('location.pathname==="/catalogo" && location.search.includes("career=career-1")'); await settled();
+  assert.equal(await evaluate('document.querySelector("#catalog-career").value'), 'career-1');
   for (const [path, selector, name] of [['/catalogo', '.product-grid', 'catalog'], ['/productos/producto-0', '.product-detail-grid', 'product']]) {
     await navigate(path, selector);
     for (const width of [1440, 390, 320]) {

@@ -5,13 +5,12 @@ import { getStoreSettings } from '@/features/settings/queries';
 import { getContent } from '@/features/content/queries';
 import { getTaxonomy } from '@/features/catalog/queries';
 import { ProductCard } from '@/features/catalog/product-card';
-import { CatalogCollections } from '@/features/catalog/catalog-collections';
 import { HomeShowcase } from '@/components/home-showcase';
-import { HomeCategoryList } from '@/components/home-category-list';
+import { HomeCareerList } from '@/components/home-career-list';
 
 export default async function HomePage() {
-  const [settings, content, categoriesResult] = await Promise.all([
-    getStoreSettings(), getContent('home'), getTaxonomy('categories').then((items) => ({ items, failed: false }), () => ({ items: [], failed: true })),
+  const [settings, content, careersResult] = await Promise.all([
+    getStoreSettings(), getContent('home'), getTaxonomy('careers').then((items) => ({ items, failed: false }), () => ({ items: [], failed: true })),
   ]);
 
   return (
@@ -32,15 +31,17 @@ export default async function HomePage() {
               <li><strong>50% de seña</strong><span>Para comenzar con el diseño</span></li>
             </ul>
           </div>
-          <HomeShowcase />
         </div>
       </section>
-      {(content.status === 'unavailable' || categoriesResult.failed || !settings) && <div className="container"><p className="notice" role="status">No pudimos cargar toda la información. Podés volver a intentarlo en unos minutos.</p></div>}
+      {(content.status === 'unavailable' || careersResult.failed || !settings) && <div className="container"><p className="notice" role="status">No pudimos cargar toda la información. Podés volver a intentarlo en unos minutos.</p></div>}
 
-      <div className="container home-collections"><CatalogCollections categories={categoriesResult.items} /></div>
+      <section className="container home-section home-showcase-section" aria-labelledby="showcase-title">
+        <div className="section-heading"><p className="eyebrow">Encontrá el formato ideal</p><h2 id="showcase-title">Una propuesta para cada festejo.</h2><p className="muted">Explorá carteles por su forma o elegí props y combos para completar tu celebración.</p></div>
+        <HomeShowcase />
+      </section>
 
-      {categoriesResult.items.length > 0 && <section className="container home-section"><div className="section-heading"><p className="eyebrow">Siempre hay algo para festejar</p><h2>Encontrá tu ocasión.</h2></div>
-        <HomeCategoryList categories={categoriesResult.items} />
+      {careersResult.items.length > 0 && <section className="container home-section home-careers"><div className="section-heading"><p className="eyebrow">Carteles predeterminados para recibidas</p><h2>Elegí tu carrera.</h2><p className="muted">Encontrá diseños preparados para cada profesión y personalizalos con tu nombre.</p></div>
+        <HomeCareerList careers={careersResult.items} />
       </section>}
       {!!content.data?.featuredProducts.length && <section className="container home-section"><div className="section-heading heading-row"><div><p className="eyebrow">Elegidos para vos</p><h2>Para tu próxima celebración.</h2></div><Link className="text-link" href="/catalogo">Ver todo el catálogo</Link></div>
         <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
