@@ -10,6 +10,7 @@ export function StoreHeader({ storeName }: { storeName: string }) {
           <BrandLogo />
         </Link>
         <nav aria-label="Navegación principal" className="store-nav">
+          <Link href="/">Home</Link>
           <Link href="/catalogo">Catálogo</Link>
           <Link href="/#como-pedir">Cómo pedir</Link>
           <CartLink />

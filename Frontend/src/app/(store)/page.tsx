@@ -6,6 +6,8 @@ import { getContent } from '@/features/content/queries';
 import { getTaxonomy } from '@/features/catalog/queries';
 import { ProductCard } from '@/features/catalog/product-card';
 import { CatalogCollections } from '@/features/catalog/catalog-collections';
+import { HomeShowcase } from '@/components/home-showcase';
+import { HomeCategoryList } from '@/components/home-category-list';
 
 export default async function HomePage() {
   const [settings, content, categoriesResult] = await Promise.all([
@@ -15,20 +17,30 @@ export default async function HomePage() {
   return (
     <>
       <section className="brand-hero" aria-labelledby="home-title">
-        <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> Carteles hechos para celebrar</p>
-        <h1 id="home-title">{content.data?.title || 'Un detalle especial para cada celebración.'}</h1>
-        <p className="hero-description">{content.data?.subtitle || 'Carteles, props y combos personalizados para celebrar a tu manera.'}</p>
-        <div className="actions">
-          <Link href="/catalogo" className="button">Explorar el catálogo <span aria-hidden="true">↗</span></Link>
-          <Link href="#como-pedir" className="text-link">Cómo hacer tu pedido</Link>
+        <div className="container hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> Carteles hechos para celebrar</p>
+            <h1 id="home-title">{content.data?.title || 'Un detalle especial para cada celebración.'}</h1>
+            <p className="hero-description">{content.data?.subtitle || 'Carteles, props y combos personalizados para celebrar a tu manera.'}</p>
+            <div className="actions">
+              <Link href="/catalogo" className="button">Explorar el catálogo <span aria-hidden="true">↗</span></Link>
+              <Link href="#como-pedir" className="text-link">Cómo hacer tu pedido</Link>
+            </div>
+            <ul className="hero-details" aria-label="Información destacada">
+              <li><strong>Hecho a medida</strong><span>Cada idea tiene su detalle</span></li>
+              <li><strong>Santa Fe Capital</strong><span>Retiro o envío a coordinar</span></li>
+              <li><strong>50% de seña</strong><span>Para comenzar con el diseño</span></li>
+            </ul>
+          </div>
+          <HomeShowcase />
         </div>
       </section>
       {(content.status === 'unavailable' || categoriesResult.failed || !settings) && <div className="container"><p className="notice" role="status">No pudimos cargar toda la información. Podés volver a intentarlo en unos minutos.</p></div>}
 
       <div className="container home-collections"><CatalogCollections categories={categoriesResult.items} /></div>
 
-      {categoriesResult.items.length > 0 && <section className="container home-section"><div className="section-heading"><p className="eyebrow">Siempre hay algo para festejar</p><h2>Encontrá tu propuesta.</h2></div>
-        <div className="tag-list">{categoriesResult.items.map((category) => <Link key={category.id} href={`/catalogo?categoryId=${encodeURIComponent(category.id)}`} className="tag category-tag">{category.name} <span aria-hidden="true">↗</span></Link>)}</div>
+      {categoriesResult.items.length > 0 && <section className="container home-section"><div className="section-heading"><p className="eyebrow">Siempre hay algo para festejar</p><h2>Encontrá tu ocasión.</h2></div>
+        <HomeCategoryList categories={categoriesResult.items} />
       </section>}
       {!!content.data?.featuredProducts.length && <section className="container home-section"><div className="section-heading heading-row"><div><p className="eyebrow">Elegidos para vos</p><h2>Para tu próxima celebración.</h2></div><Link className="text-link" href="/catalogo">Ver todo el catálogo</Link></div>
         <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>

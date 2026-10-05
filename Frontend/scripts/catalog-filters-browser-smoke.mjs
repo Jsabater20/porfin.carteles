@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { startFixtureApi, products } from '../test/fixtures/storefront-api.mjs';
@@ -71,6 +71,7 @@ try {
   const settled = () => waitFor('!!document.querySelector(".catalog-filters") && document.querySelector(".catalog-filters").getAttribute("aria-busy")==="false"');
   await navigate('/catalogo', '.catalog-filters');
   await settled();
+  await delay(750);
   assert.equal(await evaluate('document.querySelector("#catalog-type")'), null);
   assert.equal(await evaluate('document.querySelector("#catalog-sort")'), null);
   await fill('#catalog-category', 'CARTEL');
@@ -127,7 +128,21 @@ try {
   }
   await navigate('/','h1');
   assert.ok(await evaluate('document.body.textContent.includes("Celebraciones con tu toque")'));
-  assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),4);
+  assert.equal(await evaluate('[...document.querySelectorAll(".store-nav a")].filter(link=>link.textContent.trim()==="Home").length'),1);
+  assert.equal(await evaluate('document.querySelectorAll(".showcase-options button").length'),3);
+  await click('.showcase-options button:nth-child(2)');
+  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Props"');
+  assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),3);
+  assert.equal(await evaluate('document.querySelectorAll(".home-category-list .category-tag").length'),10);
+  await click('.home-category-actions button');
+  await waitFor('document.querySelectorAll(".home-category-list .category-tag").length===52');
+  await click('.home-category-actions button');
+  await waitFor('document.querySelectorAll(".home-category-list .category-tag").length===10');
+  for (const width of [1440,390,320]) {
+    await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<500});
+    assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Desborde del Home a '+width);
+    if (width !== 320) { const shot = await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true}); await writeFile(root+'.test-build/home-'+width+'.png',Buffer.from(shot.data,'base64')); }
+  }
   await click('.category-tag');
   await waitFor('location.pathname==="/catalogo" && location.search.includes("categoryId=cat-0")'); await settled();
   assert.ok(await evaluate('document.body.textContent.includes("enlace anterior")'));
