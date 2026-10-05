@@ -146,6 +146,14 @@ try {
   await click('.category-tag');
   await waitFor('location.pathname==="/catalogo" && location.search.includes("categoryId=cat-0")'); await settled();
   assert.ok(await evaluate('document.body.textContent.includes("enlace anterior")'));
+  for (const [path, selector, name] of [['/catalogo', '.product-grid', 'catalog'], ['/productos/producto-0', '.product-detail-grid', 'product']]) {
+    await navigate(path, selector);
+    for (const width of [1440, 390, 320]) {
+      await send('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: width < 500 });
+      assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Desborde de '+name+' a '+width);
+      if (width !== 320) { const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true }); await writeFile(root+'.test-build/'+name+'-'+width+'.png', Buffer.from(shot.data, 'base64')); }
+    }
+  }
   assert.deepEqual(exceptions,[]);
   console.log('OK: filtros, limpieza, paginación, atrás/adelante, enlaces anteriores, Home y 1440/390/320px');
 } finally {

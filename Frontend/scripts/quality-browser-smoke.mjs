@@ -82,7 +82,7 @@ try {
    }
   }
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:1000,deviceScaleFactor:1,mobile:true});
-  await navigate('/productos/producto-0','.customizer');await fill('#personalization-name','Ana');await click('.customizer button[type=submit]');await waitFor('!!document.querySelector(".success-notice")');
+   await navigate('/productos/producto-0','.customizer');await fill('#personalization-idea','Cartel para Ana');await click('.customizer button[type=submit]');await waitFor('!!document.querySelector(".success-notice")');
   await navigate('/carrito','.cart-row');await auditPage(evaluate,'carrito con producto');
   await navigate('/','h1');
   await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
