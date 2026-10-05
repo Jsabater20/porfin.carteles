@@ -1,7 +1,8 @@
-/** Brand wordmark rendered as text so it stays sharp on every background. */
-export function BrandLogo({ hero = false }: { hero?: boolean }) {
-  return <span className={hero ? 'brand-logo brand-logo-hero' : 'brand-logo'} role="img" aria-label="Por fin, carteles y más">
-    <span className="brand-logo-name">Por fin</span>
-    <span className="brand-logo-caption">CARTELES &amp; MÁS</span>
+import Image from 'next/image';
+
+/** Original Por fin Carteles wordmark, shared by the storefront and administration. */
+export function BrandLogo() {
+  return <span className="brand-logo">
+    <Image className="brand-logo-image" src="/brand/por-fin-carteles-logo.png" width={2172} height={724} sizes="(max-width: 520px) 116px, 154px" alt="Por fin Carteles" priority />
   </span>;
 }

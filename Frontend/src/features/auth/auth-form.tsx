@@ -62,7 +62,7 @@ export function AuthForm({ mode, status = '' }: { mode: AuthMode; status?: strin
   }
   const title = mode === 'login' ? 'Ingresá al panel' : mode === 'recovery' ? 'Recuperá tu acceso' : 'Elegí una contraseña nueva';
   if (success) return <section className="auth-card" aria-live="polite"><h1>{mode === 'recovery' ? 'Revisá tu correo' : 'Contraseña actualizada'}</h1><p>{mode === 'recovery' ? 'Si la cuenta está habilitada, recibirás un enlace para recuperar el acceso. Revisá también el correo no deseado.' : 'Las sesiones anteriores quedaron cerradas. Iniciá sesión con tu contraseña nueva.'}</p><Link className="button" href="/admin/login">Volver al inicio de sesión</Link></section>;
-  return <section className="auth-card"><p className="eyebrow">Administración · Por fin!</p><h1>{title}</h1>
+  return <section className="auth-card"><p className="eyebrow">Administración · Por fin Carteles</p><h1>{title}</h1>
     {mode === 'login' && status === 'vencida' && <p className="notice" role="status">Tu sesión venció o dejó de estar activa. Ingresá nuevamente.</p>}
     {mode === 'login' && status === 'cerrada' && <p className="notice" role="status">Tu sesión se cerró.</p>}
     <noscript>Activá JavaScript para usar el acceso administrativo.</noscript>{message && <p className="notice" role="alert">{message}</p>}

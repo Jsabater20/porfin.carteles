@@ -28,8 +28,8 @@ function configureSheet(sheet: Worksheet) {
 function ordersSheet(workbook: Workbook) {
   const preferred = workbook.getWorksheet('Pedidos');
   if (!preferred || preferred.rowCount === 0 || String(preferred.getCell('B1').value ?? '') === 'Referencia') return preferred ?? workbook.addWorksheet('Pedidos');
-  let name = 'Pedidos Porfin', suffix = 2;
-  while (workbook.getWorksheet(name)) name = `Pedidos Porfin ${suffix++}`;
+  let name = 'Pedidos Por fin Carteles', suffix = 2;
+  while (workbook.getWorksheet(name)) name = `Pedidos Por fin Carteles ${suffix++}`;
   return workbook.addWorksheet(name);
 }
 

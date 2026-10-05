@@ -2,7 +2,7 @@
   "name": "porfin-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "API de Por fin! con NestJS, Prisma y PostgreSQL",
+  "description": "API de Por fin Carteles con NestJS, Prisma y PostgreSQL",
   "scripts": {
     "start": "nest start --watch",
     "start:dev": "nest start --watch",

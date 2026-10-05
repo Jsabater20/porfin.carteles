@@ -52,7 +52,7 @@ export function configureApp(app: NestExpressApplication) {
   });
   if (config.getOrThrow<boolean>('SWAGGER_ENABLED')) {
     const definition = new DocumentBuilder()
-      .setTitle('Por fin! API')
+      .setTitle('Por fin Carteles API')
       .setDescription('Catálogo público, sesión invitada y preview de carrito. Las escrituras de tienda usan X-Requested-With: porfin-storefront y su CSRF invitado. Acceso administrativo con sesiones, cookies, CSRF y roles OWNER/ADMIN. En las escrituras administrativas usar JSON y X-Requested-With: porfin-admin. Para operaciones autenticadas, agregar X-CSRF-Token obtenido en login o /auth/me.')
       .setVersion('0.12.0')
       .addCookieAuth(guestCookieName(config), { type: 'apiKey', in: 'cookie' }, 'guest-session')

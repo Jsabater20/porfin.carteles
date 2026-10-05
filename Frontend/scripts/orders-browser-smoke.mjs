@@ -121,8 +121,8 @@ try {
   assert.equal(api.state.orders.size, 1); assert.equal(api.state.orderCalls[0].key, api.state.orderCalls[1].key);
   assert.equal(await cart(), null, 'Vacía el carrito después de registrar el pedido');
   const whatsappMessage = api.state.orders.values().next().value.whatsapp.message;
-  for (const expected of ['Hola Porfin Carteles!', 'CAR-', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío \\(correo\\)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total']) assert.match(whatsappMessage, new RegExp(expected));
-  assert.equal((whatsappMessage.match(/Hola Porfin Carteles!/g)??[]).length,1);
+  for (const expected of ['Hola Por fin Carteles!', 'CAR-', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío \\(correo\\)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total']) assert.match(whatsappMessage, new RegExp(expected));
+  assert.equal((whatsappMessage.match(/Hola Por fin Carteles!/g)??[]).length,1);
   assert.doesNotMatch(whatsappMessage, /Mail:|Fecha de nacimiento:|Teléfono:|Ocasión:|Carrera:|Pendientes de cotización:/i);
   assert.doesNotMatch(await evaluate('document.body.innerText'), /Tu solicitud quedó registrada|Confirmalo con la tienda/);
   assert.match(await evaluate('document.querySelector(".whatsapp-link").href'), /^https:\/\/wa.me\//);

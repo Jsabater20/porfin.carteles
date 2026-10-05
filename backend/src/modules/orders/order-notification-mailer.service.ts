@@ -35,7 +35,7 @@ export class OrderNotificationMailer {
     const origin = this.config.get<string>('ALLOWED_ORIGINS', '').split(',')[0]?.trim();
     const adminUrl = origin ? `${origin}/admin/pedidos/${order.id}` : '';
     const text = [
-      `Se registró un nuevo pedido en Porfin Carteles: ${order.reference}`,
+      `Se registró un nuevo pedido en Por fin Carteles: ${order.reference}`,
       '',
       `Cliente: ${order.customerName}`,
       `Teléfono: ${order.customerPhone}`,
@@ -53,7 +53,7 @@ export class OrderNotificationMailer {
       ...(adminUrl ? ['', `Abrir el pedido en administración: ${adminUrl}`] : []),
     ].join('\n');
     const message = {
-      from: mode === 'resend' ? this.config.get<string>('EMAIL_FROM') : this.config.get<string>('MAIL_FROM', 'Porfin Carteles <no-reply@example.invalid>'),
+      from: mode === 'resend' ? this.config.get<string>('EMAIL_FROM') : this.config.get<string>('MAIL_FROM', 'Por fin Carteles <no-reply@example.invalid>'),
       to: recipient,
       subject: `Nuevo pedido ${order.reference} · ${order.customerName}`,
       text,

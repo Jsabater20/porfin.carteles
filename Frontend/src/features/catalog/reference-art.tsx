@@ -8,7 +8,7 @@ const artworks: Record<string, ReferenceArtwork> = {
   'cartel-tres-imagenes': { page: 4, frame: '130 510 550 660' },
   'cartel-baby-shower': { page: 5, frame: '130 470 590 695' },
   'cartel-personalizado': { page: 6, frame: '25 370 770 925', shapes: {
-    RECTANGULAR: '25 370 520 330', CIRCULAR: '300 690 500 380', XXL: '20 1065 600 250',
+    RECTANGULAR: '25 370 520 330', CIRCULAR: '300 690 500 380', XXL: '20 1065 525 250',
   } },
   'props-personalizados': { page: 7, frame: '100 540 620 480' },
   'combo-1': { page: 9, frame: '65 510 665 815' },

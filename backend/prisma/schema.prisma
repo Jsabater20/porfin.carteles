@@ -514,7 +514,7 @@ model FeaturedProduct {
 
 model StoreSettings {
   id              Int      @id @default(1)
-  storeName       String   @default("Por fin!")
+  storeName       String   @default("Por fin Carteles")
   description     String   @default("")
   whatsappNumber  String?
   contactEmail    String?

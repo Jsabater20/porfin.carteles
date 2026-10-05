@@ -4,7 +4,7 @@ import { replyPreview } from './preview-api.mjs';
 import { replyOrder } from './orders-api.mjs';
 
 export const settings = {
-  storeName: 'Por fin! Pruebas', description: 'Celebraciones de prueba',
+  storeName: 'Por fin Carteles · Pruebas', description: 'Celebraciones de prueba',
   whatsappNumber: '5491112345678', whatsappUrl: 'https://wa.me/5491112345678', contactEmail: 'pruebas@example.test',
   instagramUrl: null, facebookUrl: null, tiktokUrl: null, pickupAddress: 'Dirección de prueba',
   deliveryMethods: ['PICKUP', 'SHIPPING'], deliveryNotes: 'Entrega a coordinar.', leadTimeText: 'Fecha a confirmar.', businessHours: 'Lunes a viernes',

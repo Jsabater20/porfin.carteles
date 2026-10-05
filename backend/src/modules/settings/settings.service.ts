@@ -5,7 +5,7 @@ import { adminTransaction } from '../../common/utils/admin-transaction';
 import { PatchSettingsDto } from './settings.dto';
 
 const defaults = {
-  storeName: 'Por fin!', description: '', whatsappNumber: null, contactEmail: null,
+  storeName: 'Por fin Carteles', description: '', whatsappNumber: null, contactEmail: null,
   instagramUrl: null, facebookUrl: null, tiktokUrl: null, pickupAddress: '',
   deliveryMethods: [] as string[], deliveryNotes: '', leadTimeText: '', businessHours: '',
 };

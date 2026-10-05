@@ -58,8 +58,8 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     order = results[0].body;
     assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
-    for (const text of ['Hola Porfin Carteles! Quisiera consultar este pedido:', order.reference, '2 × Cartel (Tres fotos):', 'size: A3', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío (correo)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total.']) assert.ok(order.whatsapp.message.includes(text), text);
-    assert.equal(order.whatsapp.message.match(/Hola Porfin Carteles!/g)?.length, 1);
+    for (const text of ['Hola Por fin Carteles! Quisiera consultar este pedido:', order.reference, '2 × Cartel (Tres fotos):', 'size: A3', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío (correo)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total.']) assert.ok(order.whatsapp.message.includes(text), text);
+    assert.equal(order.whatsapp.message.match(/Hola Por fin Carteles!/g)?.length, 1);
     assert.doesNotMatch(order.whatsapp.message, /Mail:|Fecha de nacimiento:|Teléfono:|Ocasión:|Carrera:|Pendientes de cotización:|Fotos para enviar/);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
     assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
@@ -69,7 +69,7 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     assert.equal(notice.to, 'porfincarteles@gmail.com'); assert.match(notice.text, /CAR-|Ana Pérez|Teléfono: 3425556789|2 × Cartel/); assert.doesNotMatch(notice.text, /Fecha de nacimiento/);
     await ctx.prisma.order.update({ where: { id: order.id }, data: { whatsappMessage: 'mensaje viejo mensaje viejo', whatsappUrl: 'https://wa.me/5491199999999?text=mensaje%20viejo%20mensaje%20viejo' } });
     const repaired = (await create(submittedPayload, key)).body;
-    assert.equal(repaired.whatsapp.message.match(/Hola Porfin Carteles!/g)?.length, 1);
+    assert.equal(repaired.whatsapp.message.match(/Hola Por fin Carteles!/g)?.length, 1);
     assert.equal(new URL(repaired.whatsapp.url).searchParams.get('text'), repaired.whatsapp.message);
     assert.equal((await create({ ...submittedPayload, customerFirstName: 'Otro' }, key)).status, 409);
     assert.equal((await create({ ...submittedPayload, customerEmail: 'otro@example.com' }, key)).status, 409);

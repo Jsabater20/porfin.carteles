@@ -6,7 +6,7 @@ import {siteConfig} from '@/lib/seo';
 export function generateMetadata(): Metadata { const site=siteConfig(); return {
   metadataBase: new URL(site.origin),
   robots: {index:site.indexable,follow:true},
-  title: { default: 'Por fin! · Carteles para celebrar', template: '%s · Por fin!' },
+  title: { default: 'Por fin Carteles · Carteles para celebrar', template: '%s · Por fin Carteles' },
   description: 'Carteles y combos personalizados para acompañar tus celebraciones.',
 }; }
 

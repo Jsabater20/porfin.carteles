@@ -26,9 +26,9 @@ export class RecoveryMailer {
     // El fragmento no llega a servidores web ni a logs de acceso.
     url.hash = new URLSearchParams({ token }).toString();
     const message = {
-      from: mode === 'resend' ? this.config.getOrThrow<string>('EMAIL_FROM') : this.config.get<string>('MAIL_FROM', 'Por fin! <no-reply@example.invalid>'),
+      from: mode === 'resend' ? this.config.getOrThrow<string>('EMAIL_FROM') : this.config.get<string>('MAIL_FROM', 'Por fin Carteles <no-reply@example.invalid>'),
       to: email,
-      subject: 'Recuperar acceso a Por fin!',
+      subject: 'Recuperar acceso a Por fin Carteles',
       text: `Abrí este enlace para elegir una contraseña nueva:\n${url.toString()}\n\nVence en 30 minutos y solo se puede usar una vez. Si no lo solicitaste, ignorá este mensaje.`,
     };
     if (mode === 'resend') {

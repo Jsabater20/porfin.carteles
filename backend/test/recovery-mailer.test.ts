@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { RecoveryMailer } from '../src/modules/auth/recovery-mailer.service';
 
-const settings = { MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_only', EMAIL_FROM: 'Porfin Carteles <no-reply@example.com>', PASSWORD_RESET_URL: 'https://tienda.example.com/admin/reset-password' };
+const settings = { MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_only', EMAIL_FROM: 'Por fin Carteles <no-reply@example.com>', PASSWORD_RESET_URL: 'https://tienda.example.com/admin/reset-password' };
 const mailer = (patch = {}) => new RecoveryMailer(new ConfigService({ ...settings, ...patch }));
 
 test('Resend envía HTTPS con remitente configurado, token en fragmento e idempotencia sin exponer el token en headers', async t => {

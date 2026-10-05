@@ -124,7 +124,7 @@ test('Etapa 2: autenticación y administradores con PostgreSQL real', { timeout:
     const previous = Object.fromEntries(['MAIL_MODE', 'RESEND_API_KEY', 'EMAIL_FROM'].map(key => [key, config.get(key)]));
     config.set('MAIL_MODE', 'resend');
     config.set('RESEND_API_KEY', 're_test_only');
-    config.set('EMAIL_FROM', 'Porfin Carteles <no-reply@example.com>');
+    config.set('EMAIL_FROM', 'Por fin Carteles <no-reply@example.com>');
     const account = await ctx.prisma.administrator.create({ data: { name: 'Prueba Resend', email: 'resend@example.com', passwordHash: owner.passwordHash } });
     const realFetch = globalThis.fetch;
     let fail = false;
@@ -141,7 +141,7 @@ test('Etapa 2: autenticación y administradores con PostgreSQL real', { timeout:
       assert.equal(success.response.status, 202);
       assert.deepEqual(success.body, absent.body);
       assert.equal(messages.length, 1);
-      assert.equal(messages[0].from, 'Porfin Carteles <no-reply@example.com>');
+      assert.equal(messages[0].from, 'Por fin Carteles <no-reply@example.com>');
       const rawToken = /#token=([a-f0-9]{64})/.exec(messages[0].text)![1];
       assert.equal((await ctx.prisma.accessToken.findUniqueOrThrow({ where: { tokenHash: tokenHash(rawToken) } })).usedAt, null);
       fail = true;

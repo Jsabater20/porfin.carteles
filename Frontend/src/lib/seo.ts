@@ -9,10 +9,10 @@ export function siteConfig(env:Record<string,string|undefined>=process.env) {
  return {origin:webOrigin,indexable:flag==='true'&&url.protocol==='https:'&&!local};
 }
 export function publicMetadata(title:string,description:string,path:string,index=true,images:string[]=[]):Metadata {
- const site=siteConfig(),url=site.origin+path;
- return {title,description,alternates:{canonical:url},robots:{index:site.indexable&&index,follow:true},
- openGraph:{type:'website',locale:'es_AR',siteName:'Por fin!',title,description,url,...(images.length?{images:images.map(url=>({url}))}:{})},
- twitter:{card:images.length?'summary_large_image':'summary',title,description,...(images.length?{images}:{})}};
+ const site=siteConfig(),url=site.origin+path,normalizedTitle=/^Por fin!?$/i.test(title.trim())?'Por fin Carteles':title;
+ return {title:normalizedTitle,description,alternates:{canonical:url},robots:{index:site.indexable&&index,follow:true},
+ openGraph:{type:'website',locale:'es_AR',siteName:'Por fin Carteles',title:normalizedTitle,description,url,...(images.length?{images:images.map(url=>({url}))}:{})},
+ twitter:{card:images.length?'summary_large_image':'summary',title:normalizedTitle,description,...(images.length?{images}:{})}};
 }
 export function productMetadata(product:ProductDetail):Metadata {
  const images=product.images.filter(i=>isCatalogImageUrl(i.url)).slice(0,1).map(i=>i.url);

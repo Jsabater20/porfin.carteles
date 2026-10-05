@@ -23,7 +23,7 @@ const amount = (cents: number) => (cents / 100).toLocaleString('es-AR', { style:
 const displayDate = (value: string | Date) => (value instanceof Date ? value.toISOString().slice(0, 10) : value).split('-').reverse().join('/');
 function whatsappText(input: { reference: string; firstName: string; lastName: string; requestedDate: string | Date; deliveryMethod: string; notes?: string | null; knownSubtotalCents: number; items: WhatsAppItem[] }) {
   return [
-    'Hola Porfin Carteles! Quisiera consultar este pedido:',
+    'Hola Por fin Carteles! Quisiera consultar este pedido:',
     input.reference,
     ...input.items.flatMap(item => [
       `${item.quantity} × ${item.productName} (${item.variantName}): ${item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)}`,

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {publicMetadata} from '@/lib/seo';
-export async function generateMetadata(){const [settings,content]=await Promise.all([getStoreSettings(),getContent('home')]);return publicMetadata(content.data?.title||settings?.storeName||'Por fin! · Carteles para celebrar',content.data?.subtitle||settings?.description||'Carteles y combos personalizados para tus celebraciones.','/');}
+export async function generateMetadata(){const [settings,content]=await Promise.all([getStoreSettings(),getContent('home')]);return publicMetadata(content.data?.title||settings?.storeName||'Por fin Carteles · Carteles para celebrar',content.data?.subtitle||settings?.description||'Carteles y combos personalizados para tus celebraciones.','/');}
 import { getStoreSettings } from '@/features/settings/queries';
 import { getContent } from '@/features/content/queries';
 import { getTaxonomy } from '@/features/catalog/queries';

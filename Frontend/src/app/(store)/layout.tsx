@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function StoreLayout({ children }: { children: ReactNode }) {
   const settings = await getStoreSettings();
-  const name = settings?.storeName || 'Por fin!';
+  const name = !settings?.storeName || settings.storeName.trim() === 'Por fin!' ? 'Por fin Carteles' : settings.storeName;
   return (
     <CartProvider><div className="site-shell">
       <StoreHeader storeName={name} />

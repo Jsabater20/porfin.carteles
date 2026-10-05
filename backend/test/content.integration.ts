@@ -54,7 +54,7 @@ test('Etapa 11: contenido, destacados y configuración pública segura', { timeo
     assert.equal((await patchContent({ page: 'home', published: false })).status, 200); assert.equal((await req('/content/home')).status, 404);
   });
   await t.test('Configuración de contacto, entrega y plazos; enlaces seguros y secretos rechazados', async () => {
-    const patch = { storeName: 'Por fin!', whatsappNumber: '5491199999999', contactEmail: 'contacto@example.com', instagramUrl: 'https://www.instagram.com/porfin', deliveryMethods: ['PICKUP', 'SHIPPING'], pickupAddress: 'Dirección a confirmar', leadTimeText: 'Consultar plazo', businessHours: 'Lunes a viernes' };
+    const patch = { storeName: 'Por fin Carteles', whatsappNumber: '5491199999999', contactEmail: 'contacto@example.com', instagramUrl: 'https://www.instagram.com/porfin', deliveryMethods: ['PICKUP', 'SHIPPING'], pickupAddress: 'Dirección a confirmar', leadTimeText: 'Consultar plazo', businessHours: 'Lunes a viernes' };
     assert.equal((await patchSettings(patch)).status, 200);
     assert.equal((await patchSettings({ description: 'Carteles y combos' })).status, 200);
     const publicSettings = (await req('/settings/public')).body; assert.equal(publicSettings.whatsappUrl, 'https://wa.me/5491199999999'); assert.equal(publicSettings.leadTimeText, patch.leadTimeText);

@@ -23,28 +23,12 @@
 
 .brand-logo {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: auto;
+  align-items: center;
+  width: 154px;
   height: auto;
   overflow: visible;
-  line-height: 1;
-  color: var(--accent);
 }
-.brand-logo-name {
-  font-family: 'Bodoni MT', Didot, Georgia, serif;
-  font-weight: 700;
-  font-size: clamp(2rem, 3.2vw, 2.45rem);
-  letter-spacing: -.065em;
-  white-space: nowrap;
-}
-.brand-logo-caption {
-  padding-left: .13em;
-  font-size: .62rem;
-  letter-spacing: .085em;
-  font-weight: 600;
-  white-space: nowrap;
-}
+.brand-logo-image { display: block; width: 100%; height: auto; }
 .site-shell .store-header {
   position: relative;
   z-index: 5;
@@ -52,8 +36,6 @@
   background: rgba(251, 247, 244, .97);
 }
 .site-shell .header-inner { min-height: 92px; }
-.site-shell .store-header .brand-logo { color: #23334b; }
-.site-shell .store-header .brand-logo-caption { color: #833d59; }
 .site-shell .store-nav { gap: clamp(1rem, 2.3vw, 2rem); }
 .site-shell .store-nav a {
   position: relative;
@@ -242,8 +224,7 @@
 .site-shell .content-body h2,
 .site-shell .contact-details h2 { color: var(--ink); }
 .site-shell .store-footer { padding-block: 3.25rem; background: #1d2d44; border-top: 5px solid #eab6c3; }
-.site-shell .store-footer .brand-logo { color: var(--accent); }
-.site-shell .store-footer .brand-logo-caption { color: #f3d4dc; }
+.site-shell .store-footer .brand-logo-image { filter: brightness(0) saturate(100%) invert(85%) sepia(15%) saturate(655%) hue-rotate(300deg) brightness(102%) contrast(89%); }
 .site-shell .store-footer p { max-width: 29ch; line-height: 1.7; }
 .site-shell .store-footer .footer-nav { font-weight: 600; }
 .site-shell .store-footer .footer-contact { color: #f0dce2; }
@@ -254,7 +235,7 @@
 @media (max-width: 520px) {
   .site-shell .header-inner { justify-content: space-between; }
   .site-shell .store-nav { gap: .45rem 1rem; }
-  .site-shell .brand-logo-name { font-size: 2rem; }
+  .site-shell .brand-logo { width: 116px; }
   .site-shell .catalog-page > .page-heading { margin: 1rem 0 1.25rem; padding: 1.6rem; }
   .site-shell .catalog-page > .page-heading::after { font-size: 8rem; bottom: -2rem; }
   .site-shell .brand-hero h1 { font-size: clamp(2.5rem, 12vw, 3.2rem); }

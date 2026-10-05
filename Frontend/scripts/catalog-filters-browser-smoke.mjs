@@ -128,6 +128,8 @@ try {
   }
   await navigate('/','h1');
   assert.ok(await evaluate('document.body.textContent.includes("Celebraciones con tu toque")'));
+  assert.ok(await evaluate('document.title.includes("Por fin Carteles") && !document.title.includes("Por fin!")'));
+  assert.ok(await evaluate('document.querySelector(".brand-logo-image").complete && document.querySelector(".brand-logo-image").naturalWidth > 0'));
   assert.equal(await evaluate('[...document.querySelectorAll(".store-nav a")].filter(link=>link.textContent.trim()==="Home").length'),1);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-options button").length'),3);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-shapes button").length'),3);
@@ -138,6 +140,9 @@ try {
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Props"');
   await click('.showcase-options button:nth-child(1)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
+  await click('.showcase-shapes button:nth-child(3)');
+  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles xxl"');
+  assert.equal(await evaluate('document.querySelector(".showcase-art .reference-art").getAttribute("viewBox")'), '20 1065 525 250');
   assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),3);
   assert.equal(await evaluate('document.querySelectorAll(".home-career-list .career-tag").length'),1);
   assert.equal(await evaluate('document.querySelector(".career-tag").textContent.includes("Medicina")'),true);

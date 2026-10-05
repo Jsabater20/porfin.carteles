@@ -13,7 +13,7 @@ const order = {
 test('avisa un pedido por Resend al correo de contacto sin incluir fecha de nacimiento', async t => {
   const calls: RequestInit[] = [];
   t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => { calls.push(options); return new Response(JSON.stringify({ id: 'mail-id' }), { status: 200 }); });
-  const mailer = new OrderNotificationMailer(new ConfigService({ MAIL_MODE: 'resend', RESEND_API_KEY: 're_test', EMAIL_FROM: 'Porfin Carteles <no-reply@example.com>', ALLOWED_ORIGINS: 'https://tienda.example.com' }));
+  const mailer = new OrderNotificationMailer(new ConfigService({ MAIL_MODE: 'resend', RESEND_API_KEY: 're_test', EMAIL_FROM: 'Por fin Carteles <no-reply@example.com>', ALLOWED_ORIGINS: 'https://tienda.example.com' }));
   assert.equal(await mailer.send('porfincarteles@gmail.com', order), true);
   const request = calls[0], message = JSON.parse(String(request.body));
   assert.deepEqual(message.to, ['porfincarteles@gmail.com']);

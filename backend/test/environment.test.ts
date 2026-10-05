@@ -37,7 +37,7 @@ const production = {
 };
 
 test('Resend exige clave y remitente válido sin exigir credenciales SMTP', () => {
-  const resend = { ...production, MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_sentinel', EMAIL_FROM: 'Porfin Carteles <no-reply@example.com>' };
+  const resend = { ...production, MAIL_MODE: 'resend', RESEND_API_KEY: 're_test_sentinel', EMAIL_FROM: 'Por fin Carteles <no-reply@example.com>' };
   assert.equal(validateEnvironment(resend).MAIL_MODE, 'resend');
   assert.equal(validateEnvironment({ ...resend, EMAIL_FROM: 'no-reply@example.com' }).EMAIL_FROM, 'no-reply@example.com');
   for (const patch of [{ RESEND_API_KEY: '' }, { RESEND_API_KEY: 'sentinel-secret' }, { EMAIL_FROM: '' }, { EMAIL_FROM: 'not-email' }, { EMAIL_FROM: 'Sender <a@example.com>\r\nBcc: b@example.com' }]) {
