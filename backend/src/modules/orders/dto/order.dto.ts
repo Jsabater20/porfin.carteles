@@ -1,7 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, QuoteStatus } from '@prisma/client';
-import { IsEmail, IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, IsArray, IsDateString, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
+import { IsEmail, IsUUID, ValidateIf, ArrayMaxSize, ArrayMinSize, ArrayUnique, IsArray, IsDateString, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Length, Matches, Max, Min, ValidateNested } from 'class-validator';
 import { DeliveryMethod } from './preview.dto';
 
 const trimText = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim().normalize('NFC') : value;
@@ -78,6 +78,18 @@ export class CreateManualOrderDto {
   @ApiPropertyOptional({ enum: ['TO_CONFIRM', 'PICKUP', 'SHIPPING'], default: 'TO_CONFIRM' }) @IsOptional() @IsIn(['TO_CONFIRM', 'PICKUP', 'SHIPPING']) deliveryMethod: 'TO_CONFIRM' | 'PICKUP' | 'SHIPPING' = 'TO_CONFIRM';
   @ApiPropertyOptional({ enum: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED], default: OrderStatus.PENDING_CONFIRMATION }) @IsOptional() @IsIn([OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]) status: 'PENDING_CONFIRMATION' | 'CONFIRMED' = OrderStatus.PENDING_CONFIRMATION;
   @ApiPropertyOptional() @ValidateIf(optionalValue) @Transform(trimText) @IsString() @Matches(/^[^\u0000\uD800-\uDFFF]*$/u) @Length(0, 1000) notes?: string;
+}
+
+export class CompleteGoogleCalendarDto {
+  @ApiProperty() @IsString() @Length(10, 4096) code!: string;
+  @ApiProperty() @IsString() @Length(20, 4096) state!: string;
+}
+
+export class SyncGoogleCalendarDto {
+  @ApiProperty({ type: [String], maxItems: 100 })
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @ArrayUnique()
+  @IsString({ each: true }) @Matches(/^c[a-z0-9]{24}$/, { each: true })
+  orderIds!: string[];
 }
 
 

@@ -6,6 +6,9 @@ export type QuoteStatus='DRAFT'|'SENT'|'ACCEPTED'|'REJECTED';
 export interface OrderListItem {id:string;reference:string;customerName:string;status:OrderStatus;requestedDate:string;scheduledDate:string;source:'STOREFRONT'|'MANUAL';knownSubtotalCents:number;pendingQuoteCount:number;createdAt:string}
 export interface OrderList {items:OrderListItem[];total:number;page:number;pageSize:number}
 export interface OrderCalendar {items:OrderListItem[]}
+export interface CalendarHoliday {date:string;name:string;scope:'NATIONAL'|'SANTA_FE';type:'PUBLIC'|'TOURIST'|'LOCAL'}
+export interface CalendarIntegrationStatus {configured:boolean;connected:boolean;email:string|null;connectedAt:string|null;lastSyncedAt:string|null}
+export interface CalendarSyncResult {requested:number;synced:number;missing:string[];failures:{id:string;message:string}[]}
 export interface ManualOrderInput {customerName:string;customerEmail?:string;customerPhone?:string;scheduledDate:string;description:string;deliveryMethod:'TO_CONFIRM'|'PICKUP'|'SHIPPING';status:'PENDING_CONFIRMATION'|'CONFIRMED';notes?:string}
 export interface QuoteInput {items:{productName:string;description:string;quantity:number;unitPriceCents:number}[];notes:string}
 export interface Quote {id:string;version:number;status:QuoteStatus;totalCents:number;notes:string|null;administratorId:string;createdAt:string;items:(QuoteInput['items'][number]&{id:string;subtotalCents:number})[]}

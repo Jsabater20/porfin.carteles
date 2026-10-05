@@ -2,6 +2,7 @@ import { requireAdminSession } from '@/features/auth/session';
 import { serverApi } from '@/lib/api/server';
 import type { OrderCalendar } from '@/lib/contracts/admin-operations';
 import { OrdersCalendar } from '@/features/admin-operations/orders-calendar';
+import { argentinaHolidays } from '@/features/admin-operations/argentina-holidays';
 
 const validMonth=(value:unknown):value is string=>typeof value==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 const monthIso=(date:Date)=>date.toISOString().slice(0,7);
@@ -15,5 +16,5 @@ export default async function Orders({searchParams}:{searchParams:Promise<Record
  const query=new URLSearchParams({from,to}),result=await serverApi<OrderCalendar>('admin/orders/calendar',query);
  const monthLabel=new Intl.DateTimeFormat('es-AR',{month:'long',year:'numeric',timeZone:'UTC'}).format(start);
  const calendarKey=month+':'+result.items.map(item=>item.id+item.status+item.scheduledDate).join('|');
- return <OrdersCalendar key={calendarKey} initialItems={result.items} from={from} to={to} monthLabel={monthLabel.charAt(0).toUpperCase()+monthLabel.slice(1)} previousMonth={monthIso(new Date(Date.UTC(year,monthNumber-2,1)))} nextMonth={monthIso(new Date(Date.UTC(year,monthNumber,1)))}/>;
+ return <OrdersCalendar key={calendarKey} initialItems={result.items} holidays={argentinaHolidays(year)} from={from} to={to} monthLabel={monthLabel.charAt(0).toUpperCase()+monthLabel.slice(1)} previousMonth={monthIso(new Date(Date.UTC(year,monthNumber-2,1)))} nextMonth={monthIso(new Date(Date.UTC(year,monthNumber,1)))}/>;
 }

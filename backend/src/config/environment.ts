@@ -65,5 +65,17 @@ export function validateEnvironment(env: Record<string, unknown>) {
   if (cloudValues.some(Boolean) && cloudValues.some(value => !value)) throw new Error('Configurá las cuatro variables CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET y CLOUDINARY_UPLOAD_PRESET, o dejá todas vacías.');
   if (cloudValues[0] && (!/^[a-zA-Z0-9_-]+$/.test(cloudValues[0]) || !/^[a-zA-Z0-9_-]+$/.test(cloudValues[3]))) throw new Error('El nombre de Cloudinary y del preset deben usar letras, números, guiones o guiones bajos.');
 
-  return { ...env, CLOUDINARY_CLOUD_NAME: cloudValues[0], CLOUDINARY_API_KEY: cloudValues[1], CLOUDINARY_API_SECRET: cloudValues[2], CLOUDINARY_UPLOAD_PRESET: cloudValues[3], NODE_ENV: nodeEnv, PORT: port, ALLOWED_ORIGINS: origins.join(','), SWAGGER_ENABLED: swagger === 'true', API_ORIGIN: apiOrigin, PASSWORD_RESET_URL: resetUrl, SESSION_TTL_HOURS: sessionTtl, SESSION_SAME_SITE: sameSite, TRUST_PROXY_HOPS: proxyHops, MAIL_MODE: mailMode, RESEND_API_KEY: resendKey, EMAIL_FROM: emailFrom, SMTP_PORT: smtpPort, SMTP_SECURE: smtpSecure === 'true' };
+  const googleKeys = ['GOOGLE_CALENDAR_CLIENT_ID', 'GOOGLE_CALENDAR_CLIENT_SECRET', 'GOOGLE_CALENDAR_REDIRECT_URL', 'GOOGLE_CALENDAR_ACCOUNT_EMAIL', 'INTEGRATION_ENCRYPTION_KEY'];
+  const googleValues = googleKeys.map(key => String(env[key] ?? '').trim());
+  if (googleValues.some(Boolean) && googleValues.some(value => !value)) throw new Error('Configurá todas las variables de Google Calendar o dejalas todas vacías.');
+  if (googleValues[0]) {
+    try {
+      const redirect = new URL(googleValues[2]);
+      if (redirect.username || redirect.password || redirect.search || redirect.hash || (nodeEnv === 'production' && redirect.protocol !== 'https:') || !origins.includes(redirect.origin)) throw new Error();
+    } catch { throw new Error('GOOGLE_CALENDAR_REDIRECT_URL debe pertenecer al frontend permitido y usar HTTPS en producción.'); }
+    if (!isEmail(googleValues[3])) throw new Error('GOOGLE_CALENDAR_ACCOUNT_EMAIL debe ser un correo válido.');
+    if (!/^[a-f0-9]{64}$/i.test(googleValues[4])) throw new Error('INTEGRATION_ENCRYPTION_KEY debe tener exactamente 64 caracteres hexadecimales.');
+  }
+
+  return { ...env, CLOUDINARY_CLOUD_NAME: cloudValues[0], CLOUDINARY_API_KEY: cloudValues[1], CLOUDINARY_API_SECRET: cloudValues[2], CLOUDINARY_UPLOAD_PRESET: cloudValues[3], GOOGLE_CALENDAR_CLIENT_ID: googleValues[0], GOOGLE_CALENDAR_CLIENT_SECRET: googleValues[1], GOOGLE_CALENDAR_REDIRECT_URL: googleValues[2], GOOGLE_CALENDAR_ACCOUNT_EMAIL: googleValues[3], INTEGRATION_ENCRYPTION_KEY: googleValues[4], NODE_ENV: nodeEnv, PORT: port, ALLOWED_ORIGINS: origins.join(','), SWAGGER_ENABLED: swagger === 'true', API_ORIGIN: apiOrigin, PASSWORD_RESET_URL: resetUrl, SESSION_TTL_HOURS: sessionTtl, SESSION_SAME_SITE: sameSite, TRUST_PROXY_HOPS: proxyHops, MAIL_MODE: mailMode, RESEND_API_KEY: resendKey, EMAIL_FROM: emailFrom, SMTP_PORT: smtpPort, SMTP_SECURE: smtpSecure === 'true' };
 }

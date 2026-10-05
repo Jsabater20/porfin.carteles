@@ -26,6 +26,9 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
   const canRegister = Boolean(result && delivery !== 'UNDECIDED' && methods.includes(delivery) && settings && Date.parse(result.expiresAt) > Date.now());
   useEffect(() => { if (orderState.status === 'review') previews.invalidate(); }, [orderState.status, previews]);
   useEffect(() => {
+    if (orderState.status === 'success' && orderState.orderId) router.replace('/pedido/' + orderState.orderId);
+  }, [orderState.orderId, orderState.status, router]);
+  useEffect(() => {
     if (!pending && state.ready && state.lines.length && settings && delivery !== 'UNDECIDED' && methods.includes(delivery) && ['idle', 'expired'].includes(preview.status)) void previews.validate();
   }, [delivery, methods, pending, preview.status, previews, settings, state.lines.length, state.ready]);
   useEffect(() => {
@@ -61,16 +64,15 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
       setFormMessage('El carrito cambió o venció el resumen. Volvé a revisarlo antes de registrar.'); return;
     }
     const registeredOrder = await orders.submit(validation.input, cartHash);
-    const registered = orders.getSnapshot();
     if (registeredOrder) {
       const link = whatsappLink(registeredOrder.whatsapp.url);
       if (link && whatsappWindow) whatsappWindow.location.replace(link);
       else whatsappWindow?.close();
+      router.replace('/pedido/' + registeredOrder.id);
     } else whatsappWindow?.close();
-    if (registered.status === 'success' && registered.orderId && window.location.pathname === '/pedido') router.replace('/pedido/' + registered.orderId);
   }
   if (!state.ready || !orderState.ready) return <div className="container loading-state" role="status">Preparando tu solicitud…</div>;
-  if (orderState.status === 'success' && orderState.orderId) return <div className="container order-page"><h1>Tu solicitud quedó registrada</h1><p>Podés consultar el resumen y continuar a WhatsApp.</p><Link className="button" href={'/pedido/' + orderState.orderId}>Ver solicitud registrada</Link><button className="text-button" onClick={() => orders.newRequest()}>Preparar otra solicitud</button></div>;
+  if (orderState.status === 'success' && orderState.orderId) return <div className="container loading-state" role="status">Abriendo el resumen de tu pedido…</div>;
   if (!state.lines.length && !pending && orderState.status !== 'blocked') return <div className="container order-page"><h1>Primero armá tu carrito</h1><p>Elegí y personalizá tus productos para preparar una solicitud.</p><Link className="button" href="/catalogo">Explorar el catálogo</Link></div>;
   const input = (key: keyof CustomerFields, label: string, type = 'text', hint?: string) => <div className="custom-field">
     <label htmlFor={'order-' + key}>{label}</label>

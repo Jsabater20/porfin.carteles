@@ -526,5 +526,12 @@ model StoreSettings {
   deliveryNotes   String   @default("")
   leadTimeText    String   @default("")
   businessHours   String   @default("")
+  googleCalendarEmail          String?
+  googleCalendarAccessToken    String?
+  googleCalendarRefreshToken   String?
+  googleCalendarTokenExpiresAt DateTime?
+  googleCalendarId             String?
+  googleCalendarConnectedAt    DateTime?
+  googleCalendarLastSyncedAt   DateTime?
   updatedAt       DateTime @updatedAt
 }

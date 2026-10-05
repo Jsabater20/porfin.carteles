@@ -62,8 +62,9 @@ export class OrderService {
           const amount = (cents: number) => (cents / 100).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
           const displayDate = (value: string) => value.split('-').reverse().join('/');
           const whatsappMessage = [
-            'Hola Porfin Carteles! Quisiera consultar este pedido:',
-            reference,
+            'Nombre y apellido: ' + dto.customerFirstName + ' ' + dto.customerLastName,
+            '',
+            'Información del pedido:',
             ...currentItems.flatMap(item => [
               item.quantity + ' × ' + item.productName + ' (' + item.variantName + '): ' + (item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)),
               '  Categoría: ' + (item.category ? CATEGORY_LABELS[item.category] : 'Sin clasificar'),
@@ -79,17 +80,13 @@ export class OrderService {
               ...(item.photoCountTotal ? ['  Fotos para enviar por este chat: ' + item.photoCountTotal] : []),
             ]),
             '',
+            'Fecha para cuando lo necesita: ' + displayDate(dto.requestedDate),
             'Modalidad de entrega: ' + (dto.deliveryMethod === DeliveryMethod.PICKUP ? 'A coordinar (retiro, Uber u otra opción en Santa Fe Capital)' : 'Envío por correo'),
-            'Nombre: ' + dto.customerFirstName,
-            'Apellido: ' + dto.customerLastName,
-            'Teléfono: ' + phone,
-            'Lo necesitaría para: ' + displayDate(dto.requestedDate),
             ...(dto.notes ? ['Observaciones: ' + dto.notes] : []),
-            ...(dto.deliveryMethod === DeliveryMethod.PICKUP ? ['Si se coordina un Uber, el costo queda a cargo del cliente al solicitarlo.'] : []),
-            'Subtotal conocido: ' + amount(result.summary.knownSubtotalCents) + '. Pendientes de cotización: ' + result.summary.pendingQuoteLines + '.',
             '',
-            'Entiendo que el pedido, la disponibilidad, la fecha y el precio final quedan pendientes de confirmación por la emprendedora en este chat.',
-            'Para confirmar el pedido y comenzar con el diseño, se abona una seña del 50% del total.',
+            'Precio de productos con importe definido: ' + amount(result.summary.knownSubtotalCents),
+            ...(result.summary.pendingQuoteLines ? ['Productos a cotizar: ' + result.summary.pendingQuoteLines] : []),
+            'Seña: 50% del importe final para confirmar el pedido y comenzar con el diseño.',
           ].join('\n');
           const order = await tx.order.create({ data: {
             guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,

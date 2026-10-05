@@ -15,6 +15,14 @@ test('Normaliza el puerto y las opciones sin exponer credenciales', () => {
   assert.throws(() => validateEnvironment({ ...base, DATABASE_URL: 'secret-value' }), /DATABASE_URL debe ser/);
 });
 
+test('Google Calendar is optional and requires a complete secure configuration', () => {
+  assert.equal(validateEnvironment(base).GOOGLE_CALENDAR_CLIENT_ID, '');
+  assert.throws(() => validateEnvironment({ ...base, GOOGLE_CALENDAR_CLIENT_ID: 'client-only' }), /Google Calendar/);
+  const google = { GOOGLE_CALENDAR_CLIENT_ID: 'client-id', GOOGLE_CALENDAR_CLIENT_SECRET: 'secret', GOOGLE_CALENDAR_REDIRECT_URL: 'http://localhost:3000/admin/pedidos/google', GOOGLE_CALENDAR_ACCOUNT_EMAIL: 'porfincarteles@gmail.com', INTEGRATION_ENCRYPTION_KEY: 'a'.repeat(64) };
+  assert.equal(validateEnvironment({ ...base, ...google }).GOOGLE_CALENDAR_ACCOUNT_EMAIL, 'porfincarteles@gmail.com');
+  assert.throws(() => validateEnvironment({ ...base, ...google, GOOGLE_CALENDAR_REDIRECT_URL: 'https://attacker.example/callback' }));
+});
+
 test('Rechaza orígenes comodín, puertos inválidos y HTTP en producción', () => {
   assert.throws(() => validateEnvironment({ ...base, ALLOWED_ORIGINS: '*' }));
   assert.throws(() => validateEnvironment({ ...base, PORT: '3.5' }));

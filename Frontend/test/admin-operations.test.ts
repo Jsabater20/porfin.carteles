@@ -5,6 +5,7 @@ import {readAttempt,prepareAttempt,attemptStorageKey,type AttemptStorage} from '
 import {routePolicy} from '../src/lib/api/policy';
 import {forwardToBackend} from '../src/lib/api/gateway';
 import type {ContentInput,PaymentInput} from '../src/lib/contracts/admin-operations';
+import {argentinaHolidays} from '../src/features/admin-operations/argentina-holidays';
 test('fechas de entrega y horarios se formatean de manera estable, incluso a medianoche',()=>{
  assert.equal(date('2026-10-29T00:00:00.000Z'),'29/10/2026');
  assert.equal(timestamp('2026-09-29T03:01:00.000Z'),'29/09/2026 00:01');
@@ -50,8 +51,14 @@ test('publicación exige título y FAQ con preguntas completas; listas y claves 
  assert.deepEqual(validateContent({...valid,body:'<script>alert(1)</script>'}),[],'El texto plano se conserva; React lo escapa.');
 });
 test('rutas privadas de operación aceptan solo sus métodos exactos',()=>{
- for(const [path,method] of [['admin/orders','GET'],['admin/orders/calendar','GET'],['admin/orders/manual','POST'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/schedule','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
+ for(const [path,method] of [['admin/orders','GET'],['admin/orders/calendar','GET'],['admin/orders/manual','POST'],['admin/calendar-integration/status','GET'],['admin/calendar-integration/google/start','POST'],['admin/calendar-integration/google/complete','POST'],['admin/calendar-integration/google/sync','POST'],['admin/calendar-integration/google','DELETE'],['admin/orders/'+id,'GET'],['admin/orders/'+id+'/status','PATCH'],['admin/orders/'+id+'/schedule','PATCH'],['admin/orders/'+id+'/quotes','POST'],['admin/orders/'+id+'/quotes/'+id+'/status','PATCH'],['admin/payments','POST'],['admin/payments/orders/'+id,'GET'],['admin/content','PATCH'],['admin/admins/'+id,'PATCH']])assert.equal(routePolicy(path,method),'admin');
  for(const [path,method] of [['admin/orders','POST'],['admin/payments','DELETE'],['admin/admins/'+id,'DELETE'],['admin/content/home','PATCH'],['admin/admins/'+id+'/password','PATCH']])assert.equal(routePolicy(path,method),undefined);
+});
+test('agenda incluye feriados argentinos, días turísticos 2026 y el feriado local de Santa Fe',()=>{
+ const holidays=argentinaHolidays(2026);
+ assert.ok(holidays.some(item=>item.date==='2026-03-24'&&item.scope==='NATIONAL'));
+ assert.ok(holidays.some(item=>item.date==='2026-07-10'&&item.type==='TOURIST'));
+ assert.ok(holidays.some(item=>item.date==='2026-11-15'&&item.scope==='SANTA_FE'));
 });
 test('pasarela de pagos preserva clave y CSRF, filtra sesión invitada y bloquea origen ajeno',async()=>{
  const config={backendUrl:'http://127.0.0.1:3001/api/v1',webOrigin:'http://localhost:3000'},key=crypto.randomUUID();
