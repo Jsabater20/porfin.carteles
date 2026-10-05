@@ -4,18 +4,15 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore, t
 import { browserApi } from '@/lib/api/browser';
 import { createCartStore, type CartStore } from './store';
 import { createPreviewManager } from './preview-manager';
-import { CART_KEY, previewInput } from './model';
-import { createOrderManager, fingerprint } from '@/features/orders/manager';
+import { CART_KEY } from './model';
+import { createOrderManager } from '@/features/orders/manager';
 
 type Services = { store: CartStore; previews: ReturnType<typeof createPreviewManager>; orders: ReturnType<typeof createOrderManager> };
 const Context = createContext<Services | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [services] = useState(() => {
     const store = createCartStore();
-    return { store, previews: createPreviewManager(store, browserApi), orders: createOrderManager(browserApi, async (submitted) => {
-      const snapshot = store.getSnapshot();
-      if (await fingerprint(previewInput(snapshot)) === submitted && store.getSnapshot().revision === snapshot.revision) store.clear();
-    }) };
+    return { store, previews: createPreviewManager(store, browserApi), orders: createOrderManager(browserApi, async () => { store.clear(); }) };
   });
   useEffect(() => {
     let storage: Storage | undefined;

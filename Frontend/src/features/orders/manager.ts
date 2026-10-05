@@ -61,7 +61,7 @@ export function createOrderManager(request: PreviewTransport, onSuccess: (cartFi
       const order = await request<GuestOrder>('orders', { method: 'POST', body: input, csrfToken: session.csrfToken, idempotencyKey: pending.key, signal });
       if (!ORDER_ID.test(order.id)) throw new Error('Respuesta de pedido inválida');
       persist({ kind: 'complete', orderId: order.id, cartFingerprint: pending.cartFingerprint });
-      // Nunca se borra un carrito que cambió mientras se registraba el pedido.
+      // El proveedor aplica la política del carrito después de confirmar el registro.
       await onSuccess(pending.cartFingerprint);
       update({ status: 'success', orderId: order.id, pending: null, message: '' });
       return order;

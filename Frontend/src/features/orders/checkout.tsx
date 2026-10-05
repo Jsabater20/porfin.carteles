@@ -7,7 +7,7 @@ import { useCart } from '@/features/cart/provider';
 import { previewInput } from '@/features/cart/model';
 import { formatMoney } from '@/lib/format/money';
 import type { PublicSettings } from '@/lib/contracts/settings';
-import { argentinaDate, emptyCustomer, validateCustomer, whatsappLink, type CustomerFields } from './validation';
+import { argentinaDate, emptyCustomer, validateCustomer, type CustomerFields } from './validation';
 import { fingerprint } from './manager';
 import { DepositNotice } from '@/components/deposit-notice';
 
@@ -54,31 +54,16 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
       pending ? argentinaDate(new Date(pending.createdAt)) : argentinaDate());
     setErrors(validation.errors);
     if (Object.keys(validation.errors).length) { requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return; }
-    // Se abre durante el clic, antes de esperar la API, para que el navegador no lo bloquee como popup tardío.
-    const whatsappWindow = window.open('/pedido/whatsapp', 'porfin-whatsapp');
     // El hash permite recuperar un reintento tras recargar sin guardar datos de contacto.
     const snapshot = store.getSnapshot();
     const cartHash = await fingerprint(previewInput(snapshot));
     if (!pending && (store.getSnapshot().revision !== snapshot.revision || previews.getSnapshot().preview?.id !== validation.input.previewId || Date.parse(result!.expiresAt) <= Date.now())) {
-      whatsappWindow?.close();
       setFormMessage('El carrito cambió o venció el resumen. Volvé a revisarlo antes de registrar.'); return;
     }
     const registeredOrder = await orders.submit(validation.input, cartHash);
     if (registeredOrder) {
-      const link = whatsappLink(registeredOrder.whatsapp.url);
-      if (link && whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.replace(link);
-        try { whatsappWindow.opener = null; } catch {}
-      } else {
-        whatsappWindow?.close();
-        if (link) {
-          const fallback = window.open(link, '_blank');
-          if (fallback) fallback.opener = null;
-          else setFormMessage('El navegador bloqueó la pestaña de WhatsApp. Abrila desde el resumen del pedido.');
-        }
-      }
       router.replace('/pedido/' + registeredOrder.id);
-    } else whatsappWindow?.close();
+    }
   }
   if (!state.ready || !orderState.ready) return <div className="container loading-state" role="status">Preparando tu solicitud…</div>;
   if (orderState.status === 'success' && orderState.orderId) return <div className="container loading-state" role="status">Abriendo el resumen de tu pedido…</div>;
@@ -114,7 +99,7 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
         </fieldset>
         {formMessage && <p role="alert" className="field-error">{formMessage}</p>}
         {orderState.storageWarning && <p className="notice">Este navegador no permite guardar el registro de reintento. Mantené la página abierta hasta recibir la confirmación.</p>}
-        <button className="button order-submit" type="submit" disabled={busy || orderState.retryBlocked || !pending && !canRegister}>{busy ? 'Registrando…' : pending ? 'Reintentar la misma solicitud' : 'Hacer pedido y abrir WhatsApp'}</button>
+        <button className="button order-submit" type="submit" disabled={busy || orderState.retryBlocked || !pending && !canRegister}>{busy ? 'Registrando…' : pending ? 'Reintentar la misma solicitud' : 'Registrar pedido'}</button>
         {busy && <p role="status">Guardando tu solicitud…</p>}
         <p className="muted form-note">Los datos de contacto no se guardan en el navegador. El mail y la fecha de nacimiento quedan registrados para la administración, pero no se incluyen en el mensaje de WhatsApp.</p>
       </form>
