@@ -21,14 +21,6 @@
   color: var(--ink);
 }
 
-.brand-logo {
-  display: inline-flex;
-  align-items: center;
-  width: 154px;
-  height: auto;
-  overflow: visible;
-}
-.brand-logo-image { display: block; width: 100%; height: auto; }
 .site-shell .store-header {
   position: relative;
   z-index: 5;
@@ -233,8 +225,9 @@
   .site-shell .product-information { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
-  .site-shell .header-inner { justify-content: space-between; }
-  .site-shell .store-nav { gap: .45rem 1rem; }
+  .site-shell .header-inner { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: .25rem; padding-block: .75rem; }
+  .site-shell .store-nav { justify-content: space-between; gap: .35rem .75rem; }
+  .site-shell .store-nav a { padding-block: .35rem; }
   .site-shell .brand-logo { width: 116px; }
   .site-shell .catalog-page > .page-heading { margin: 1rem 0 1.25rem; padding: 1.6rem; }
   .site-shell .catalog-page > .page-heading::after { font-size: 8rem; bottom: -2rem; }
