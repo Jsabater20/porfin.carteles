@@ -68,7 +68,7 @@
 .site-shell .brand-hero { border-bottom: 7px solid #f1c1cc; }
 .site-shell .brand-hero h1 { max-width: 15ch; font-size: clamp(2.65rem, 4.6vw, 4.6rem); }
 .site-shell .home-showcase-section { padding-top: clamp(3.5rem, 7vw, 6rem); }
-.site-shell .home-showcase-section > .section-heading { max-width: 720px; margin-inline: auto; text-align: center; }
+.site-shell .home-showcase-section > .section-heading { max-width: 720px; text-align: left; }
 .site-shell .home-showcase {
   color-scheme: dark;
   --surface: #263b55;
@@ -78,12 +78,13 @@
   --accent-soft: rgba(241, 193, 204, .12);
   --line: rgba(241, 193, 204, .25);
   --on-accent: #1d2d44;
-  padding: 1.25rem;
+  padding: 0;
   border-radius: 32px;
   background: #1d2d44;
   box-shadow: 0 24px 60px rgba(35, 51, 75, .18);
 }
 .site-shell .showcase-window { background: #263b55; }
+.site-shell .showcase-options { justify-content: flex-start; padding: 1.25rem 0 0; }
 .site-shell .showcase-options button[aria-pressed='true'] { font-weight: 700; }
 .site-shell .button {
   border-radius: 999px;
@@ -237,7 +238,7 @@
   .site-shell .cart-summary { padding: 1.25rem; }
   .site-shell .home-section { padding-block: 1rem 3rem; }
   .site-shell .home-showcase-section { padding-top: 3rem; }
-  .site-shell .home-showcase { padding: .75rem; border-radius: 24px; }
+  .site-shell .home-showcase { border-radius: 24px; }
   .site-shell .store-footer { padding-block: 2.5rem; }
 }
 @media (prefers-reduced-motion: reduce) {
