@@ -18,13 +18,17 @@ for (const [index, kind] of ['generico','predeterminado'].entries()) {
   const product = structuredClone(products[0]);
   product.id = 'consolidated-' + kind; product.slug = 'cartel-' + kind;
   product.name = 'Cartel ' + kind; product.type = index ? 'PREDEFINED' : 'GENERIC';
-  product.variants = [product.variants[0], ...['rectangular','circular'].map(shape=>({ ...product.variants[1], id:kind+'-'+shape, key:kind+'-'+shape, name:shape+' con 3 imágenes' }))];
+  product.variants = ['rectangular','circular'].flatMap(shape=>[
+    { ...product.variants[0], id:kind+'-'+shape+'-base', key:kind+'-'+shape+'-base', name:shape, attributes:{formato:shape}, photoCount:0, priceCents:5200000 },
+    { ...product.variants[0], id:kind+'-'+shape+'-photos', key:kind+'-'+shape+'-photos', name:shape+' · con 3 imágenes', attributes:{formato:shape}, photoCount:3, priceCents:5500000 },
+  ]);
+  product.images = ['RECTANGULAR','CIRCULAR'].map((shape,index)=>({id:kind+'-'+shape,url:'https://res.cloudinary.com/test/image/upload/'+kind+'-'+shape+'.jpg',altText:shape,shape,cover:index===0,position:index,width:800,height:600}));
   products.push(product);
 }
 const next = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', '3100'], {
   cwd: root, windowsHide: true, env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', BACKEND_API_URL: 'http://127.0.0.1:3101/api/v1', WEB_ORIGIN: 'http://localhost:3100' }, stdio: 'ignore',
 });
-const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--remote-debugging-port=9232', '--remote-debugging-address=127.0.0.1', '--user-data-dir=' + profile,
+const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--disable-gpu-sandbox', '--use-gl=swiftshader', '--disable-features=Vulkan,SkiaGraphite', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--remote-debugging-port=9232', '--remote-debugging-address=127.0.0.1', '--user-data-dir=' + profile,
   ...(process.env.TEST_BROWSER_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), 'about:blank'], { windowsHide: true, stdio: 'ignore' });
 let ws;
 const processes = [next, browser];
@@ -71,25 +75,27 @@ try {
 
   await send('Page.enable');await send('Runtime.enable');
 
-  await navigate('/productos/cartel-tres-imagenes','h1');
-  await waitFor('document.querySelectorAll(\'a[href*="?variante="]\').length === 4');
-  const links = await evaluate('Array.from(document.querySelectorAll(\'a[href*="?variante="]\')).map(a=>a.getAttribute("href"))');
-  assert.ok(await evaluate('document.body.textContent.includes("carrito")'));
-  for (const link of links) {
-    await navigate(link,'#product-variant');
-    const id = new URL(link,'http://localhost').searchParams.get('variante');
+  await send('Page.navigate',{url:'http://localhost:3100/productos/cartel-tres-imagenes'});
+  await waitFor('location.pathname==="/catalogo" && location.search.includes("type=PREDEFINED")');
+  for (const kind of ['generico','predeterminado']) for (const shape of ['rectangular','circular']) {
+    const id=kind+'-'+shape+'-base';
+    await navigate('/productos/cartel-'+kind+'?variante='+id,'#product-variant');
     await waitFor('document.querySelector("#product-variant").value === '+JSON.stringify(id));
-    assert.ok(await evaluate('document.querySelector(".variant-detail").textContent.includes("3 fotos")'));
+    assert.equal(await evaluate('document.querySelector("#product-variant").options.length'),2);
+    assert.ok(await evaluate('document.querySelector("#product-variant").textContent.includes("+ 3 imágenes a elección")'));
+    assert.ok(await evaluate('document.querySelector(".variant-price").textContent.includes("52.000")'));
+    await evaluate('(()=>{const element=document.querySelector("#product-variant");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(element,'+JSON.stringify(kind+'-'+shape+'-photos')+');element.dispatchEvent(new Event("change",{bubbles:true}));})()');
+    await waitFor('document.querySelector(".variant-detail").textContent.includes("3 fotos") && document.querySelector(".variant-price").textContent.includes("55.000")');
   }
   await navigate('/productos/cartel-generico?variante=inexistente','#product-variant');
-  await waitFor('document.querySelector("#product-variant").value === "fixed"');
+  await waitFor('document.querySelector("#product-variant").value === "generico-rectangular-base"');
   for (const width of [1440,390,320]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});
-    await navigate('/productos/cartel-tres-imagenes','h1');
+    await navigate('/productos/cartel-generico?variante=generico-rectangular-base','#product-variant');
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Desborde a '+width);
   }
   assert.deepEqual(exceptions,[]);
-  console.log('OK: enlace anterior, 4 destinos, preselección de variante, parámetro inválido y 1440/390/320px');
+  console.log('OK: enlace anterior, opciones normal/+3 por tipo y forma, precios, parámetro inválido y 1440/390/320px');
 } finally {
   ws?.close();
   await Promise.allSettled(processes.map(stop));

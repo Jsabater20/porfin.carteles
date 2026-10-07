@@ -5,8 +5,7 @@ import type { CatalogImage, CatalogShape } from '@/lib/contracts/catalog';
 import { ProductImage } from './product-image';
 
 export function Gallery({ images, name, slug, preferredShape }: { images: CatalogImage[]; name: string; slug?: string; preferredShape?: CatalogShape | null }) {
-  const hasTaggedImages = images.some((image) => Boolean(image.shape));
-  const ordered = preferredShape ? images.filter((image) => image.shape === preferredShape || (!hasTaggedImages && !image.shape)) : images;
+  const ordered = preferredShape ? images.filter((image) => image.shape === preferredShape) : images;
   const [selectedId, setSelectedId] = useState(ordered.find((image) => image.shape === preferredShape)?.id ?? ordered.find((image) => image.cover)?.id ?? ordered[0]?.id);
   const selected = ordered.find((image) => image.id === selectedId) ?? ordered[0] ?? null;
   return (

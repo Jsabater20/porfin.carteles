@@ -40,7 +40,7 @@ export function ProductCustomizer({ product, editLineId, initialVariantId }: { p
 function CustomizerForm({ product, editing, initialVariantId }: { product: ProductDetail; editing?: CartLine; initialVariantId?: string }) {
   const { store, state } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
-  const variantId = editing?.variantId ?? product.variants.find(item => item.id === initialVariantId)?.id ?? product.variants[0]?.id ?? '';
+  const [variantId, setVariantId] = useState(editing?.variantId ?? product.variants.find(item => item.id === initialVariantId)?.id ?? product.variants[0]?.id ?? '');
   const [quantity, setQuantity] = useState(String(editing?.quantity ?? 1));
   const [values, setValues] = useState<Record<string, string>>(() => ({ idea: String(editing?.answers.find((answer) => answer.fieldKey === 'idea')?.value ?? '') }));
   const [errors, setErrors] = useState<Record<string, string>>(() => Object.create(null));
@@ -48,6 +48,9 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   const [message, setMessage] = useState('');
   const [added, setAdded] = useState(false);
   const variant = product.variants.find((item) => item.id === variantId);
+  const imageChoices = product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) &&
+    product.variants.length === 2 && new Set(product.variants.map(item => item.photoCount)).size === 2 &&
+    product.variants.every(item => item.photoCount === 0 || item.photoCount === 3);
   const visibleFields = [IDEA_FIELD];
   const validation = validateAnswers(visibleFields, values);
   const estimate = variant ? estimateUnit(product, variant, validation.answers) : null;
@@ -81,6 +84,15 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
     <h2>{editing ? 'Editar tu idea' : 'Armá tu producto'}</h2>
     <DepositNotice />
     {!variant && <p className="notice" role="alert">Este cartel ya no está disponible. <Link className="text-link" href="/catalogo">Ver el catálogo</Link></p>}
+    {product.variants.length > 1 && <div className="custom-field"><label htmlFor="product-variant">{product.category === 'CARTEL' ? 'Elegí la opción del cartel' : 'Elegí una opción'} *</label>
+      <select id="product-variant" value={variantId} onChange={event => setVariantId(event.target.value)}>
+        {product.variants.map(item => {
+          const typeLabel = product.type === 'GENERIC' ? 'Genérico' : product.type === 'PREDEFINED' ? 'Predeterminado' : '';
+          const label = imageChoices && typeLabel
+            ? `${typeLabel}${item.photoCount === 3 ? ' + 3 imágenes a elección' : ''}` : item.name;
+          return <option key={item.id} value={item.id}>{label} · {item.priceCents === null ? 'A cotizar' : formatMoney(item.priceCents)}</option>;
+        })}
+      </select></div>}
     {variant && <div className="variant-detail" aria-live="polite">
       {product.category && <p className="muted form-note"><strong>Categoría:</strong> {categoryLabels[product.category]}{product.category === 'CARTEL' ? ` · Tipo: ${displayTypeLabels[getDisplayType(product.category, product.type, variant.photoCount)]}` : ''}</p>}
       <p className="variant-price">{estimate?.unit === null ? 'A cotizar' : estimate ? formatMoney(estimate.unit) : 'A confirmar'}</p>

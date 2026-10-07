@@ -28,6 +28,20 @@ const detail = {
   variants: { where: { active: true }, orderBy: { position: 'asc' }, select: { id: true, key: true, name: true, pricingMode: true, priceCents: true, attributes: true, photoCount: true } },
   components: { orderBy: { position: 'asc' }, select: { key: true, name: true, quantity: true, position: true } },
 } satisfies Prisma.ProductSelect;
+const referenceShapes: Partial<Record<string, CatalogShape[]>> = {
+  'cartel-generico': [CatalogShape.CIRCULAR],
+  'cartel-predeterminado': [CatalogShape.RECTANGULAR],
+  'cartel-baby-shower': [CatalogShape.CIRCULAR],
+  'cartel-personalizado': [CatalogShape.RECTANGULAR, CatalogShape.CIRCULAR, CatalogShape.XXL],
+};
+type CardProduct = Prisma.ProductGetPayload<{ select: typeof card }>;
+type CardVariant = CardProduct['variants'][number];
+
+function variantShape(variant: CardVariant): CatalogShape | null {
+  const raw = (variant.attributes as Prisma.JsonObject).formato;
+  return typeof raw === 'string' && Object.values(CatalogShape).includes(raw.toUpperCase() as CatalogShape)
+    ? raw.toUpperCase() as CatalogShape : null;
+}
 
 @Injectable()
 export class PublicCatalogService {
@@ -43,7 +57,7 @@ export class PublicCatalogService {
       return { type: 'PREDEFINED', variants: { some: { ...variant, photoCount: 3 } } };
     }
     if (type === CatalogDisplayType.PREDEFINED) {
-      return { type: 'PREDEFINED', variants: { some: { ...variant, photoCount: { not: 3 } } } };
+      return { type: 'PREDEFINED', ...(shape ? { variants: { some: variant } } : {}) };
     }
     return { type, ...(shape ? { variants: { some: variant } } : {}) };
   }
@@ -104,14 +118,14 @@ export class PublicCatalogService {
     };
   }
 
-  private presentVariant(product: Prisma.ProductGetPayload<{ select: typeof cardBase }>, variant: Prisma.ProductVariantGetPayload<{ select: typeof variantSummary }>) {
-    const rawShape = (variant.attributes as Prisma.JsonObject).formato;
-    const shape = typeof rawShape === 'string' && Object.values(CatalogShape).includes(rawShape.toUpperCase() as CatalogShape)
-      ? rawShape.toUpperCase() as CatalogShape : null;
+  private presentVariant(product: CardProduct, variant: CardVariant) {
+    const shape = variantShape(variant);
+    const isCartel = product.category === 'CARTEL' || (product.category === null && product.variants.some(item => variantShape(item)));
     const coverImage = shape
-      ? product.images.find(item => item.shape === shape) ?? product.images.find(item => item.shape === null && item.cover) ?? product.images.find(item => item.shape === null) ?? null
-      : product.images.find(item => item.cover) ?? product.images[0] ?? null;
-    const variantLabel = variant.name.trim();
+      ? product.images.find(item => item.shape === shape) ?? null
+      : product.images.find(item => item.shape === null && item.cover) ?? product.images.find(item => item.shape === null) ?? null;
+    if (isCartel && !coverImage && !(shape && referenceShapes[product.slug]?.includes(shape))) return null;
+    const variantLabel = variant.name.trim().replace(/\s*[·-]\s*con 3 im[aá]genes$/i, '');
     const name = variantLabel && variantLabel.toLocaleLowerCase('es-AR') !== 'base' && !product.name.toLocaleLowerCase('es-AR').includes(variantLabel.toLocaleLowerCase('es-AR'))
       ? `${product.name} · ${variantLabel}` : product.name;
     return {
@@ -124,27 +138,44 @@ export class PublicCatalogService {
     };
   }
 
+  private cardsFor(product: CardProduct, query?: Pick<PublicCatalogQuery, 'type' | 'shape'>) {
+    const groups = new Map<string, CardVariant>();
+    const isCartel = product.category === 'CARTEL' || (product.category === null && product.variants.some(item => variantShape(item)));
+    for (const variant of product.variants) {
+      const shape = variantShape(variant);
+      if (query?.shape && shape !== query.shape) continue;
+      if (query?.type === CatalogDisplayType.PREDEFINED_THREE_IMAGES && variant.photoCount !== 3) continue;
+      const key = isCartel ? shape ?? 'UNTAGGED' : 'PRODUCT';
+      const previous = groups.get(key);
+      if (!previous || (previous.photoCount > 0 && variant.photoCount === 0)) groups.set(key, variant);
+    }
+    return [...groups.values()].map(variant => this.presentVariant(product, variant)).filter(item => item !== null);
+  }
+
+  private uniqueImages<T extends { coverImage: { url: string } | null }>(cards: T[]): T[] {
+    const seen = new Set<string>();
+    return cards.filter(card => {
+      const url = card.coverImage?.url;
+      if (!url) return true;
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+  }
+
   async featured(tx: Prisma.TransactionClient) {
     const items = await tx.featuredProduct.findMany({ where: { product: visible }, orderBy: { position: 'asc' }, take: 12, select: { product: { select: card } } });
-    return items.flatMap(item => item.product.variants.map(variant => this.presentVariant(item.product, variant))).slice(0, 12);
+    return this.uniqueImages(items.flatMap(item => this.cardsFor(item.product))).slice(0, 12);
   }
   async list(query: PublicCatalogQuery) {
-    const product = this.filters(query);
-    const shape = query.shape && (!query.category || query.category === 'CARTEL') ? query.shape : undefined;
+    const orderBy: Prisma.ProductOrderByWithRelationInput[] = query.sort === PublicCatalogSort.NEWEST
+      ? [{ createdAt: 'desc' }, { id: 'asc' }]
+      : [{ name: query.sort === PublicCatalogSort.NAME_ASC ? 'asc' : 'desc' }, { id: 'asc' }];
+    const products = await this.prisma.product.findMany({ where: this.filters(query), select: card, orderBy });
+    const shape = query.category && query.category !== 'CARTEL' ? undefined : query.shape;
     const type = query.category && query.category !== 'CARTEL' ? undefined : query.type;
-    const where: Prisma.ProductVariantWhereInput = {
-      active: true, product,
-      ...(shape ? { attributes: { path: ['formato'], equals: shape.toLowerCase() } } : {}),
-      ...(type === CatalogDisplayType.PREDEFINED_THREE_IMAGES ? { photoCount: 3 } : type === CatalogDisplayType.PREDEFINED ? { photoCount: { not: 3 } } : {}),
-    };
-    const orderBy: Prisma.ProductVariantOrderByWithRelationInput[] = query.sort === PublicCatalogSort.NEWEST
-      ? [{ product: { createdAt: 'desc' } }, { productId: 'asc' }, { position: 'asc' }]
-      : [{ product: { name: query.sort === PublicCatalogSort.NAME_ASC ? 'asc' : 'desc' } }, { productId: 'asc' }, { position: 'asc' }];
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.productVariant.findMany({ where, select: { ...variantSummary, product: { select: cardBase } }, orderBy, skip: (query.page - 1) * query.limit, take: query.limit }),
-      this.prisma.productVariant.count({ where }),
-    ], { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
-    return { items: items.map(({ product, ...variant }) => this.presentVariant(product, variant)), total, page: query.page, limit: query.limit };
+    const cards = this.uniqueImages(products.flatMap(product => this.cardsFor(product, { shape, type })));
+    return { items: cards.slice((query.page - 1) * query.limit, query.page * query.limit), total: cards.length, page: query.page, limit: query.limit };
   }
 
   async get(slug: string) {

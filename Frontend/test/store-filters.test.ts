@@ -13,7 +13,7 @@ test('filtros nuevos respetan sus padres y limpian página', () => {
   assert.equal(storeHref(parseStoreFilters({ category: '', type: 'PREDEFINED', occasion: 'x', page: '8' })), '/catalogo');
   const photos = parseStoreFilters({ category: 'CARTEL', type: 'PREDEFINED_THREE_IMAGES', shape: 'RECTANGULAR', occasion: 'recibida', career: 'arquitectura' });
   assert.equal(hasOccasion(photos), true); assert.equal(hasCareer(photos), true);
-  assert.equal(storeHref(photos), '/catalogo?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=RECTANGULAR&occasion=recibida&career=arquitectura');
+  assert.equal(storeHref(photos), '/catalogo?category=CARTEL&type=PREDEFINED&shape=RECTANGULAR&occasion=recibida&career=arquitectura');
   assert.equal(parseStoreFilters({ category: 'CARTEL', shape: 'INVALID' }).shape, '');
 });
 test('URLs nuevas omiten sort y conservan filtros en paginación', () => {

@@ -8,6 +8,7 @@ import { RetryButton } from '@/components/ui/retry-button';
 import { getProduct } from '@/features/catalog/queries';
 import { isProductSlug, productTypes } from '@/features/catalog/filters';
 import { Gallery } from '@/features/catalog/gallery';
+import { hasReferenceArt } from '@/features/catalog/reference-art';
 import { ProductCustomizer } from '@/features/personalization/product-customizer';
 import type { CatalogShape } from '@/lib/contracts/catalog';
 
@@ -36,10 +37,23 @@ export default async function ProductPage({ params, searchParams }: Props) {
     return <div className="container"><EmptyState title="No pudimos cargar este producto" action={<RetryButton />}><p>Intentá nuevamente en unos minutos.</p></EmptyState></div>;
   }
   const initialVariantId = typeof query.variante === 'string' ? query.variante : undefined;
-  const selectedVariant = product.variants.find(item => item.id === initialVariantId) ?? product.variants[0];
+  const shapeOf = (format?: string): CatalogShape | null => {
+    const shape = format?.toUpperCase();
+    return shape && ['RECTANGULAR', 'CIRCULAR', 'XXL'].includes(shape) ? shape as CatalogShape : null;
+  };
+  const hasArtwork = (item: typeof product.variants[number]) => {
+    const shape = shapeOf(item.attributes.formato);
+    return shape
+      ? product.images.some(image => image.shape === shape) || hasReferenceArt(product.slug, shape)
+      : product.images.some(image => image.shape === null) || hasReferenceArt(product.slug);
+  };
+  const selectedVariant = product.variants.find(item => item.id === initialVariantId && (editLineId || product.category !== 'CARTEL' || hasArtwork(item)))
+    ?? product.variants.find(item => product.category === 'CARTEL' && hasArtwork(item)) ?? product.variants[0];
+  if (!selectedVariant) notFound();
   const format = selectedVariant?.attributes.formato?.toUpperCase();
-  const preferredShape = format && ['RECTANGULAR', 'CIRCULAR', 'XXL'].includes(format) ? format as CatalogShape : null;
-  const variantLabel = selectedVariant?.name.trim() ?? '';
+  const preferredShape = shapeOf(format);
+  const sameShapeVariants = product.variants.filter(item => shapeOf(item.attributes.formato) === preferredShape);
+  const variantLabel = selectedVariant.name.trim().replace(/\s*[·-]\s*con 3 im[aá]genes$/i, '');
   const displayName = variantLabel && variantLabel.toLocaleLowerCase('es-AR') !== 'base' && !product.name.toLocaleLowerCase('es-AR').includes(variantLabel.toLocaleLowerCase('es-AR'))
     ? `${product.name} · ${variantLabel}` : product.name;
   return <div className="container product-page">
@@ -49,7 +63,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <div className="product-summary">
         <p className="eyebrow">{productTypes[product.type]}</p><h1>{displayName}</h1>
         {product.description && <p className="muted preserve-lines">{product.description}</p>}
-        <ProductCustomizer key={product.id + (editLineId ?? '') + (initialVariantId ?? '')} product={product} editLineId={editLineId} initialVariantId={initialVariantId} />
+        <ProductCustomizer key={product.id + (editLineId ?? '') + selectedVariant.id} product={{ ...product, variants: sameShapeVariants }} editLineId={editLineId} initialVariantId={selectedVariant.id} />
         <div className="tag-list">{product.categories.map((category) => <Link key={category.id} className="tag" href={`/catalogo?categoryId=${encodeURIComponent(category.id)}`}>{category.name}</Link>)}
           {product.careers.map((career) => <Link key={career.id} className="tag" href={`/catalogo?careerId=${encodeURIComponent(career.id)}`}>{career.name}</Link>)}</div>
       </div>

@@ -46,9 +46,9 @@ test('Etapa 5: catálogo público y precios con PostgreSQL real', { timeout: 120
 
   await t.test('Lectura anónima, visibilidad y separación de operaciones privadas', async () => {
     const result = await read('/products');
-    assert.equal(result.status, 200); assert.equal(result.body.total, 6);
+    assert.equal(result.status, 200); assert.equal(result.body.total, 4);
     assert.deepEqual(new Set(result.body.items.map((item: any) => item.id)), new Set([fixed.id, quote.id, mixed.id, combo.id]));
-    assert.deepEqual(result.body.items.filter((item: any) => item.id === fixed.id).map((item: any) => [item.defaultVariantId, item.basePrice.fromCents]), [[fixed.variants[0].id, 10000], [fixed.variants[1].id, 25000]]);
+    assert.deepEqual(result.body.items.filter((item: any) => item.id === fixed.id).map((item: any) => [item.defaultVariantId, item.basePrice.fromCents]), [[fixed.variants[0].id, 10000]]);
     for (const slug of ['oculto', 'no-disponible', 'inactivo', 'inexistente']) assert.equal((await read('/products/' + slug)).status, 404);
     assert.equal((await read('/admin/products')).status, 401);
     const post = await fetch(ctx.url + '/api/v1/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -58,14 +58,14 @@ test('Etapa 5: catálogo público y precios con PostgreSQL real', { timeout: 120
 
   await t.test('Filtros, búsqueda, orden y paginación se aplican solo al catálogo visible', async () => {
     const filtered = await read('/products?categoryId=' + category.id + '&careerId=' + career.id + '&type=PREDEFINED&q=ARQUITECTURA');
-    assert.equal(filtered.body.total, 2); assert.equal(filtered.body.items[0].id, fixed.id);
+    assert.equal(filtered.body.total, 1); assert.equal(filtered.body.items[0].id, fixed.id);
     assert.equal((await read('/products?categoryId=' + privateCategory.id)).body.total, 0);
     assert.equal((await read('/products?careerId=' + privateCareer.id)).body.total, 0);
     const first = await read('/products?sort=name-asc&page=1&limit=2');
     const second = await read('/products?sort=name-asc&page=2&limit=2');
-    assert.equal(first.body.total, 6); assert.equal(first.body.limit, 2);
-    assert.deepEqual(first.body.items.map((item: any) => item.slug), ['alpha-cartel', 'alpha-cartel']);
-    assert.deepEqual(second.body.items.map((item: any) => item.slug), ['beta-personalizado', 'gamma-mixto']);
+    assert.equal(first.body.total, 4); assert.equal(first.body.limit, 2);
+    assert.deepEqual(first.body.items.map((item: any) => item.slug), ['alpha-cartel', 'beta-personalizado']);
+    assert.deepEqual(second.body.items.map((item: any) => item.slug), ['gamma-mixto', 'zeta-combo']);
     assert.equal((await read('/products?sort=name-desc&limit=1')).body.items[0].id, combo.id);
     assert.deepEqual((await read('/products?page=99')).body.items, []);
     for (const query of ['status=HIDDEN', 'limit=51', 'page=0', 'page=1.5', 'sort=price', 'type=OTHER', 'q=' + 'x'.repeat(121), 'q=%00', 'categoryId=%00', 'careerId=%00', 'categoryId=']) assert.equal((await read('/products?' + query)).status, 400, query);

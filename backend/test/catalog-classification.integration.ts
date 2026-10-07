@@ -66,13 +66,13 @@ test('Clasificación del catálogo: escritura compatible y filtros públicos', {
   });
   await t.test('Filtros nuevos, dependientes inválidos y URLs anteriores', async () => {
     assert.equal((await call('/products?category=PROP&type=PREDEFINED&occasion=missing&career=missing')).body.total, 2);
-    assert.equal((await call('/products?category=CARTEL&type=GENERIC&occasion=' + occasion.id + '&career=missing')).body.total, 1);
-    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
+    assert.equal((await call('/products?category=CARTEL&type=GENERIC&occasion=' + occasion.id + '&career=missing')).body.total, 0);
+    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&occasion=' + occasion.id + '&career=' + career.id)).body.total, 2);
     assert.equal((await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&occasion=' + occasion.id + '&career=' + career.id)).body.total, 1);
     const rectangular = (await call('/products?category=CARTEL&type=PREDEFINED&shape=RECTANGULAR')).body;
     assert.equal(rectangular.total, 1); assert.equal(rectangular.items[0].basePrice.fromCents, 4800000); assert.equal(rectangular.items[0].defaultVariantId, sign.variants[0].id);
     assert.equal(rectangular.items[0].coverImage.shape, 'RECTANGULAR'); assert.equal(rectangular.items[0].displayShape, 'RECTANGULAR');
-    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&shape=CIRCULAR')).body.total, 0);
+    assert.equal((await call('/products?category=CARTEL&type=PREDEFINED&shape=CIRCULAR')).body.total, 1);
     const circularPhotos = (await call('/products?category=CARTEL&type=PREDEFINED_THREE_IMAGES&shape=CIRCULAR')).body;
     assert.equal(circularPhotos.total, 1); assert.equal(circularPhotos.items[0].basePrice.fromCents, 5400000); assert.equal(circularPhotos.items[0].defaultVariantId, sign.variants[1].id);
     assert.equal(circularPhotos.items[0].coverImage.shape, 'CIRCULAR'); assert.equal(circularPhotos.items[0].displayShape, 'CIRCULAR');
