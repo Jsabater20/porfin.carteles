@@ -40,7 +40,8 @@ export async function replyPreview(request, response, state, products, path) {
       variantId: variant.id, variantName: variant.name, variantAttributes: variant.attributes, quantity: line.quantity, currency: 'ARS',
       pricingMode: variant.pricingMode, status: unitPriceCents === null ? 'PENDING_QUOTE' : 'PRICED',
       baseUnitCents, additionalUnitCents, unitPriceCents, subtotalCents: unitPriceCents === null ? null : unitPriceCents * line.quantity,
-      selectedOptions, answers, components: product.components, photoCountPerUnit: variant.photoCount, photoCountTotal: variant.photoCount * line.quantity, photoDelivery: variant.photoCount ? 'WHATSAPP' : 'NONE',
+      selectedOptions, answers, components: product.components, photoCountPerUnit: variant.photoCount, photoCountTotal: variant.photoCount * line.quantity,
+      photoDelivery: !variant.photoCount ? 'NONE' : product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) && variant.photoCount === 3 ? 'EMAIL' : 'WHATSAPP',
     }];
   });
   if (errors.length) return send(422, { message: errors });

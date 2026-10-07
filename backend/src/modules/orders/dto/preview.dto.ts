@@ -83,7 +83,7 @@ export class PreviewLineResultDto {
   @ApiProperty({ type: [PreviewComponentDto] }) components!: PreviewComponentDto[];
   @ApiProperty() photoCountPerUnit!: number;
   @ApiProperty() photoCountTotal!: number;
-  @ApiProperty({ enum: ['NONE', 'WHATSAPP'] }) photoDelivery!: 'NONE' | 'WHATSAPP';
+  @ApiProperty({ enum: ['NONE', 'EMAIL', 'WHATSAPP'] }) photoDelivery!: 'NONE' | 'EMAIL' | 'WHATSAPP';
 }
 export class PreviewShippingDto {
   @ApiProperty({ enum: DeliveryMethod }) method!: DeliveryMethod;

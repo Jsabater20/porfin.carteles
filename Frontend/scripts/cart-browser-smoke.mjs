@@ -13,6 +13,8 @@ assert.ok(existsSync(chrome), 'Indicá CHROME_PATH con un Chrome instalado.');
 const profile = root + '.test-build/cart-browser-profile-' + Date.now();
 await mkdir(profile, { recursive: true });
 const api = await startFixtureApi(3101);
+products[1].variants[0].pricingMode = 'FIXED';
+products[1].variants[0].priceCents = 12345;
 const template = products[2].fields[0];
 products[2].fields.push(
   { ...template, key: 'color', label: 'Color de accesorios', type: 'SELECT', componentKey: 'props', options: [{ key: 'gold', label: 'Dorado', additionalCents: 500, position: 0 }] },
@@ -72,7 +74,7 @@ try {
   const submitProduct = async () => { await click('.customizer button[type="submit"]'); await waitFor('!!document.querySelector(".success-notice")'); };
   await send('Page.enable'); await send('Runtime.enable');
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
-  await navigate('/productos/producto-0', '.customizer');
+  await navigate('/productos/producto-1', '.customizer');
   await click('.customizer button[type="submit"]');
   await waitFor('!!document.querySelector("#personalization-idea-error")');
   assert.equal(await evaluate('document.activeElement.id'), 'personalization-idea');
@@ -84,20 +86,24 @@ try {
   await navigate('/carrito', '.cart-row');
   assert.equal(await evaluate('document.querySelectorAll(".cart-row").length'), 2);
   const saved = await cart();
-  await navigate('/productos/producto-0?editar=' + saved.lines[0].lineId, '.customizer');
+  await navigate('/productos/producto-1?editar=' + saved.lines[0].lineId, '.customizer');
   assert.equal(await evaluate('document.querySelector("#personalization-idea").value'), 'Cartel para Ana');
   await fill('#personalization-idea', 'Cartel para Eva'); await submitProduct();
   assert.equal((await cart()).lines[0].lineId, saved.lines[0].lineId);
   assert.equal((await cart()).lines[0].answers[0].value, 'Cartel para Eva');
   await navigate('/productos/producto-2', '.customizer');
-  await fill('#personalization-idea', 'Combo dorado con una frase especial'); await submitProduct();
-  await navigate('/productos/producto-1', '.customizer');
-  await fill('#personalization-idea', 'Diseño a cotizar'); await submitProduct();
+  assert.equal(await evaluate('!!document.querySelector("#personalization-idea")'), false);
+  await submitProduct();
+  await navigate('/productos/producto-0', '.customizer');
+  assert.equal(await evaluate('!!document.querySelector("#personalization-idea")'), false);
+  await fill('#product-variant', 'quote');
+  await submitProduct();
   await navigate('/carrito', '.cart-row');
   assert.equal(await evaluate('document.querySelectorAll(".cart-row").length'), 4);
-  assert.equal((await cart()).lines[2].answers[0].fieldKey, 'idea');
+  assert.deepEqual((await cart()).lines[2].answers, []);
+  assert.deepEqual((await cart()).lines[3].answers, []);
   assert.doesNotMatch(JSON.stringify(await cart()), /csrfToken|idempotency|previewId/);
-  console.log('OK edición, persistencia al navegar, combos e idea libre');
+  console.log('OK edición, persistencia al navegar, combos sin idea e idea en cartel personalizado');
   api.state.previewFailures = 1; api.state.priceDelta = 250;
   await fill('#cart-delivery', 'SHIPPING');
   await waitFor('document.querySelector(".cart-summary").innerText.includes("No pudimos validar")');
@@ -122,7 +128,7 @@ try {
   await waitFor('!!document.querySelector(".validated-summary")');
   assert.notEqual(api.state.previewCalls.at(-1).key, api.state.previewCalls[1].key);
   assert.equal(api.state.previewCalls.at(-1).input.deliveryMethod, 'PICKUP');
-  api.state.unavailableProducts.add('product-0');
+  api.state.unavailableProducts.add('product-1');
   await waitFor('document.querySelectorAll(".cart-row .field-error").length===2');
   console.log('OK invalidación por cantidad/entrega, expiración y errores 422 por renglón');
   await click('.cart-lines > .actions .text-button');

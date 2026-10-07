@@ -81,11 +81,12 @@ try {
     const id=kind+'-'+shape+'-base';
     await navigate('/productos/cartel-'+kind+'?variante='+id,'#product-variant');
     await waitFor('document.querySelector("#product-variant").value === '+JSON.stringify(id));
+    assert.equal(await evaluate('!!document.querySelector("#personalization-idea")'),false);
     assert.equal(await evaluate('document.querySelector("#product-variant").options.length'),2);
     assert.ok(await evaluate('document.querySelector("#product-variant").textContent.includes("+ 3 imágenes a elección")'));
     assert.ok(await evaluate('document.querySelector(".variant-price").textContent.includes("52.000")'));
     await evaluate('(()=>{const element=document.querySelector("#product-variant");Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,"value").set.call(element,'+JSON.stringify(kind+'-'+shape+'-photos')+');element.dispatchEvent(new Event("change",{bubbles:true}));})()');
-    await waitFor('document.querySelector(".variant-detail").textContent.includes("3 fotos") && document.querySelector(".variant-price").textContent.includes("55.000")');
+    await waitFor('document.querySelector(".variant-detail").textContent.includes("porfincarteles@gmail.com") && document.querySelector(".variant-price").textContent.includes("55.000")');
   }
   await navigate('/productos/cartel-generico?variante=inexistente','#product-variant');
   await waitFor('document.querySelector("#product-variant").value === "generico-rectangular-base"');

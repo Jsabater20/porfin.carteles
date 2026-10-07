@@ -79,7 +79,7 @@ test('Etapa 6: invitados y preview con PostgreSQL real', { timeout: 180000 }, as
     assert.equal((await request('/orders', 'POST', body, guest, randomUUID())).status, 400);
   });
 
-  await t.test('Resumen mixto, cotización pendiente y fotos por WhatsApp; sin pedido', async () => {
+  await t.test('Resumen mixto, cotización pendiente y fotos por mail; sin pedido', async () => {
     const result = await preview(body, guest, savedKey);
     assert.equal(result.status, 200, JSON.stringify(result.body)); saved = result.body;
     assert.equal(saved.summary.knownSubtotalCents, 21000);
@@ -87,7 +87,7 @@ test('Etapa 6: invitados y preview con PostgreSQL real', { timeout: 180000 }, as
     assert.equal(saved.summary.totalQuantity, 5); assert.equal(saved.summary.finalTotalCents, null);
     assert.deepEqual(saved.summary.shipping, { method: 'SHIPPING', status: 'TO_CONFIRM', amountCents: null });
     assert.equal(saved.items[0].unitPriceCents, 10500); assert.equal(saved.items[1].subtotalCents, null);
-    assert.equal(saved.items[0].photoCountPerUnit, 3); assert.equal(saved.items[0].photoCountTotal, 6); assert.equal(saved.items[0].photoDelivery, 'WHATSAPP');
+    assert.equal(saved.items[0].photoCountPerUnit, 3); assert.equal(saved.items[0].photoCountTotal, 6); assert.equal(saved.items[0].photoDelivery, 'EMAIL');
     assert.equal(saved.items[0].category, 'CARTEL'); assert.equal(saved.items[0].displayType, 'PREDEFINED_THREE_IMAGES');
     assert.deepEqual(saved.items[0].occasions, [{ id: occasion.id, name: occasion.name, slug: occasion.slug }]);
     assert.deepEqual(saved.items[0].careers, [{ id: career.id, name: career.name, slug: career.slug }]);

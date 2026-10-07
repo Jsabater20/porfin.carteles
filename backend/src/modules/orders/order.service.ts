@@ -114,7 +114,7 @@ export class OrderService {
             whatsappMessage, whatsappUrl: settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}` : null,
             items: { create: currentItems.map(item => ({
               productId: item.productId, productName: item.productName,
-              variantSnapshot: { id: item.variantId, name: item.variantName, attributes: item.variantAttributes, photoCount: item.photoCountPerUnit, pricingMode: item.pricingMode, baseUnitCents: item.baseUnitCents, unitPriceCents: item.unitPriceCents, category: item.category, displayType: item.displayType, occasions: item.occasions, careers: item.careers } as unknown as Prisma.InputJsonObject,
+              variantSnapshot: { id: item.variantId, name: item.variantName, attributes: item.variantAttributes, photoCount: item.photoCountPerUnit, photoDelivery: item.photoDelivery, pricingMode: item.pricingMode, baseUnitCents: item.baseUnitCents, unitPriceCents: item.unitPriceCents, category: item.category, displayType: item.displayType, occasions: item.occasions, careers: item.careers } as unknown as Prisma.InputJsonObject,
               customizationSnapshot: { answers: item.answers, selectedOptions: item.selectedOptions } as unknown as Prisma.InputJsonObject,
               componentsSnapshot: item.components as unknown as Prisma.InputJsonArray,
               pricingMode: item.pricingMode, unitPriceCents: item.unitPriceCents, quantity: item.quantity, subtotalCents: item.subtotalCents,

@@ -9,6 +9,7 @@ import type { CartLine } from './model';
 import { useCart } from './provider';
 import { categoryLabels, displayTypeLabels } from '@/features/catalog/classification';
 import { DepositNotice } from '@/components/deposit-notice';
+import { PhotoDeliveryNotice } from '@/components/photo-delivery-notice';
 
 function CartRow({ line, index }: { line: CartLine; index: number }) {
   const { store, preview } = useCart();
@@ -35,7 +36,7 @@ function CartRow({ line, index }: { line: CartLine; index: number }) {
       const serverLabel = serverAnswer ? (component ? component.name + ': ' : '') + serverAnswer.label : undefined;
       return <div key={answer.fieldKey}><dt>{serverLabel ?? label?.label ?? answer.fieldKey}</dt><dd>{serverAnswer?.displayValue ?? label?.optionLabel ?? answer.value}</dd></div>;
     })}</dl>}
-    {(validated?.photoCountTotal ?? line.display.photoCount * line.quantity) > 0 && <p className="form-note muted">{validated?.photoCountTotal ?? line.display.photoCount * line.quantity} fotos en total · envío por WhatsApp.</p>}
+    {(validated?.photoCountTotal ?? line.display.photoCount * line.quantity) > 0 && <PhotoDeliveryNotice count={validated?.photoCountTotal ?? line.display.photoCount * line.quantity} method={validated?.photoDelivery === 'EMAIL' || !validated && category === 'CARTEL' && ['GENERIC', 'PREDEFINED', 'PREDEFINED_THREE_IMAGES'].includes(displayType ?? '') && line.display.photoCount === 3 ? 'EMAIL' : 'WHATSAPP'} className="form-note muted" />}
     <div className="cart-row-controls"><div className="custom-field quantity-field"><label htmlFor={'qty-' + line.lineId}>Cantidad</label><input id={'qty-' + line.lineId} type="number" inputMode="numeric" min={1} max={100} step={1} value={line.quantity}
       onChange={(event) => setError(store.quantity(line.lineId, Number(event.target.value)) ?? '')} aria-invalid={Boolean(error)} aria-describedby={error ? 'qty-error-' + line.lineId : undefined} /></div>
       <Link className="text-link" href={`/productos/${line.display.slug}?variante=${encodeURIComponent(line.variantId)}&editar=${encodeURIComponent(line.lineId)}`}>Editar producto</Link>

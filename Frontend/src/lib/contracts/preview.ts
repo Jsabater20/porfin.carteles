@@ -12,7 +12,7 @@ export interface PreviewLine {
   selectedOptions: { fieldKey: string; optionKey: string; label: string; additionalCents: number }[];
   answers: (Answer & { label: string; type: string; componentKey: string | null; displayValue: string | number })[];
   components: { key: string; name: string; quantity: number; position: number }[];
-  photoCountPerUnit: number; photoCountTotal: number; photoDelivery: 'NONE' | 'WHATSAPP';
+  photoCountPerUnit: number; photoCountTotal: number; photoDelivery: 'NONE' | 'EMAIL' | 'WHATSAPP';
   category?: 'CARTEL' | 'PROP' | 'COMBO' | null;
   displayType?: 'GENERIC' | 'PREDEFINED' | 'PREDEFINED_THREE_IMAGES' | 'CUSTOM' | 'COMBO';
   occasions?: { id: string; name: string; slug: string }[];

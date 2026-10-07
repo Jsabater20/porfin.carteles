@@ -13,7 +13,7 @@ export interface GuestOrder {
   knownSubtotalCents: number; pendingQuoteCount: number; shippingCents: number | null;
   items: { id: string; productId: string | null; productName: string; variantName: string; quantity: number;
     unitPriceCents: number | null; subtotalCents: number | null;
-    snapshot: { variant: { photoCount: number }; customization: { answers: PreviewLine['answers'] }; components: PreviewLine['components'] };
+    snapshot: { variant: { photoCount: number; photoDelivery?: PreviewLine['photoDelivery']; displayType?: PreviewLine['displayType'] }; customization: { answers: PreviewLine['answers'] }; components: PreviewLine['components'] };
   }[];
   whatsapp: { url: string | null; message: string };
 }

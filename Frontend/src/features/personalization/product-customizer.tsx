@@ -10,6 +10,7 @@ import type { CartLine } from '@/features/cart/model';
 import { estimateUnit, validateAnswers } from './validate';
 import { categoryLabels, displayTypeLabels, getDisplayType } from '@/features/catalog/classification';
 import { DepositNotice } from '@/components/deposit-notice';
+import { PhotoDeliveryNotice } from '@/components/photo-delivery-notice';
 
 const IDEA_FIELD: PersonalizationField = {
   key: 'idea', label: 'Contanos tu idea', type: 'LONG_TEXT', required: true, position: 0, componentKey: null,
@@ -32,7 +33,7 @@ function InputField({ field, value, error, onChange }: { field: PersonalizationF
 }
 export function ProductCustomizer({ product, editLineId, initialVariantId }: { product: ProductDetail; editLineId?: string; initialVariantId?: string }) {
   const { state } = useCart();
-  if (!state.ready) return <><Variants variants={product.variants} selectedId={initialVariantId} /><p role="status">Preparando la personalización…</p><noscript>Activá JavaScript para personalizar el producto y usar el carrito.</noscript></>;
+  if (!state.ready) return <><Variants variants={product.variants} selectedId={initialVariantId} imagesByEmail={product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type)} /><p role="status">Preparando la personalización…</p><noscript>Activá JavaScript para personalizar el producto y usar el carrito.</noscript></>;
   const editing = editLineId ? state.lines.find((line) => line.lineId === editLineId && line.productId === product.id) : undefined;
   if (editLineId && !editing) return <p className="notice">Este renglón ya no está disponible. <Link className="text-link" href="/carrito">Volver al carrito</Link></p>;
   return <CustomizerForm key={editLineId || product.id} product={product} editing={editing} initialVariantId={initialVariantId} />;
@@ -51,7 +52,8 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   const imageChoices = product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) &&
     product.variants.length === 2 && new Set(product.variants.map(item => item.photoCount)).size === 2 &&
     product.variants.every(item => item.photoCount === 0 || item.photoCount === 3);
-  const visibleFields = [IDEA_FIELD];
+  const needsIdea = product.category === 'CARTEL' && product.type === 'CUSTOM';
+  const visibleFields = needsIdea ? [IDEA_FIELD] : [];
   const validation = validateAnswers(visibleFields, values);
   const estimate = variant ? estimateUnit(product, variant, validation.answers) : null;
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -81,7 +83,7 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   }
   const changed = () => { setAdded(false); setMessage(''); };
   return <form ref={formRef} onSubmit={submit} noValidate className="customizer" onChange={changed}>
-    <h2>{editing ? 'Editar tu idea' : 'Armá tu producto'}</h2>
+    <h2>{editing ? 'Editar tu producto' : 'Armá tu producto'}</h2>
     <DepositNotice />
     {!variant && <p className="notice" role="alert">Este cartel ya no está disponible. <Link className="text-link" href="/catalogo">Ver el catálogo</Link></p>}
     {product.variants.length > 1 && <div className="custom-field"><label htmlFor="product-variant">{product.category === 'CARTEL' ? 'Elegí la opción del cartel' : 'Elegí una opción'} *</label>
@@ -98,9 +100,9 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
       <p className="variant-price">{estimate?.unit === null ? 'A cotizar' : estimate ? formatMoney(estimate.unit) : 'A confirmar'}</p>
       <p className="muted form-note">{estimate?.unit === null ? 'El precio se confirma al coordinar el pedido.' : 'Precio por unidad en ARS. Se vuelve a verificar en el carrito.'}</p>
       {Object.keys(variant.attributes).length > 0 && <dl className="attributes">{Object.entries(variant.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>}
-      {variant.photoCount > 0 && <p className="notice">Este cartel lleva {variant.photoCount} fotos por unidad. Las fotos se envían por WhatsApp al coordinar el pedido.</p>}
+      {variant.photoCount > 0 && <PhotoDeliveryNotice count={variant.photoCount} method={product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) && variant.photoCount === 3 ? 'EMAIL' : 'WHATSAPP'} className="notice" />}
     </div>}
-    <InputField field={IDEA_FIELD} value={values.idea} error={errors.idea} onChange={(value) => setValues({ idea: value })} />
+    {needsIdea && <InputField field={IDEA_FIELD} value={values.idea} error={errors.idea} onChange={(value) => setValues({ idea: value })} />}
     <div className="custom-field quantity-field"><label htmlFor="product-quantity">Cantidad *</label><input id="product-quantity" type="number" inputMode="numeric" min={1} max={100} step={1} value={quantity} onChange={(event) => setQuantity(event.target.value)} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? 'quantity-error' : undefined} />
       {quantityError && <p id="quantity-error" className="field-error">{quantityError}</p>}
     </div>

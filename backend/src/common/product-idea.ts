@@ -1,4 +1,10 @@
-import { PersonalizationType } from '@prisma/client';
+import { PersonalizationType, ProductKind, ProductType } from '@prisma/client';
+
+export const requiresProductIdea = (category: ProductKind | null, type: ProductType) =>
+  category === 'CARTEL' && type === 'CUSTOM';
+
+export const sendsThreeImagesByEmail = (category: ProductKind | null, type: ProductType, photoCount: number) =>
+  category === 'CARTEL' && (type === 'GENERIC' || type === 'PREDEFINED') && photoCount === 3;
 
 export const PRODUCT_IDEA_FIELD = {
   key: 'idea',

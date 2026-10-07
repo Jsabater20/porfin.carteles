@@ -66,10 +66,11 @@ export function restoreCart(raw: string | null, now = Date.now()): { data: CartD
         ? String(labels.find(label => label.fieldKey === answers[0].fieldKey)?.optionLabel ?? answers[0].value)
         : answers.map(answer => { const label = labels.find(item => item.fieldKey === answer.fieldKey); return `${label?.label ?? answer.fieldKey}: ${label?.optionLabel ?? answer.value}`; }).join('\n')) : '';
       const ideaText = [...String(currentIdea?.value ?? legacyIdea).normalize('NFC')].slice(0, 2000).join('');
-      const normalizedAnswers: Answer[] = ideaText ? [{ fieldKey: 'idea', value: ideaText }] : [];
-      const normalizedLabels = ideaText ? [{ fieldKey: 'idea', label: 'Contanos tu idea' }] : [];
       if (d.category !== undefined && d.category !== null && !productCategory(d.category)) throw new Error();
       if (d.displayType !== undefined && !displayType(d.displayType)) throw new Error();
+      const keepsIdea = d.category === undefined || d.displayType === undefined || d.category === 'CARTEL' && d.displayType === 'CUSTOM';
+      const normalizedAnswers: Answer[] = keepsIdea && ideaText ? [{ fieldKey: 'idea', value: ideaText }] : [];
+      const normalizedLabels = keepsIdea && ideaText ? [{ fieldKey: 'idea', label: 'Contanos tu idea' }] : [];
       const occasions = taxonomies(d.occasions), careers = taxonomies(d.careers);
       return { lineId: line.lineId, productId: line.productId, variantId: line.variantId, quantity: line.quantity, answers: normalizedAnswers,
         display: { slug: d.slug, name: d.name, variantName: d.variantName, unitEstimateCents: d.unitEstimateCents as number | null, photoCount: d.photoCount, labels: normalizedLabels,

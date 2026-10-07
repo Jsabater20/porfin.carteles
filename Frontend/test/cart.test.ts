@@ -75,8 +75,7 @@ test('carrito conserva personalizaciones distintas y persiste solo datos de comp
   const saved = JSON.parse(memory.get(CART_KEY)!);
   assert.ok(saved.expiresAt > Date.now() + CART_TTL - 1000);
   assert.deepEqual(Object.keys(saved).sort(), ['deliveryMethod', 'expiresAt', 'lines', 'version']);
-  assert.equal(restoreCart(memory.get(CART_KEY)!).data.lines[1].answers[0].value, 'Sol');
-  assert.equal(restoreCart(memory.get(CART_KEY)!).data.lines[1].answers[0].fieldKey, 'idea');
+  assert.deepEqual(restoreCart(memory.get(CART_KEY)!).data.lines[1].answers, []);
   assert.equal(restoreCart(memory.get(CART_KEY)!).data.lines[0].display.displayType, 'PREDEFINED_THREE_IMAGES');
 });
 

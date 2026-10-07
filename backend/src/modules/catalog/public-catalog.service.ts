@@ -4,7 +4,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
 import { CatalogShape, PublicCatalogQuery, PublicCatalogSort, PublicTaxonomyQuery } from './dto/public-catalog.dto';
 import { CatalogDisplayType } from '../../common/catalog-classification';
-import { PRODUCT_IDEA_FIELD } from '../../common/product-idea';
+import { PRODUCT_IDEA_FIELD, requiresProductIdea } from '../../common/product-idea';
 
 // Proyección explícita: no publicar IDs de cargas, assets, referencias a
 // borradores de combos ni futuros campos privados agregados al modelo.
@@ -186,7 +186,7 @@ export class PublicCatalogService {
       }
       throw new NotFoundException('Producto no encontrado.');
     }
-    return { ...this.present(product), description: product.description, measurements: product.measurements, materials: product.materials, includes: product.includes, images: product.images, variants: product.variants, fields: [{ ...PRODUCT_IDEA_FIELD }], components: product.components };
+    return { ...this.present(product), description: product.description, measurements: product.measurements, materials: product.materials, includes: product.includes, images: product.images, variants: product.variants, fields: requiresProductIdea(product.category, product.type) ? [{ ...PRODUCT_IDEA_FIELD }] : [], components: product.components };
   }
 
   async taxonomy(kind: 'category' | 'career' | 'occasion', query: PublicTaxonomyQuery) {

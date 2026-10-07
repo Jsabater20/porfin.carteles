@@ -81,7 +81,8 @@ try {
   await auditedNavigate('/pedido', '.order-page');
   await waitFor('document.body.innerText.includes("Primero armá tu carrito")');
   await auditedNavigate('/productos/producto-0', '.customizer');
-  await fill('#personalization-idea', 'Celebración'); await submitProduct();
+  assert.equal(await evaluate('!!document.querySelector("#personalization-idea")'), false);
+  await submitProduct();
   await auditedNavigate('/pedido', '.order-form');
   assert.equal(await evaluate('document.querySelector(".order-submit").disabled'), true);
   await fill('#order-delivery', 'SHIPPING'); await waitForOrder();

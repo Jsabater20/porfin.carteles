@@ -8,7 +8,7 @@ import { PREVIEW_TTL_MS } from '../guest-sessions/guest.constants';
 import { DeliveryMethod, PreviewDto, PreviewLineDto, PreviewLineResultDto, PreviewResponseDto } from './dto/preview.dto';
 import { validatePersonalization } from './personalization';
 import { catalogDisplayType } from '../../common/catalog-classification';
-import { PRODUCT_IDEA_FIELD } from '../../common/product-idea';
+import { PRODUCT_IDEA_FIELD, requiresProductIdea, sendsThreeImagesByEmail } from '../../common/product-idea';
 
 const SCOPE = 'ORDER_PREVIEW';
 
@@ -98,7 +98,10 @@ export class PreviewService {
     if (!product) throw new BadRequestException('Producto no disponible.');
     const variant = product.variants[0];
     if (!variant) throw new BadRequestException('Variante no disponible para este producto.');
-    const answers = validatePersonalization([{ ...PRODUCT_IDEA_FIELD }], line.answers);
+    const needsIdea = requiresProductIdea(product.category, product.type);
+    // Los carritos guardados antes de este cambio pueden contener una idea en carteles de catálogo.
+    const answers = validatePersonalization(needsIdea ? [{ ...PRODUCT_IDEA_FIELD }] : [],
+      needsIdea ? line.answers : line.answers.filter(answer => answer.fieldKey !== 'idea'));
     const priced = await this.pricing.calculate({
       productId: line.productId, variantId: line.variantId, quantity: line.quantity,
       selections: answers.filter(answer => answer.type === 'SELECT').map(answer => ({ fieldKey: answer.fieldKey, optionKey: answer.value as string })),
@@ -109,7 +112,8 @@ export class PreviewService {
       occasions: product.category === 'CARTEL' && ['GENERIC', 'PREDEFINED'].includes(product.type) ? product.categories.map(item => item.category) : [],
       careers: product.category === 'CARTEL' && product.type === 'PREDEFINED' ? product.careers.map(item => item.career) : [],
       answers, components: product.components, photoCountPerUnit: variant.photoCount,
-      photoCountTotal: variant.photoCount * line.quantity, photoDelivery: variant.photoCount ? 'WHATSAPP' : 'NONE',
+      photoCountTotal: variant.photoCount * line.quantity,
+      photoDelivery: !variant.photoCount ? 'NONE' : sendsThreeImagesByEmail(product.category, product.type, variant.photoCount) ? 'EMAIL' : 'WHATSAPP',
     };
   }
 

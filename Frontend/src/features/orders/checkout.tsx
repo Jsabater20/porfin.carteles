@@ -10,6 +10,7 @@ import type { PublicSettings } from '@/lib/contracts/settings';
 import { argentinaDate, emptyCustomer, validateCustomer, type CustomerFields } from './validation';
 import { fingerprint } from './manager';
 import { DepositNotice } from '@/components/deposit-notice';
+import { PhotoDeliveryNotice } from '@/components/photo-delivery-notice';
 
 export function Checkout({ settings }: { settings: PublicSettings | null }) {
   const { state, store, preview, previews, orders, orderState } = useCart();
@@ -95,7 +96,7 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
           {input('customerEmail', 'Mail *', 'email')}
           {input('customerBirthDate', 'Fecha de nacimiento *', 'date')}
           {input('requestedDate', '¿Para cuándo lo necesitarías? *', 'date', 'La fecha queda pendiente hasta que la emprendedora la confirme por WhatsApp.')}
-          {input('notes', 'Observaciones (opcional)', 'text', 'Hasta 1000 caracteres. Las fotos se envían por WhatsApp.')}
+          {input('notes', 'Observaciones (opcional)', 'text', 'Hasta 1000 caracteres.')}
         </fieldset>
         {formMessage && <p role="alert" className="field-error">{formMessage}</p>}
         {orderState.storageWarning && <p className="notice">Este navegador no permite guardar el registro de reintento. Mantené la página abierta hasta recibir la confirmación.</p>}
@@ -115,7 +116,7 @@ export function Checkout({ settings }: { settings: PublicSettings | null }) {
             {preview.priceChanges.length > 0 && <p className="notice">Hay cambios de precio. Revisá los importes actualizados antes de continuar.</p>}
             {result.items.map((item) => <div className="order-review-item" key={item.lineId}><h3>{item.quantity} × {item.productName}</h3><p>{item.variantName} · {item.subtotalCents === null ? 'A cotizar' : formatMoney(item.subtotalCents)}</p>
               <dl className="cart-answers">{item.answers.map((answer) => <div key={answer.fieldKey}><dt>{item.components.find((c) => c.key === answer.componentKey)?.name ? item.components.find((c) => c.key === answer.componentKey)!.name + ': ' : ''}{answer.label}</dt><dd>{answer.displayValue}</dd></div>)}</dl>
-              {item.photoCountTotal > 0 && <p className="muted form-note">{item.photoCountTotal} fotos por WhatsApp.</p>}
+              {item.photoCountTotal > 0 && <PhotoDeliveryNotice count={item.photoCountTotal} method={item.photoDelivery === 'EMAIL' ? 'EMAIL' : 'WHATSAPP'} className="muted form-note" />}
             </div>)}
             <dl><div><dt>Subtotal conocido</dt><dd>{formatMoney(result.summary.knownSubtotalCents)}</dd></div><div><dt>A cotizar</dt><dd>{result.summary.pendingQuoteQuantity} unidades</dd></div><div><dt>Entrega</dt><dd>{delivery === 'PICKUP' ? 'A coordinar' : 'Envío por correo a confirmar'}</dd></div><div><dt>Total final</dt><dd>A confirmar</dd></div></dl>
           </div>}

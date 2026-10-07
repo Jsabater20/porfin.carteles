@@ -28,7 +28,7 @@ export async function replyOrder(request, response, state, settings, path) {
     knownSubtotalCents: preview.summary.knownSubtotalCents, pendingQuoteCount: preview.summary.pendingQuoteLines, shippingCents: preview.summary.shipping.amountCents,
     createdAt: new Date().toISOString(), idempotencyKey: key,
     items: preview.items.map((item, index) => ({ id: 'item-' + index, productId: item.productId, productName: item.productName, variantName: item.variantName, quantity: item.quantity, unitPriceCents: item.unitPriceCents, subtotalCents: item.subtotalCents,
-      snapshot: { variant: { photoCount: item.photoCountPerUnit }, customization: { answers: item.answers }, components: item.components } })),
+      snapshot: { variant: { photoCount: item.photoCountPerUnit, photoDelivery: item.photoDelivery }, customization: { answers: item.answers }, components: item.components } })),
     whatsapp: { url: state.orderNoWhatsapp ? null : 'https://wa.me/' + settings.whatsappNumber + '?text=' + encodeURIComponent(message), message },
   };
   state.orders.set(order.id, order); state.orderKeys.set(key, { raw, order });

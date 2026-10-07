@@ -4,6 +4,7 @@ import type { GuestOrder } from '@/lib/contracts/orders';
 import { browserApi } from '@/lib/api/browser';
 import { formatMoney } from '@/lib/format/money';
 import { OrderActions } from './order-actions';
+import { PhotoDeliveryNotice } from '@/components/photo-delivery-notice';
 
 const statuses: Record<GuestOrder['status'], string> = { PENDING_CONFIRMATION: 'Pendiente de confirmación', CONFIRMED: 'Confirmado', IN_PRODUCTION: 'En producción', READY: 'Listo para entregar', DELIVERED: 'Entregado', CANCELLED: 'Cancelado' };
 const statusMessages: Record<GuestOrder['status'], string> = {
@@ -37,7 +38,7 @@ export function OrderDetails({ order }: { order: GuestOrder }) {
       {current.items.map((item) => <article key={item.id} className="cart-row"><h2>{item.quantity} × {item.productName}</h2><p>{item.variantName}</p>
         <dl className="cart-answers">{item.snapshot.customization.answers.map((answer) => { const component = item.snapshot.components.find((c) => c.key === answer.componentKey); return <div key={answer.fieldKey}><dt>{component ? component.name + ': ' : ''}{answer.label}</dt><dd>{answer.displayValue}</dd></div>; })}</dl>
         <strong>{item.subtotalCents === null ? 'A cotizar' : formatMoney(item.subtotalCents)}</strong>
-        {item.snapshot.variant.photoCount > 0 && <p>{item.snapshot.variant.photoCount * item.quantity} fotos para enviar por WhatsApp.</p>}
+        {item.snapshot.variant.photoCount > 0 && <PhotoDeliveryNotice count={item.snapshot.variant.photoCount * item.quantity} method={item.snapshot.variant.photoDelivery === 'EMAIL' ? 'EMAIL' : 'WHATSAPP'} />}
       </article>)}
       <h2>Contacto y entrega</h2><dl className="cart-answers"><div><dt>Nombre</dt><dd>{current.customerName}</dd></div>{current.customerEmail && <div><dt>Mail</dt><dd>{current.customerEmail}</dd></div>}{current.customerBirthDate && <div><dt>Fecha de nacimiento</dt><dd>{current.customerBirthDate.slice(0, 10).split('-').reverse().join('/')}</dd></div>}{current.customerPhone && <div><dt>Teléfono</dt><dd>{current.customerPhone}</dd></div>}<div><dt>Fecha solicitada</dt><dd>{current.requestedDate.slice(0, 10).split('-').reverse().join('/')} · a coordinar</dd></div><div><dt>Modalidad</dt><dd>{current.deliveryMethod === 'PICKUP' ? 'A coordinar (Santa Fe Capital)' : current.deliveryMethod === 'SHIPPING' ? 'Envío por correo' : 'A coordinar'}</dd></div>{current.deliveryAddress && <div><dt>Dirección</dt><dd>{current.deliveryAddress}</dd></div>}{current.notes && <div><dt>Observaciones</dt><dd>{current.notes}</dd></div>}</dl>
     </section><aside className="cart-summary"><h2>Importes registrados</h2><div className="validated-summary"><dl><div><dt>Subtotal conocido</dt><dd>{formatMoney(current.knownSubtotalCents)}</dd></div><div><dt>Productos a cotizar</dt><dd>{current.pendingQuoteCount}</dd></div><div><dt>Envío</dt><dd>{current.shippingCents === null ? 'A confirmar' : current.deliveryMethod === 'PICKUP' ? 'No requerido' : formatMoney(current.shippingCents)}</dd></div><div><dt>Total final</dt><dd>Acordar con la tienda</dd></div></dl></div>
