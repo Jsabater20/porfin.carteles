@@ -75,17 +75,17 @@
   --ink: #fff8f8;
   --muted: #e2d4db;
   --accent: #f1c1cc;
+  --accent-dark: #e6aebc;
   --accent-soft: rgba(241, 193, 204, .12);
   --line: rgba(241, 193, 204, .25);
   --on-accent: #1d2d44;
   padding: 0;
-  border-radius: 32px;
-  background: #1d2d44;
-  box-shadow: 0 24px 60px rgba(35, 51, 75, .18);
+  border: 1px solid rgba(241, 193, 204, .2);
+  border-radius: 28px;
+  background: linear-gradient(120deg, #263b55, #1d2d44);
+  box-shadow: 0 16px 38px -16px rgba(35, 51, 75, .3);
 }
-.site-shell .showcase-window { background: #263b55; }
-.site-shell .showcase-options { justify-content: flex-start; padding: 1.25rem 0 0; }
-.site-shell .showcase-options button[aria-pressed='true'] { font-weight: 700; }
+.site-shell .showcase-options { background: rgba(13, 26, 43, .2); border-radius: 28px 28px 0 0; }
 .site-shell .button {
   border-radius: 999px;
   padding-inline: 1.65rem;
@@ -242,6 +242,9 @@
   .site-shell .store-footer { padding-block: 2.5rem; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .site-shell .showcase-art { animation: none; }
+  .site-shell .showcase-options button,
+  .site-shell .showcase-shapes button,
   .site-shell .product-card,
   .site-shell .product-card .product-image img,
   .site-shell .category-tag,

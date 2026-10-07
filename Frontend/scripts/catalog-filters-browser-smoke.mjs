@@ -136,7 +136,7 @@ try {
   assert.equal(await evaluate('document.querySelectorAll(".showcase-shapes button").length'),3);
   await click('.showcase-shapes button:nth-child(2)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
-  assert.match(await evaluate('document.querySelector(".showcase-copy .text-link").href'),/shape=CIRCULAR/);
+  assert.match(await evaluate('document.querySelector(".showcase-cta").href'),/shape=CIRCULAR/);
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await delay(450);
   const circleShot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
@@ -146,7 +146,7 @@ try {
   await click('.showcase-options button:nth-child(1)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
   await click('.showcase-shapes button:nth-child(3)');
-  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles xxl"');
+  await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles XXL"');
   assert.equal(await evaluate('document.querySelector(".showcase-art .reference-art").getAttribute("viewBox")'), '24 1082 502 212');
   await delay(450);
   assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),3);
