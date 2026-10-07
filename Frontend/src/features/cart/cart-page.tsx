@@ -38,7 +38,7 @@ function CartRow({ line, index }: { line: CartLine; index: number }) {
     {(validated?.photoCountTotal ?? line.display.photoCount * line.quantity) > 0 && <p className="form-note muted">{validated?.photoCountTotal ?? line.display.photoCount * line.quantity} fotos en total · envío por WhatsApp.</p>}
     <div className="cart-row-controls"><div className="custom-field quantity-field"><label htmlFor={'qty-' + line.lineId}>Cantidad</label><input id={'qty-' + line.lineId} type="number" inputMode="numeric" min={1} max={100} step={1} value={line.quantity}
       onChange={(event) => setError(store.quantity(line.lineId, Number(event.target.value)) ?? '')} aria-invalid={Boolean(error)} aria-describedby={error ? 'qty-error-' + line.lineId : undefined} /></div>
-      <Link className="text-link" href={`/productos/${line.display.slug}?editar=${encodeURIComponent(line.lineId)}`}>Editar opciones</Link>
+      <Link className="text-link" href={`/productos/${line.display.slug}?variante=${encodeURIComponent(line.variantId)}&editar=${encodeURIComponent(line.lineId)}`}>Editar producto</Link>
       <div className="cart-line-price">{validated ? <><strong>{validated.subtotalCents === null ? 'A cotizar' : formatMoney(validated.subtotalCents)}</strong><small>Subtotal validado</small></> :
         <><strong>{line.display.unitEstimateCents === null ? 'A cotizar' : formatMoney(line.display.unitEstimateCents)}</strong><small>Orientativo por unidad · validar</small></>}</div>
     </div>

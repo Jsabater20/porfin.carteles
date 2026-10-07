@@ -60,7 +60,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
     <FilterForm key={storeParams(filters).toString()} filters={filters} occasions={occasions} careers={careers} />
     {(occasionsResult.status === 'rejected' || careersResult.status === 'rejected') && <p className="notice" role="status">Algunos filtros no pudieron cargarse. Podés seguir buscando por nombre o categoría.</p>}
     <div className="results-heading"><p role="status">{products.total} {products.total === 1 ? 'producto' : 'productos'}{filters.q && <> para <strong>“{filters.q}”</strong></>}</p><span className="muted">Importes en ARS · Opciones a cotizar</span></div>
-    {products.items.length ? <div className="product-grid">{products.items.map(product => <ProductCard key={product.id} product={product} catalogClassification />)}</div> :
+    {products.items.length ? <div className="product-grid">{products.items.map(product => <ProductCard key={product.defaultVariantId ?? product.id} product={product} catalogClassification />)}</div> :
       <section className="catalog-empty" aria-label="Sin resultados"><h2>{filtering ? 'No encontramos productos con esos filtros' : 'Todavía no hay productos publicados'}</h2><p className="muted">{filtering ? 'Probá con otra búsqueda o quitá algunos filtros.' : 'Estamos preparando nuevas propuestas. Volvé a visitarnos pronto.'}</p>{filtering && <Link className="button button-secondary" href="/catalogo">Ver todo el catálogo</Link>}</section>}
     {pages > 1 && <nav className="pagination" aria-label="Paginación del catálogo">
       {filters.page > 1 ? <Link className="button button-secondary" href={storeHref({ ...filters, page: filters.page - 1 })} rel="prev">Anterior</Link> : <span />}

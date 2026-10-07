@@ -36,7 +36,7 @@ try {
     assert.doesNotMatch(page, /id="catalog-sort"/);
     assert.doesNotMatch(page, /id="catalog-type"/);
     assert.match(await html('/catalogo?category=CARTEL&type=PREDEFINED'), /Ocasión 51/);
-    assert.match(page, /Desde/);
+    assert.doesNotMatch(page, /Desde/);
     assert.match(page, /123,45/);
     assert.match(page, /A cotizar/);
     const second = await html('/catalogo?type=PREDEFINED&categoryId=cat-0&careerId=career-1&sort=name-asc&page=2');

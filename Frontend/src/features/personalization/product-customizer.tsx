@@ -32,7 +32,7 @@ function InputField({ field, value, error, onChange }: { field: PersonalizationF
 }
 export function ProductCustomizer({ product, editLineId, initialVariantId }: { product: ProductDetail; editLineId?: string; initialVariantId?: string }) {
   const { state } = useCart();
-  if (!state.ready) return <><Variants variants={product.variants} /><p role="status">Preparando la personalización…</p><noscript>Activá JavaScript para personalizar el producto y usar el carrito.</noscript></>;
+  if (!state.ready) return <><Variants variants={product.variants} selectedId={initialVariantId} /><p role="status">Preparando la personalización…</p><noscript>Activá JavaScript para personalizar el producto y usar el carrito.</noscript></>;
   const editing = editLineId ? state.lines.find((line) => line.lineId === editLineId && line.productId === product.id) : undefined;
   if (editLineId && !editing) return <p className="notice">Este renglón ya no está disponible. <Link className="text-link" href="/carrito">Volver al carrito</Link></p>;
   return <CustomizerForm key={editLineId || product.id} product={product} editing={editing} initialVariantId={initialVariantId} />;
@@ -40,11 +40,10 @@ export function ProductCustomizer({ product, editLineId, initialVariantId }: { p
 function CustomizerForm({ product, editing, initialVariantId }: { product: ProductDetail; editing?: CartLine; initialVariantId?: string }) {
   const { store, state } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
-  const [variantId, setVariantId] = useState(editing?.variantId ?? product.variants.find(item => item.id === initialVariantId)?.id ?? product.variants[0]?.id ?? '');
+  const variantId = editing?.variantId ?? product.variants.find(item => item.id === initialVariantId)?.id ?? product.variants[0]?.id ?? '';
   const [quantity, setQuantity] = useState(String(editing?.quantity ?? 1));
   const [values, setValues] = useState<Record<string, string>>(() => ({ idea: String(editing?.answers.find((answer) => answer.fieldKey === 'idea')?.value ?? '') }));
   const [errors, setErrors] = useState<Record<string, string>>(() => Object.create(null));
-  const [variantError, setVariantError] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [message, setMessage] = useState('');
   const [added, setAdded] = useState(false);
@@ -57,7 +56,6 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
     const result = validateAnswers(visibleFields, values);
     const count = Number(quantity);
     const invalidQuantity = !quantity.trim() || !Number.isInteger(count) || count < 1 || count > 100;
-    setVariantError(variant ? '' : 'Elegí una variante disponible.');
     setQuantityError(invalidQuantity ? 'Ingresá una cantidad entera entre 1 y 100.' : '');
     setErrors(result.errors); setMessage(''); setAdded(false);
     if (Object.keys(result.errors).length || invalidQuantity || !variant || !estimate) {
@@ -82,24 +80,19 @@ function CustomizerForm({ product, editing, initialVariantId }: { product: Produ
   return <form ref={formRef} onSubmit={submit} noValidate className="customizer" onChange={changed}>
     <h2>{editing ? 'Editar tu idea' : 'Armá tu producto'}</h2>
     <DepositNotice />
-    <div className="custom-field"><label htmlFor="product-variant">Opción *</label>
-      <select id="product-variant" value={variantId} onChange={(event) => setVariantId(event.target.value)} aria-invalid={Boolean(variantError)} aria-describedby={variantError ? 'variant-error' : undefined}>
-        {!variant && <option value="">La opción anterior ya no está disponible</option>}
-        {product.variants.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-      </select>{variantError && <p id="variant-error" className="field-error">{variantError}</p>}
-    </div>
+    {!variant && <p className="notice" role="alert">Este cartel ya no está disponible. <Link className="text-link" href="/catalogo">Ver el catálogo</Link></p>}
     {variant && <div className="variant-detail" aria-live="polite">
       {product.category && <p className="muted form-note"><strong>Categoría:</strong> {categoryLabels[product.category]}{product.category === 'CARTEL' ? ` · Tipo: ${displayTypeLabels[getDisplayType(product.category, product.type, variant.photoCount)]}` : ''}</p>}
       <p className="variant-price">{estimate?.unit === null ? 'A cotizar' : estimate ? formatMoney(estimate.unit) : 'A confirmar'}</p>
-      <p className="muted form-note">Importe orientativo por unidad{estimate && estimate.additional > 0 ? ` · adicionales elegidos: ${formatMoney(estimate.additional)}` : ''}. Se vuelve a validar en el carrito.</p>
+      <p className="muted form-note">{estimate?.unit === null ? 'El precio se confirma al coordinar el pedido.' : 'Precio por unidad en ARS. Se vuelve a verificar en el carrito.'}</p>
       {Object.keys(variant.attributes).length > 0 && <dl className="attributes">{Object.entries(variant.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>}
-      {variant.photoCount > 0 && <p className="notice">Esta opción lleva {variant.photoCount} fotos por unidad. Las fotos se envían por WhatsApp al coordinar el pedido.</p>}
+      {variant.photoCount > 0 && <p className="notice">Este cartel lleva {variant.photoCount} fotos por unidad. Las fotos se envían por WhatsApp al coordinar el pedido.</p>}
     </div>}
     <InputField field={IDEA_FIELD} value={values.idea} error={errors.idea} onChange={(value) => setValues({ idea: value })} />
     <div className="custom-field quantity-field"><label htmlFor="product-quantity">Cantidad *</label><input id="product-quantity" type="number" inputMode="numeric" min={1} max={100} step={1} value={quantity} onChange={(event) => setQuantity(event.target.value)} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? 'quantity-error' : undefined} />
       {quantityError && <p id="quantity-error" className="field-error">{quantityError}</p>}
     </div>
-    <button className="button" type="submit" disabled={added}>{added ? (editing ? 'Cambios guardados' : 'Agregado al carrito') : editing ? 'Guardar cambios' : 'Agregar al carrito'}</button>
+    <button className="button" type="submit" disabled={added || !variant}>{added ? (editing ? 'Cambios guardados' : 'Agregado al carrito') : editing ? 'Guardar cambios' : 'Agregar al carrito'}</button>
     {added && <div className="notice success-notice" role="status"><p>{editing ? 'Actualizamos este renglón.' : 'Tu producto ya está en el carrito.'}</p><Link className="text-link" href="/carrito">Ver carrito</Link>{!editing && <button type="button" className="text-button" onClick={() => { setAdded(false); setValues({ idea: '' }); }}>Agregar otro producto</button>}</div>}
     {message && <p role="alert" className="field-error">{message}</p>}
     {state.storageWarning && <p className="notice">No pudimos guardar en este navegador. El carrito se mantendrá mientras esta página siga abierta.</p>}

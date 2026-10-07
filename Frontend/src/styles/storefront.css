@@ -68,7 +68,7 @@
 .site-shell .brand-hero { border-bottom: 7px solid #f1c1cc; }
 .site-shell .brand-hero h1 { max-width: 15ch; font-size: clamp(2.65rem, 4.6vw, 4.6rem); }
 .site-shell .home-showcase-section { padding-top: clamp(3.5rem, 7vw, 6rem); }
-.site-shell .home-showcase-section > .section-heading { max-width: 720px; text-align: left; }
+.site-shell .home-showcase-section > .section-heading { max-width: 720px; margin-inline: auto; text-align: center; }
 .site-shell .home-showcase {
   color-scheme: dark;
   --surface: #263b55;

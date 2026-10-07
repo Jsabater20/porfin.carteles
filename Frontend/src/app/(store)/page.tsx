@@ -44,7 +44,7 @@ export default async function HomePage() {
         <HomeCareerList careers={careersResult.items} />
       </section>}
       {!!content.data?.featuredProducts.length && <section className="container home-section"><div className="section-heading heading-row"><div><p className="eyebrow">Elegidos para vos</p><h2>Para tu próxima celebración.</h2></div><Link className="text-link" href="/catalogo">Ver todo el catálogo</Link></div>
-        <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.defaultVariantId ?? product.id} product={product} />)}</div>
       </section>}
       {content.data?.body && <section className="container home-section home-promo"><p className="eyebrow">Novedades</p><p className="preserve-lines">{content.data.body}</p></section>}
       <section id="como-pedir" className="how-section">
