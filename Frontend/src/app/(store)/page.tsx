@@ -23,7 +23,7 @@ export default async function HomePage() {
             <p className="hero-description">{content.data?.subtitle || 'Carteles, props y combos personalizados para celebrar a tu manera.'}</p>
             <div className="actions">
               <Link href="/catalogo" className="button">Explorar el catálogo <span aria-hidden="true">↗</span></Link>
-              <Link href="#como-pedir" className="text-link">Cómo hacer tu pedido</Link>
+              <a href="#como-pedir" className="text-link">Cómo hacer tu pedido</a>
             </div>
             <ul className="hero-details" aria-label="Información destacada">
               <li><strong>Hecho a medida</strong><span>Cada idea tiene su detalle</span></li>

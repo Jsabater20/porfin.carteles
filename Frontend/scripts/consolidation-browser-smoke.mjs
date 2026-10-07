@@ -95,8 +95,14 @@ try {
     await navigate('/productos/cartel-generico?variante=generico-rectangular-base','#product-variant');
     assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Desborde a '+width);
   }
+  await navigate('/catalogo','.store-nav');
+  await evaluate('document.querySelector(\'.store-nav a[href="/#como-pedir"]\').click()');
+  await waitFor('location.pathname==="/" && location.hash==="#como-pedir" && !!document.querySelector("#como-pedir") && Math.abs(document.querySelector("#como-pedir").getBoundingClientRect().top) < 150');
+  await navigate('/','.hero-copy');
+  await evaluate('document.querySelector(\'.hero-copy a[href="#como-pedir"]\').click()');
+  await waitFor('location.hash==="#como-pedir" && Math.abs(document.querySelector("#como-pedir").getBoundingClientRect().top) < 150');
   assert.deepEqual(exceptions,[]);
-  console.log('OK: enlace anterior, opciones normal/+3 por tipo y forma, precios, parámetro inválido y 1440/390/320px');
+  console.log('OK: variantes, precios, tamaños de pantalla y enlaces a Cómo pedir desde catálogo y home');
 } finally {
   ws?.close();
   await Promise.allSettled(processes.map(stop));
