@@ -217,7 +217,7 @@
 .site-shell .content-body h2,
 .site-shell .contact-details h2 { color: var(--ink); }
 .site-shell .store-footer { padding-block: 3.25rem; background: #1d2d44; border-top: 5px solid #eab6c3; }
-.site-shell .store-footer .brand-logo { color: #f1c1cc; }
+.site-shell .store-footer .brand-logo { background: #f1c1cc; }
 .site-shell .store-footer p { max-width: 29ch; line-height: 1.7; }
 .site-shell .store-footer .footer-nav { font-weight: 600; }
 .site-shell .store-footer .footer-contact { color: #f0dce2; }
