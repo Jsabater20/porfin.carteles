@@ -8,6 +8,11 @@
 .editor-section .custom-field, .taxonomy-form .custom-field { margin-bottom:1rem; min-width:0; }
 .editor-section input:not([type=checkbox]), .editor-section select, .editor-section textarea, .admin-filters input, .admin-filters select { width:100%; min-width:0; padding:.65rem; border:1px solid var(--control-border); border-radius:var(--radius-small); background:var(--canvas); color:var(--ink); font:inherit; }
 .editor-section input[type=file] { overflow:hidden; }
+.product-image-picker { min-width:0; }
+.selected-product-image { display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap; margin-block:1rem; padding:1rem; border:1px solid var(--line); border-radius:var(--radius-small); background:var(--canvas); }
+.selected-product-image img { display:block; width:min(100%,280px); height:200px; object-fit:contain; border-radius:8px; background:#e6e6e6; }
+.selected-product-image > div { min-width:0; flex:1 1 140px; }
+.selected-product-image p { margin-bottom:.5rem; overflow-wrap:anywhere; }
 .editor-section textarea { resize:vertical; }
 .editor-section label, .admin-filters label { display:grid; gap:.35rem; }
 .taxonomy-choices { min-width:0; border:1px solid var(--line); border-radius:var(--radius-small); padding:.8rem; }

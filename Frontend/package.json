@@ -18,6 +18,7 @@
     "test:auth-browser": "node scripts/auth-browser-smoke.mjs",
     "test:catalog-filters-browser": "node scripts/catalog-filters-browser-smoke.mjs",
     "test:catalog-browser": "node scripts/catalog-browser-smoke.mjs",
+    "test:new-product-image-browser": "node scripts/new-product-image-browser-smoke.mjs",
     "test:operations-browser": "node scripts/operations-browser-smoke.mjs",
     "start:production": "node scripts/start-production.mjs",
     "check:production": "node scripts/check-production.mjs",

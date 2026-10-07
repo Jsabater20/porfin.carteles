@@ -5,6 +5,12 @@ export function validateImage(file: Pick<File,'size'|'type'>) {
  if(file.size < 1 || file.size > MAX_IMAGE_BYTES) return 'La imagen debe pesar entre 1 byte y 5 MiB.';
  return '';
 }
+export async function checkImageFile(file: File) {
+ const invalid=validateImage(file); if(invalid) throw new Error(invalid);
+ const bitmap=await createImageBitmap(file).catch(()=>{throw new Error('No pudimos abrir esta imagen. Revisá el archivo.');});
+ const pixels=bitmap.width*bitmap.height; bitmap.close();
+ if(pixels>40000000) throw new Error('La imagen debe tener hasta 40 millones de píxeles.');
+}
 export function uploadDestination(value: string) {
  const url=new URL(value);
  if(url.protocol!=='https:' || url.hostname!=='api.cloudinary.com' || url.port || url.username || url.password || url.search || url.hash || !/^\/v1_1\/[a-zA-Z0-9_-]+\/image\/upload$/.test(url.pathname)) throw new Error('Destino de carga no permitido.');

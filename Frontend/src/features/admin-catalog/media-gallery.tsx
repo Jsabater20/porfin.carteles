@@ -8,30 +8,31 @@ import type { UploadAuthorization } from '@/lib/contracts/admin-catalog';
 import { ProductImage } from '@/features/catalog/product-image';
 import { Field, Confirm, useEditorReady } from './controls';
 import { moved } from './model';
-import { validateImage, uploadImage } from './upload';
+import { validateImage, checkImageFile, uploadImage } from './upload';
+import { ImagePicker } from './image-picker';
 const IMAGE_SHAPES: Record<CatalogShape, string> = { RECTANGULAR: 'Rectangular', CIRCULAR: 'Circular', XXL: 'XXL' };
-export function MediaGallery({productId,name,initialImages}:{productId:string;name:string;initialImages:CatalogImage[]}) {
+export function MediaGallery({productId,name,initialImages,initialFile=null,initialPending=null,initialAlt='',initialShape=null,onImageSaved}:{productId:string;name:string;initialImages:CatalogImage[];initialFile?:File|null;initialPending?:UploadAuthorization|null;initialAlt?:string;initialShape?:CatalogShape|null;onImageSaved?:()=>void}) {
  const ready=useEditorReady();
  const {manager,loggingOut}=useAdmin();
- const [images,setImages]=useState(initialImages), [pending,setPending]=useState<UploadAuthorization|null>(null);
- const [alt,setAlt]=useState(''),[shape,setShape]=useState<CatalogShape|null>(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
- const lock=useRef(false), fileInput=useRef<HTMLInputElement>(null);
+ const [images,setImages]=useState(initialImages), [pending,setPending]=useState<UploadAuthorization|null>(initialPending);
+ const [file,setFile]=useState<File|null>(initialFile);
+ const [alt,setAlt]=useState(initialAlt),[shape,setShape]=useState<CatalogShape|null>(initialShape),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ const lock=useRef(false);
  const base='admin/products/'+productId+'/images';
  const refresh=async()=>{setImages(await manager.request<CatalogImage[]>(base));};
- useEffect(()=>{if(!pending) return; const unload=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';}; const leave=(e:MouseEvent)=>{const a=(e.target as HTMLElement).closest('a');if(a&&a.target!=='_blank'&&a.pathname!==location.pathname&&!window.confirm('Hay una carga pendiente. Cancelala o verificala antes de salir. ¿Querés salir igualmente?'))e.preventDefault();};window.addEventListener('beforeunload',unload);document.addEventListener('click',leave,true);return()=>{window.removeEventListener('beforeunload',unload);document.removeEventListener('click',leave,true);};},[pending]);
+ useEffect(()=>{if(!pending&&!file) return; const unload=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';}; const leave=(e:MouseEvent)=>{const a=(e.target as HTMLElement).closest('a');if(a&&a.target!=='_blank'&&a.pathname!==location.pathname&&!window.confirm('Hay una foto sin terminar de guardar. ¿Querés salir igualmente?'))e.preventDefault();};window.addEventListener('beforeunload',unload);document.addEventListener('click',leave,true);return()=>{window.removeEventListener('beforeunload',unload);document.removeEventListener('click',leave,true);};},[pending,file]);
  async function run(action:()=>Promise<void>) {if(lock.current||loggingOut)return;lock.current=true;setBusy(true);setMessage('');try{await action();}catch(e){setMessage(e instanceof Error?e.message:'No pudimos confirmar la operación. Actualizá la galería antes de repetirla.');}finally{lock.current=false;setBusy(false);}}
  async function complete(auth:UploadAuthorization) {
   const image=await manager.request<CatalogImage>('admin/media/complete',{method:'POST',body:{uploadId:auth.uploadId,altText:alt.trim(),shape}});
-  setPending(null);setAlt('');setShape(null);if(fileInput.current)fileInput.current.value='';
+  setPending(null);setAlt('');setShape(null);setFile(null);
   setImages(current=>[...current.filter(i=>i.id!==image.id),image].sort((a,b)=>a.position-b.position));
-  setMessage('Imagen confirmada.');await refresh();
+  setMessage('Imagen confirmada.');if(onImageSaved)onImageSaved();else await refresh();
  }
  async function upload() {
-  const file=fileInput.current?.files?.[0];if(!file){setMessage('Elegí una imagen.');return;}
+  if(!file){setMessage('Elegí una imagen.');return;}
   const error=validateImage(file);if(error){setMessage(error);return;}if(alt.trim().length>240){setMessage('La descripción debe tener hasta 240 caracteres.');return;}
   await run(async()=>{
-   const bitmap=await createImageBitmap(file).catch(()=>{throw new Error('No pudimos abrir esta imagen. Revisá el archivo.');});
-   const pixels=bitmap.width*bitmap.height;bitmap.close();if(pixels>40000000)throw new Error('La imagen debe tener hasta 40 millones de píxeles.');
+   await checkImageFile(file);
    let auth:UploadAuthorization;
    try{auth=await manager.request<UploadAuthorization>('admin/media/upload-signature',{method:'POST',body:{productId}});}catch(e){if(e instanceof ApiError&&e.status===503)throw new Error('Las cargas de imágenes no están disponibles por el momento.');throw e;}
    setPending(auth);setMessage('Enviando imagen…');
@@ -43,10 +44,10 @@ export function MediaGallery({productId,name,initialImages}:{productId:string;na
  <p className="muted">La primera imagen es la portada. Podés cargar hasta 12 imágenes JPG, PNG o WebP de hasta 5 MiB y 40 millones de píxeles.</p>
  {message&&<p role="status" className="notice">{message}</p>}
  <fieldset className="editor-section editor-fields" disabled={busy||loggingOut||!ready}><legend>Agregar imagen</legend>
- <div className="custom-field"><label htmlFor="image-file">Archivo</label><input id="image-file" ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" disabled={!!pending||images.length>=12}/></div>
+ <ImagePicker file={file} onChange={setFile} disabled={!!pending||images.length>=12}/>
  <Field id="image-alt" label="Descripción de la imagen" value={alt} onChange={setAlt} hint="Describí lo que se ve para quienes usan lectores de pantalla."/>
  <div className="custom-field"><label htmlFor="image-shape">Forma que muestra</label><select id="image-shape" value={shape??''} onChange={event=>setShape(event.target.value?event.target.value as CatalogShape:null)}><option value="">No corresponde</option>{Object.entries(IMAGE_SHAPES).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><small className="muted">Cada formato de cartel aparece en el catálogo solo si tiene una imagen marcada con esa forma. Una foto no se reutiliza para otra forma.</small></div>
- {pending?<div className="notice"><p>Hay una carga pendiente de confirmar. Si se interrumpió el envío, verificá primero si llegó. Si no llegó, cancelala y elegí nuevamente el archivo.</p><div className="actions"><button className="button" type="button" onClick={()=>void run(()=>complete(pending))}>Verificar carga</button><Confirm label="Cancelar carga" question="¿Cancelar la carga pendiente?" onConfirm={()=>run(async()=>{try{await manager.request('admin/media/uploads/'+pending.uploadId,{method:'DELETE',body:{}});}catch(e){if(!(e instanceof ApiError&&e.status===409))throw e;setMessage('La imagen ya estaba confirmada.');}setPending(null);if(fileInput.current)fileInput.current.value='';await refresh();})}/></div></div>
+ {pending?<div className="notice"><p>Hay una carga pendiente de confirmar. Si se interrumpió el envío, verificá primero si llegó. Si no llegó, cancelala y elegí nuevamente el archivo.</p><div className="actions"><button className="button" type="button" onClick={()=>void run(()=>complete(pending))}>Verificar carga</button><Confirm label="Cancelar carga" question="¿Cancelar la carga pendiente?" onConfirm={()=>run(async()=>{try{await manager.request('admin/media/uploads/'+pending.uploadId,{method:'DELETE',body:{}});}catch(e){if(!(e instanceof ApiError&&e.status===409))throw e;setMessage('La imagen ya estaba confirmada.');}setPending(null);setFile(null);await refresh();})}/></div></div>
  :<button type="button" className="button" disabled={images.length>=12} onClick={()=>void upload()}>{busy?'Procesando…':'Cargar imagen'}</button>}
  </fieldset>
  <button className="text-button" disabled={busy} onClick={()=>void run(refresh)}>Actualizar galería</button>
