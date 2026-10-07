@@ -33,7 +33,7 @@ export function HomeShowcase() {
       </button>)}
     </div>
     <div className="showcase-window">
-      <div className="showcase-art" key={`${category}-${shape}`}>
+      <div className="showcase-art" key={`${category}-${shape}`} data-shape={category === 'carteles' ? shape : undefined}>
         <ReferenceArt slug={choice.art} shape={choice.shape} label={`Ejemplo de ${choice.title.toLocaleLowerCase('es-AR')}`} />
       </div>
       <span className="showcase-count" aria-hidden="true">0{categoryIndex + 1}</span>

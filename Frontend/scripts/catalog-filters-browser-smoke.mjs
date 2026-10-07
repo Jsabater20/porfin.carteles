@@ -20,7 +20,7 @@ const next = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start'
   cwd: root, windowsHide: true, env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', BACKEND_API_URL: 'http://127.0.0.1:3101/api/v1', WEB_ORIGIN: 'http://localhost:3100' }, stdio: 'ignore',
 });
 const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--remote-debugging-port=9232', '--remote-debugging-address=127.0.0.1', '--user-data-dir=' + profile,
-  ...(process.env.TEST_BROWSER_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), 'about:blank'], { windowsHide: true, stdio: 'ignore' });
+  ...(process.env.TEST_BROWSER_NO_SANDBOX === '1' ? ['--no-sandbox', '--disable-gpu-sandbox', '--use-gl=swiftshader', '--disable-features=Vulkan,SkiaGraphite'] : []), 'about:blank'], { windowsHide: true, stdio: 'ignore' });
 let ws;
 const processes = [next, browser];
 async function stop(child) { if (child.exitCode === null && child.signalCode === null) { const stopped = once(child, 'exit'); child.kill(); await stopped; } }
@@ -129,7 +129,7 @@ try {
   await navigate('/','h1');
   assert.ok(await evaluate('document.body.textContent.includes("Celebraciones con tu toque")'));
   assert.ok(await evaluate('document.title.includes("Por fin Carteles") && !document.title.includes("Por fin!")'));
-  assert.ok(await evaluate('document.querySelector(".brand-logo-image").complete && document.querySelector(".brand-logo-image").naturalWidth > 0'));
+  assert.ok(await evaluate('document.querySelector(".brand-logo").getAttribute("aria-label")==="Por fin Carteles" && document.querySelector(".brand-logo-name").textContent==="Por fin"'));
   assert.ok(await evaluate('!!document.querySelector("link[rel~=icon][href*=icon]")'));
   assert.equal(await evaluate('[...document.querySelectorAll(".store-nav a")].filter(link=>link.textContent.trim()==="Home").length'),1);
   assert.equal(await evaluate('document.querySelectorAll(".showcase-options button").length'),3);
@@ -137,13 +137,18 @@ try {
   await click('.showcase-shapes button:nth-child(2)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
   assert.match(await evaluate('document.querySelector(".showcase-copy .text-link").href'),/shape=CIRCULAR/);
+  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await delay(450);
+  const circleShot=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});
+  await writeFile(root+'.test-build/home-circle-1440.png',Buffer.from(circleShot.data,'base64'));
   await click('.showcase-options button:nth-child(2)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Props"');
   await click('.showcase-options button:nth-child(1)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles circulares"');
   await click('.showcase-shapes button:nth-child(3)');
   await waitFor('document.querySelector(".showcase-copy h2").textContent==="Carteles xxl"');
-  assert.equal(await evaluate('document.querySelector(".showcase-art .reference-art").getAttribute("viewBox")'), '20 1065 525 250');
+  assert.equal(await evaluate('document.querySelector(".showcase-art .reference-art").getAttribute("viewBox")'), '24 1082 502 212');
+  await delay(450);
   assert.equal(await evaluate('document.querySelectorAll(".steps > li").length'),3);
   assert.equal(await evaluate('document.querySelectorAll(".home-career-list .career-tag").length'),1);
   assert.equal(await evaluate('document.querySelector(".career-tag").textContent.includes("Medicina")'),true);

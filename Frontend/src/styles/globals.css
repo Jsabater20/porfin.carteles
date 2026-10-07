@@ -50,6 +50,9 @@ h3 { font-size: 1.15rem; line-height: 1.3; }
 .showcase-window { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); min-height: 430px; overflow: hidden; border: 1px solid var(--line); border-radius: 28px 28px 90px 28px; background: var(--surface); box-shadow: 0 28px 70px rgba(7, 17, 31, .3); }
 .showcase-art { min-width: 0; margin: 1.25rem; overflow: hidden; border-radius: 20px; background: #e6e6e6; box-shadow: 0 12px 32px rgba(7, 17, 31, .16); animation: showcase-in .35s ease-out; }
 .showcase-art .reference-art { min-height: 100%; object-fit: contain; }
+.showcase-art[data-shape] { display: grid; place-items: center; padding: clamp(.8rem, 2vw, 1.5rem); background: #e6e6e6; }
+.showcase-art[data-shape] .reference-art { width: 100%; height: 100%; min-height: 0; }
+.showcase-art[data-shape='CIRCULAR'] .reference-art { filter: brightness(1.04); }
 .showcase-copy { z-index: 1; align-self: center; padding: 2rem 2.5rem 2rem 1rem; }
 .showcase-copy h2 { margin: .4rem 0 .75rem; font-size: clamp(2rem, 4vw, 3rem); }
 .showcase-copy > p:not(.eyebrow) { color: var(--muted); font-size: .84rem; line-height: 1.55; }
@@ -65,9 +68,10 @@ h3 { font-size: 1.15rem; line-height: 1.3; }
 .showcase-shapes button:hover { border-color: var(--accent); color: var(--ink); }
 .showcase-shapes button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 @keyframes showcase-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
-.brand-logo { position: relative; display: block; flex: 0 0 auto; width: 154px; aspect-ratio: 1153 / 433; overflow: hidden; }
-.brand-logo-image { position: absolute; display: block; top: -38.34%; left: -44.23%; width: 188.38%; max-width: none; height: auto; }
-.admin-shell .brand-logo-image, .auth-header .brand-logo-image { filter: brightness(0) saturate(100%) invert(85%) sepia(15%) saturate(655%) hue-rotate(300deg) brightness(102%) contrast(89%); }
+.brand-logo { display: inline-flex; flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; width: 154px; min-height: 58px; color: #1d2d44; line-height: 1; white-space: nowrap; }
+.brand-logo-name { font-family: Georgia, 'Times New Roman', serif; font-size: 2.55rem; font-weight: 700; letter-spacing: -.045em; }
+.brand-logo-caption { margin-top: .08rem; font-family: Arial, Helvetica, sans-serif; font-size: .74rem; font-weight: 500; letter-spacing: .045em; }
+.admin-shell .brand-logo, .auth-header .brand-logo { color: #f1c1cc; }
 input, textarea, select { accent-color: var(--accent); }
 input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 .hero-description { max-width: 480px; color: var(--muted); font-size: 1.05rem; margin-bottom: 2rem; }
