@@ -4,8 +4,18 @@ import { randomUUID } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { integrationApp } from './support/integration';
 import { hashPassword, tokenHash } from '../src/common/utils/credentials';
-import { OrderService } from '../src/modules/orders/order.service';
+import { OrderService, whatsappText } from '../src/modules/orders/order.service';
 import { PaymentsService } from '../src/modules/payments/payments.service';
+
+test('El mensaje de WhatsApp incluye solo la compra y agrega la idea únicamente en carteles personalizados', () => {
+  const item = { quantity: 1, productName: 'Cartel genérico · Flores verde musgo', variantName: 'Circular · 70 cm de diámetro', subtotalCents: 5500000,
+    answers: [{ fieldKey: 'idea', label: 'Contanos tu idea', value: 'Texto elegido' }] };
+  const generic = whatsappText({ firstName: 'Juan', lastName: 'Pérez', requestedDate: '2026-10-29', deliveryMethod: 'PICKUP', knownSubtotalCents: 5500000, items: [{ ...item, displayType: 'GENERIC' }] }).replaceAll('\u00a0', ' ');
+  assert.equal(generic, 'Hola Por fin Carteles! Quisiera consultar este pedido:\n1 × Cartel genérico · Flores verde musgo (Circular · 70 cm de diámetro): $ 55.000,00\n\nNombre: Juan\nApellido: Pérez\nLo necesitaría para: 29/10/2026\nEntrega: Retiro\nSubtotal: $ 55.000,00');
+  assert.doesNotMatch(generic, /Contanos tu idea|CAR-|Categoría:|Tipo:|Observaciones:|Entiendo que el pedido|seña del 50%/i);
+  const custom = whatsappText({ firstName: 'Juan', lastName: 'Pérez', requestedDate: '2026-10-29', deliveryMethod: 'PICKUP', knownSubtotalCents: 5500000, items: [{ ...item, displayType: 'CUSTOM' }] });
+  assert.match(custom, /  Contanos tu idea: Texto elegido/);
+});
 
 test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 180000 }, async t => {
   const ctx = await integrationApp(); t.after(ctx.cleanup);
@@ -58,9 +68,9 @@ test('Etapas 7 a 10: pedidos, historial, presupuestos y pagos', { timeout: 18000
     order = results[0].body;
     assert.equal(order.scheduledDate.slice(0, 10), payload.requestedDate); assert.equal(order.source, 'STOREFRONT');
     assert.equal(order.customerName, 'Ana Pérez'); assert.equal(order.customerEmail, payload.customerEmail); assert.equal(order.customerBirthDate.slice(0, 10), payload.customerBirthDate); assert.equal(order.status, 'PENDING_CONFIRMATION');
-    for (const text of ['Hola Por fin Carteles! Quisiera consultar este pedido:', order.reference, '2 × Cartel (Tres fotos):', 'size: A3', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío (correo)', 'Observaciones: Entregar por la tarde', 'Subtotal conocido:', 'se abona una seña del 50% del total.']) assert.ok(order.whatsapp.message.includes(text), text);
+    for (const text of ['Hola Por fin Carteles! Quisiera consultar este pedido:', '2 × Cartel (Tres fotos):', 'Nombre: Ana', 'Apellido: Pérez', 'Lo necesitaría para:', 'Entrega: Envío (correo)', 'Subtotal:']) assert.ok(order.whatsapp.message.includes(text), text);
     assert.equal(order.whatsapp.message.match(/Hola Por fin Carteles!/g)?.length, 1);
-    assert.doesNotMatch(order.whatsapp.message, /Mail:|Fecha de nacimiento:|Teléfono:|Ocasión:|Carrera:|Pendientes de cotización:|Fotos para enviar/);
+    assert.doesNotMatch(order.whatsapp.message, /CAR-|Mail:|Fecha de nacimiento:|Teléfono:|Ocasión:|Carrera:|Categoría:|Tipo:|size:|Observaciones:|Subtotal conocido:|Pendientes de cotización:|Fotos para enviar|Entiendo que el pedido|seña del 50%|Contanos tu idea/i);
     assert.equal(order.knownSubtotalCents, 20000); assert.deepEqual(order.items[0].snapshot.variant.attributes, { size: 'A3' });
     assert.ok(order.whatsapp.url.startsWith('https://wa.me/5491199999999?text=')); assert.match(order.whatsapp.message, /2 × Cartel/);
     const notices = (await readdir(ctx.outbox)).filter(name => name.startsWith('order-'));

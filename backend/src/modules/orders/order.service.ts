@@ -13,34 +13,26 @@ import { PreviewService } from './preview.service';
 import { OrderNotificationMailer } from './order-notification-mailer.service';
 
 const SCOPE = 'ORDER_CREATE';
-const CATEGORY_LABELS = { CARTEL: 'Cartel', PROP: 'Prop', COMBO: 'Combo' } as const;
 const DISPLAY_TYPE_LABELS = { GENERIC: 'Genérico', PREDEFINED: 'Predeterminado', PREDEFINED_THREE_IMAGES: 'Predeterminado con 3 imágenes a elección', CUSTOM: 'Personalizado', COMBO: 'Combo' } as const;
 const detail = { items: true, events: { orderBy: { createdAt: 'asc' as const } }, quotes: { orderBy: { version: 'asc' as const }, include: { items: true } }, payments: { orderBy: { occurredAt: 'asc' as const } } } satisfies Prisma.OrderInclude;
 type OrderWithItems = Prisma.OrderGetPayload<{ include: { items: true } }>;
-type WhatsAppItem = { quantity: number; productName: string; variantName: string; subtotalCents: number | null; category?: string; displayType?: string; attributes: [string, string][]; answers: { label: string; value: string }[] };
+export type WhatsAppItem = { quantity: number; productName: string; variantName: string; subtotalCents: number | null; displayType?: keyof typeof DISPLAY_TYPE_LABELS; answers: { fieldKey: string; label: string; value: string }[] };
 
 const amount = (cents: number) => (cents / 100).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 const displayDate = (value: string | Date) => (value instanceof Date ? value.toISOString().slice(0, 10) : value).split('-').reverse().join('/');
-function whatsappText(input: { reference: string; firstName: string; lastName: string; requestedDate: string | Date; deliveryMethod: string; notes?: string | null; knownSubtotalCents: number; items: WhatsAppItem[] }) {
+export function whatsappText(input: { firstName: string; lastName: string; requestedDate: string | Date; deliveryMethod: string; knownSubtotalCents: number; items: WhatsAppItem[] }) {
   return [
     'Hola Por fin Carteles! Quisiera consultar este pedido:',
-    input.reference,
     ...input.items.flatMap(item => [
       `${item.quantity} × ${item.productName} (${item.variantName}): ${item.subtotalCents === null ? 'A cotizar' : amount(item.subtotalCents)}`,
-      ...(item.category ? ['  Categoría: ' + item.category] : []),
-      ...(item.displayType ? ['  Tipo: ' + item.displayType] : []),
-      ...item.attributes.map(([label, value]) => `  ${label}: ${value}`),
-      ...item.answers.map(answer => `  ${answer.label}: ${answer.value}`),
+      ...(item.displayType === 'CUSTOM' ? item.answers.filter(answer => answer.fieldKey === 'idea').map(answer => `  ${answer.label}: ${answer.value}`) : []),
     ]),
     '',
     'Nombre: ' + input.firstName,
     'Apellido: ' + input.lastName,
     'Lo necesitaría para: ' + displayDate(input.requestedDate),
     'Entrega: ' + (input.deliveryMethod === DeliveryMethod.PICKUP ? 'Retiro' : input.deliveryMethod === DeliveryMethod.SHIPPING ? 'Envío (correo)' : 'A coordinar'),
-    ...(input.notes ? ['Observaciones: ' + input.notes] : []),
-    'Subtotal conocido: ' + amount(input.knownSubtotalCents),
-    '',
-    'Entiendo que el pedido, la disponibilidad, la fecha y el precio final quedan pendientes de confirmación por la emprendedora en este chat. Y que para confirmar el pedido y comenzar con el diseño, se abona una seña del 50% del total.',
+    'Subtotal: ' + amount(input.knownSubtotalCents),
   ].join('\n');
 }
 
@@ -97,11 +89,11 @@ export class OrderService {
           if (settings?.deliveryMethods.length && !settings.deliveryMethods.includes(dto.deliveryMethod)) throw new ConflictException('La modalidad de entrega ya no está disponible.');
           const reference = 'CAR-' + randomUUID().toUpperCase();
           const whatsappMessage = whatsappText({
-            reference, firstName: dto.customerFirstName, lastName: dto.customerLastName, requestedDate: dto.requestedDate,
-            deliveryMethod: dto.deliveryMethod, notes: dto.notes, knownSubtotalCents: result.summary.knownSubtotalCents,
+            firstName: dto.customerFirstName, lastName: dto.customerLastName, requestedDate: dto.requestedDate,
+            deliveryMethod: dto.deliveryMethod, knownSubtotalCents: result.summary.knownSubtotalCents,
             items: currentItems.map(item => ({ quantity: item.quantity, productName: item.productName, variantName: item.variantName, subtotalCents: item.subtotalCents,
-              category: item.category ? CATEGORY_LABELS[item.category] : undefined, displayType: DISPLAY_TYPE_LABELS[item.displayType],
-              attributes: Object.entries(item.variantAttributes), answers: item.answers.map(answer => ({ label: answer.label, value: String(answer.displayValue) })) })),
+              displayType: item.displayType,
+              answers: item.answers.map(answer => ({ fieldKey: answer.fieldKey, label: answer.label, value: String(answer.displayValue) })) })),
           });
           const order = await tx.order.create({ data: {
             guestSessionId, reference, customerName: dto.customerFirstName + ' ' + dto.customerLastName, customerPhone: phone,
@@ -262,24 +254,19 @@ export class OrderService {
   private currentWhatsapp(order: OrderWithItems) {
     const fallbackNames = order.customerName.trim().split(/\s+/);
     const message = whatsappText({
-      reference: order.reference,
       firstName: order.customerFirstName ?? fallbackNames.shift() ?? order.customerName,
       lastName: order.customerLastName ?? fallbackNames.join(' '),
       requestedDate: order.requestedDate,
       deliveryMethod: order.deliveryMethod,
-      notes: order.notes,
       knownSubtotalCents: Number(order.knownSubtotalCents),
       items: order.items.map(item => {
         const variant = jsonObject(item.variantSnapshot);
-        const attributes = jsonObject(variant.attributes ?? null);
         const customization = jsonObject(item.customizationSnapshot);
-        const answers = Array.isArray(customization.answers) ? customization.answers.map(answer => jsonObject(answer)).map(answer => ({ label: stringValue(answer.label), value: stringValue(answer.displayValue ?? answer.value) })).filter(answer => answer.label && answer.value) : [];
-        const categoryKey = stringValue(variant.category) as keyof typeof CATEGORY_LABELS;
+        const answers = Array.isArray(customization.answers) ? customization.answers.map(answer => jsonObject(answer)).map(answer => ({ fieldKey: stringValue(answer.fieldKey), label: stringValue(answer.label), value: stringValue(answer.displayValue ?? answer.value) })).filter(answer => answer.fieldKey && answer.label && answer.value) : [];
         const typeKey = stringValue(variant.displayType) as keyof typeof DISPLAY_TYPE_LABELS;
         return {
           quantity: item.quantity, productName: item.productName, variantName: stringValue(variant.name) || 'Variante', subtotalCents: item.subtotalCents === null ? null : Number(item.subtotalCents),
-          category: CATEGORY_LABELS[categoryKey], displayType: DISPLAY_TYPE_LABELS[typeKey],
-          attributes: Object.entries(attributes).map(([label, value]) => [label, stringValue(value)] as [string, string]).filter(([, value]) => value), answers,
+          displayType: typeKey, answers,
         };
       }),
     });
