@@ -47,15 +47,15 @@ export default async function HomePage() {
         <div className="product-grid">{content.data.featuredProducts.map((product) => <ProductCard key={product.defaultVariantId ?? product.id} product={product} />)}</div>
       </section>}
       {content.data?.body && <section className="container home-section home-promo"><p className="eyebrow">Novedades</p><p className="preserve-lines">{content.data.body}</p></section>}
-      <section id="como-pedir" className="how-section">
+      <section id="como-pedir" className="how-section" aria-labelledby="how-title">
         <div className="container">
-          <div className="section-heading"><p className="eyebrow">Simple, como tiene que ser</p><h2>Tu idea, paso a paso.</h2></div>
+          <div className="section-heading how-heading"><p className="eyebrow"><span aria-hidden="true">✦</span> Simple, como tiene que ser</p><h2 id="how-title">Tu idea, paso a paso.</h2><p>Elegí ese detalle especial. Te acompañamos para darle forma y preparar tu próxima celebración.</p></div>
           <ol className="steps">
-            <li><span className="step-number">01</span><h3>Elegí tu cartel o combo</h3><p>Encontrá la propuesta que acompaña tu celebración.</p></li>
-            <li><span className="step-number">02</span><h3>Revisá el carrito y completá tus datos</h3><p>Antes de ir a WhatsApp, completá el formulario e indicá para cuándo lo necesitarías.</p></li>
-            <li><span className="step-number">03</span><h3>Confirmamos por WhatsApp</h3><p>Enviá el mensaje con tu pedido. La emprendedora debe confirmar disponibilidad, fecha y presupuesto por el chat.</p></li>
+            <li><div className="step-top"><span className="step-number">Paso 01</span><svg className="step-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="5" width="24" height="19" rx="3" /><path d="M11 28h10M16 24v4M10 11h12M10 16h7" /></svg></div><h3>Elegí tu diseño</h3><p>Explorá carteles, props y combos. Encontrá el que mejor acompaña tu forma de celebrar.</p></li>
+            <li><div className="step-top"><span className="step-number">Paso 02</span><svg className="step-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 6H7a2 2 0 0 0-2 2v19a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4" /><rect x="11" y="3" width="10" height="6" rx="2" /><path d="m10 17 3 3 8-8M10 25h12" /></svg></div><h3>Prepará tu pedido</h3><p>Revisá el carrito, completá tus datos e indicá para cuándo lo necesitás y cómo querés recibirlo.</p></li>
+            <li><div className="step-top"><span className="step-number">Paso 03</span><svg className="step-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M27 15a11 11 0 0 1-16 10L4 28l2-8a11 11 0 1 1 21-5Z" /><path d="M11 12h10M11 17h7" /></svg></div><h3>Confirmá por WhatsApp</h3><p>Enviá el pedido desde el resumen. Por WhatsApp confirmamos disponibilidad, fecha y presupuesto.</p></li>
           </ol>
-          <Link href="/preguntas-frecuentes" className="text-link how-faq-link">Ver preguntas frecuentes</Link>
+          <div className="how-actions"><Link href="/catalogo" className="button">Empezar mi pedido <span aria-hidden="true">↗</span></Link><Link href="/preguntas-frecuentes" className="text-link how-faq-link">¿Te quedó alguna duda? <span aria-hidden="true">→</span></Link></div>
         </div>
       </section>
     </>

@@ -10,13 +10,9 @@ function InstagramIcon() {
   </svg>;
 }
 
-function GmailIcon() {
-  return <svg className="footer-contact-icon" viewBox="0 0 24 24" aria-hidden="true">
-    <path fill="#4285f4" d="M3.2 6.7v10.4c0 .9.7 1.6 1.6 1.6h2.3V10.4L3.2 7.5z" />
-    <path fill="#34a853" d="M16.9 10.4v8.3h2.3c.9 0 1.6-.7 1.6-1.6V7.5z" />
-    <path fill="#fbbc04" d="M16.9 10.4l3.9-2.9V6.7c0-2-2.3-3.1-3.9-1.9z" />
-    <path fill="#ea4335" d="M7.1 10.4V4.8L12 8.5l4.9-3.7v5.6L12 14.1z" />
-    <path fill="#c5221f" d="M3.2 6.7v.8l3.9 2.9V4.8C5.5 3.6 3.2 4.7 3.2 6.7z" />
+function MailIcon() {
+  return <svg className="footer-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" />
   </svg>;
 }
 
@@ -24,14 +20,15 @@ export function StoreFooter({ storeName, settings }: { storeName: string; settin
   return (
     <footer className="store-footer">
       <div className="container footer-inner">
-        <div><Link href="/" className="brand" aria-label={`${storeName}, inicio`}><BrandLogo /></Link><p>Un detalle especial para cada celebración.</p></div>
+        <div className="footer-brand"><Link href="/" className="brand" aria-label={`${storeName}, inicio`}><BrandLogo /></Link><p>Un detalle especial para cada celebración.</p><span className="footer-location">Santa Fe Capital, Argentina</span></div>
         <div className="footer-links">
+          <h2 className="footer-heading">Nuestra tienda</h2>
           <nav aria-label="Información de la tienda" className="footer-nav"><Link href="/nosotros">Nosotros</Link><Link href="/contacto">Contacto</Link><Link href="/preguntas-frecuentes">Preguntas frecuentes</Link></nav>
-          {(settings?.instagramUrl || settings?.contactEmail) && <nav aria-label="Redes y contacto" className="footer-contact">
-            {settings.instagramUrl && <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram de Por fin Carteles"><InstagramIcon /><span>@porfin.carteles</span></a>}
-            {settings.contactEmail && <a href={`mailto:${encodeURIComponent(settings.contactEmail)}`} aria-label={`Enviar un correo a ${settings.contactEmail}`}><GmailIcon /><span>{settings.contactEmail}</span></a>}
-          </nav>}
         </div>
+        {(settings?.instagramUrl || settings?.contactEmail) && <div className="footer-social"><h2 className="footer-heading">Sigamos en contacto</h2><nav aria-label="Redes y contacto" className="footer-contact">
+          {settings.instagramUrl && <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram de Por fin Carteles"><span className="footer-icon-wrap"><InstagramIcon /></span><span className="footer-contact-copy"><small>Ideas y novedades</small><span>@porfin.carteles</span></span><span className="footer-contact-arrow" aria-hidden="true">↗</span></a>}
+          {settings.contactEmail && <a href={`mailto:${encodeURIComponent(settings.contactEmail)}`} aria-label={`Enviar un correo a ${settings.contactEmail}`}><span className="footer-icon-wrap"><MailIcon /></span><span className="footer-contact-copy"><small>Escribinos</small><span>{settings.contactEmail}</span></span></a>}
+        </nav></div>}
       </div>
     </footer>
   );
