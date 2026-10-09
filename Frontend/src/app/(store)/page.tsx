@@ -12,6 +12,8 @@ export default async function HomePage() {
   const [settings, content, careersResult] = await Promise.all([
     getStoreSettings(), getContent('home'), getTaxonomy('careers').then((items) => ({ items, failed: false }), () => ({ items: [], failed: true })),
   ]);
+  const heroTitle = content.data?.title || 'Un detalle especial para cada celebración.';
+  const twoLineHeroTitle = /^un detalle especial para cada celebración\.?$/i.test(heroTitle.trim());
 
   return (
     <>
@@ -19,7 +21,7 @@ export default async function HomePage() {
         <div className="container hero-grid">
           <div className="hero-copy">
             <p className="eyebrow hero-eyebrow"><span aria-hidden="true">✦</span> Carteles hechos para celebrar</p>
-            <h1 id="home-title">{content.data?.title || 'Un detalle especial para cada celebración.'}</h1>
+            <h1 id="home-title">{twoLineHeroTitle ? <><span className="hero-title-line">Un detalle especial</span><span className="hero-title-line">para cada celebración.</span></> : heroTitle}</h1>
             <p className="hero-description">{content.data?.subtitle || 'Carteles, props y combos personalizados para celebrar a tu manera.'}</p>
             <div className="actions">
               <Link href="/catalogo" className="button">Explorar el catálogo <span aria-hidden="true">↗</span></Link>

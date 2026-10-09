@@ -66,7 +66,8 @@
   color: var(--ink);
 }
 .site-shell .brand-hero { border-bottom: 7px solid #f1c1cc; }
-.site-shell .brand-hero h1 { max-width: 15ch; font-size: clamp(2.65rem, 4.6vw, 4.6rem); }
+.site-shell .brand-hero h1 { max-width: 23ch; font-size: clamp(2.65rem, 4.6vw, 4.6rem); }
+.site-shell .hero-title-line { display: block; white-space: nowrap; }
 .site-shell .home-showcase-section { padding-top: clamp(3.5rem, 7vw, 6rem); }
 .site-shell .home-showcase-section > .section-heading { max-width: 720px; margin-inline: auto; text-align: center; }
 .site-shell .home-showcase {
@@ -288,7 +289,7 @@
   .site-shell .brand-logo { width: 116px; }
   .site-shell .catalog-page > .page-heading { margin: 1rem 0 1.25rem; padding: 1.6rem; }
   .site-shell .catalog-page > .page-heading::after { font-size: 8rem; bottom: -2rem; }
-  .site-shell .brand-hero h1 { font-size: clamp(2.5rem, 12vw, 3.2rem); }
+  .site-shell .brand-hero h1 { font-size: clamp(1.85rem, 9.5vw, 3.2rem); }
   .site-shell .product-summary,
   .site-shell .order-form,
   .site-shell .cart-summary { padding: 1.25rem; }
